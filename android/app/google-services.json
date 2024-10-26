@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "549484205620",
+    "project_id": "tdlogistics-f7d63",
+    "storage_bucket": "tdlogistics-f7d63.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:549484205620:android:96ceb71c2c8994c5b41c61",
+        "android_client_info": {
+          "package_name": "com.example.logistics_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQ-xhPi5Q9SKvOWJhECst1K7nwyvKo_ag"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:549484205620:android:28fa068de2864eb2b41c61",
+        "android_client_info": {
+          "package_name": "com.example.tdlogistic_v2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQ-xhPi5Q9SKvOWJhECst1K7nwyvKo_ag"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:549484205620:android:cdf6f0f783d531c8b41c61",
+        "android_client_info": {
+          "package_name": "dev.flutterexplained.webrtc_tutorial"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQ-xhPi5Q9SKvOWJhECst1K7nwyvKo_ag"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

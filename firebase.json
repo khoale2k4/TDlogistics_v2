@@ -1,0 +1,41 @@
+{
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "tdlogistics-f7d63",
+                    "appId": "1:549484205620:android:28fa068de2864eb2b41c61",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "ios": {
+                "default": {
+                    "projectId": "tdlogistics-f7d63",
+                    "appId": "1:549484205620:ios:8f280473d53327dcb41c61",
+                    "uploadDebugSymbols": false,
+                    "fileOutput": "ios/Runner/GoogleService-Info.plist"
+                }
+            },
+            "macos": {
+                "default": {
+                    "projectId": "tdlogistics-f7d63",
+                    "appId": "1:549484205620:ios:8f280473d53327dcb41c61",
+                    "uploadDebugSymbols": false,
+                    "fileOutput": "macos/Runner/GoogleService-Info.plist"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "tdlogistics-f7d63",
+                    "configurations": {
+                        "android": "1:549484205620:android:28fa068de2864eb2b41c61",
+                        "ios": "1:549484205620:ios:8f280473d53327dcb41c61",
+                        "macos": "1:549484205620:ios:8f280473d53327dcb41c61",
+                        "web": "1:549484205620:web:e5e0153c7a6be79eb41c61",
+                        "windows": "1:549484205620:web:3cd27796b23efb71b41c61"
+                    }
+                }
+            }
+        }
+    }
+}
