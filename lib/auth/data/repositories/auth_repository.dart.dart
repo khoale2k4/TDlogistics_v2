@@ -23,7 +23,6 @@ class AuthRepository {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        print(responseData);
 
         if (responseData["success"] == true) {
           print("OTP sent to $email, phone $phone");
@@ -88,16 +87,12 @@ class AuthRepository {
       http.Response response =
           await http.get(url, headers: {"authorization": "Bearer $token"});
       dynamic responseData = jsonDecode(response.body);
-      print(responseData);
-      print(responseData["data"]);
       if(responseData["data"] == null) {
         url = Uri.parse('$baseUrl/staff/');
         response =
           await http.get(url, headers: {"authorization": "Bearer $token"});
       }
       responseData = jsonDecode(response.body);
-      print(responseData);
-      print(responseData["data"]);
       return User.fromJson(responseData["data"]);
     } catch (error) {
       print("error getting user info ${error.toString()}");
@@ -125,7 +120,6 @@ class AuthRepository {
         "username": username,
       }),
     );
-    print(response.body);
 
     // Lấy giá trị của trường 'set-cookie'
     String? setCookie = response.headers['set-cookie'];

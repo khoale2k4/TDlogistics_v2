@@ -48,13 +48,16 @@ class OrderDetailLoaded extends OrderState {
   List<Object?> get props => [order];
 }
 
-class OrderCreated extends OrderState {
-  final Order order;
+class OrderCreating extends OrderState {
 
-  const OrderCreated(this.order);
+}
 
-  @override
-  List<Object?> get props => [order];
+class OrderCreated extends OrderState {}
+
+class OrderCreateFaild extends OrderState {
+  final String error;
+
+  OrderCreateFaild(this.error);
 }
 
 class OrderUpdated extends OrderState {

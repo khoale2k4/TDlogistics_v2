@@ -12,9 +12,7 @@ class OrderBlocCus extends Bloc<OrderEvent, OrderState> {
   final SecureStorageService secureStorageService;
   final OrderRepository orderRepository = OrderRepository();
 
-  OrderBlocCus(
-      {required this.secureStorageService})
-      : super(OrderLoading()) {
+  OrderBlocCus({required this.secureStorageService}) : super(OrderLoading()) {
     on<StartOrder>(getOrder);
   }
 
@@ -43,8 +41,7 @@ class OrderBlocSearchCus extends Bloc<OrderEvent, OrderState> {
   final OrderRepository orderRepository = OrderRepository();
   final SecureStorageService secureStorageService;
 
-  OrderBlocSearchCus(
-      {required this.secureStorageService})
+  OrderBlocSearchCus({required this.secureStorageService})
       : super(OrderLoading()) {
     on<GetOrders>(getOrrder);
   }
@@ -111,8 +108,7 @@ class GetImagesBloc extends Bloc<OrderEvent, OrderState> {
   final OrderRepository orderRepository = OrderRepository();
   final SecureStorageService secureStorageService;
 
-  GetImagesBloc({required this.secureStorageService})
-      : super(GettingImages()) {
+  GetImagesBloc({required this.secureStorageService}) : super(GettingImages()) {
     on<GetOrderImages>(getImages);
   }
 
@@ -166,8 +162,7 @@ class ProcessingOrderBloc extends Bloc<OrderEvent, OrderState> {
   final OrderRepository orderRepository = OrderRepository();
   final SecureStorageService secureStorageService;
 
-  ProcessingOrderBloc(
-      {required this.secureStorageService})
+  ProcessingOrderBloc({required this.secureStorageService})
       : super(OrderLoading()) {
     on<StartOrder>(getOrder);
     on<AddOrder>(addOrder);
@@ -223,8 +218,7 @@ class TakingOrderBloc extends Bloc<OrderEvent, OrderState> {
   final OrderRepository orderRepository = OrderRepository();
   final SecureStorageService secureStorageService;
 
-  TakingOrderBloc(
-      {required this.secureStorageService})
+  TakingOrderBloc({required this.secureStorageService})
       : super(OrderLoading()) {
     on<StartOrder>(getOrder);
     on<AddOrder>(addOrder);
@@ -280,8 +274,7 @@ class DeliveringOrderBloc extends Bloc<OrderEvent, OrderState> {
   final OrderRepository orderRepository = OrderRepository();
   final SecureStorageService secureStorageService;
 
-  DeliveringOrderBloc(
-      {required this.secureStorageService})
+  DeliveringOrderBloc({required this.secureStorageService})
       : super(OrderLoading()) {
     on<StartOrder>(getOrder);
     on<AddOrder>(addOrder);
@@ -337,8 +330,7 @@ class CancelledOrderBloc extends Bloc<OrderEvent, OrderState> {
   final OrderRepository orderRepository = OrderRepository();
   final SecureStorageService secureStorageService;
 
-  CancelledOrderBloc(
-      {required this.secureStorageService})
+  CancelledOrderBloc({required this.secureStorageService})
       : super(OrderLoading()) {
     on<StartOrder>(getOrder);
     on<AddOrder>(addOrder);
@@ -394,8 +386,7 @@ class CompletedOrderBloc extends Bloc<OrderEvent, OrderState> {
   final OrderRepository orderRepository = OrderRepository();
   final SecureStorageService secureStorageService;
 
-  CompletedOrderBloc(
-      {required this.secureStorageService})
+  CompletedOrderBloc({required this.secureStorageService})
       : super(OrderLoading()) {
     on<StartOrder>(getOrder);
     on<AddOrder>(addOrder); // Thêm sự kiện mới cho việc thêm đơn hàng
@@ -442,6 +433,35 @@ class CompletedOrderBloc extends Bloc<OrderEvent, OrderState> {
         }
       }
       emit(OrderLoaded(updatedOrders, updatedOrders.length, page: newPage));
+    }
+  }
+}
+
+class CreateOrderBloc extends Bloc<OrderEvent, OrderState> {
+  final OrderRepository orderRepository = OrderRepository();
+  final SecureStorageService secureStorageService;
+
+  CreateOrderBloc({required this.secureStorageService})
+      : super(OrderLoading()) {
+    on<CreateOrderEvent>(createOrder);
+  }
+
+  Future<void> createOrder(event, emit) async {
+    emit(OrderCreating());
+    try {
+      final orderCreate = await orderRepository.createOrder(
+          (await secureStorageService.getToken())!, event.order);
+      if (orderCreate["success"]) {
+        emit(OrderCreated());
+      } else {
+        emit(OrderCreateFaild(orderCreate["message"]));
+      }
+      await Future.delayed(const Duration(seconds: 4), () {
+        emit(OrderLoading());
+      });
+    } catch (error) {
+      print("Lỗi khi tạo đơn hàng $error");
+      emit(OrderCreateFaild(error.toString()));
     }
   }
 }

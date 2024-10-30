@@ -2,6 +2,7 @@
 
 import 'package:equatable/equatable.dart';
 import 'package:tdlogistic_v2/core/models/order_model.dart';
+import 'package:tdlogistic_v2/customer/data/models/create_order.dart';
 
 abstract class OrderEvent extends Equatable {
   const OrderEvent();
@@ -53,10 +54,10 @@ class GetOrders extends OrderEvent {
   List<Object?> get props => [id, status, fromDate, toDate, page, pageSize];
 }
 
-class CreateOrder extends OrderEvent {
-  final Order order;
+class CreateOrderEvent extends OrderEvent {
+  final CreateOrderObject order;
 
-  const CreateOrder(this.order);
+  const CreateOrderEvent(this.order);
 
   @override
   List<Object?> get props => [order];

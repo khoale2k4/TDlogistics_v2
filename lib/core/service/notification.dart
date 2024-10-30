@@ -47,11 +47,11 @@ void startNotice() async{
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
-final DarwinInitializationSettings initializationSettingsDarwin =
+const DarwinInitializationSettings initializationSettingsDarwin =
     DarwinInitializationSettings(
         onDidReceiveLocalNotification: onDidReceiveLocalNotification);
 
-  final InitializationSettings initializationSettings = InitializationSettings(
+  const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
     iOS: initializationSettingsDarwin,
   );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/auth/data/models/user_model.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/chat_box.dart';
+import 'package:tdlogistic_v2/shipper/UI/screens/map_widget.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/tasks.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/shipper_info.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/history.dart';
@@ -35,7 +36,7 @@ class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
     _pages = [
       const TasksWidget(),
       const ShipperHistory(),
-      const ChatBox(),
+      const MapWidget(),
       ShipperInfor(user: user),
     ];
 
@@ -82,7 +83,7 @@ class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
         ],
         type: BottomNavigationBarType.fixed, // Đảm bảo các tab không bị cuộn
       ),
-      floatingActionButton: Stack(
+      floatingActionButton: _currentIndex < 2? Stack(
         children: [
           FloatingActionButton(
             onPressed: () {
@@ -118,7 +119,7 @@ class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
                     }
                     return const Text(
                       "0",
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -130,7 +131,7 @@ class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
             ),
           ),
         ],
-      ),
+      ):Container(),
     );
   }
 
@@ -180,7 +181,7 @@ class TasksNotifications extends StatefulWidget {
 
 class _TasksNotificationsState extends State<TasksNotifications> {
   void confirmTask(BuildContext context, String taskId) {
-    context.read<AcceptTask>().add(AcceptTaskEvent(taskId));
+    context.read<PendingOrderBloc>().add(AcceptTaskEvent(taskId));
   }
 
   @override
@@ -213,20 +214,31 @@ class _TasksNotificationsState extends State<TasksNotifications> {
               builder: (context, state) {
                 if (state is TaskLoaded) {
                   return state.tasks.isNotEmpty
-                      ? ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxHeight: MediaQuery.of(context).size.height * 0.6,
-                          ),
-                          child: ListView.separated(
-                            shrinkWrap: true,
-                            itemCount: state.tasks.length,
-                            separatorBuilder: (context, index) =>
-                                const Divider(),
-                            itemBuilder: (context, index) {
-                              final task = state.tasks[index];
-                              return _buildTaskCard(context, task);
-                            },
-                          ),
+                      ? Column(
+                          children: [
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxHeight:
+                                    MediaQuery.of(context).size.height * 0.6,
+                              ),
+                              child: ListView.separated(
+                                shrinkWrap: true,
+                                itemCount: state.tasks.length,
+                                separatorBuilder: (context, index) =>
+                                    const Divider(),
+                                itemBuilder: (context, index) {
+                                  final task = state.tasks[index];
+                                  return _buildTaskCard(context, task);
+                                },
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                context.read<PendingOrderBloc>().add(AddTask());
+                              },
+                              child: const Text('Tải thêm'),
+                            ),
+                          ],
                         )
                       : const Center(
                           child: Column(
@@ -245,6 +257,16 @@ class _TasksNotificationsState extends State<TasksNotifications> {
                         );
                 } else if (state is TaskError) {
                   return Text(state.error);
+                } else if (state is AcceptedTask ||
+                    state is FailedAcceptingTask) {
+                  if (state is AcceptedTask) {
+                    print("success");
+                    acceptTaskPopup(
+                        context, true, ""); // Gọi hàm hiển thị popup thành công
+                  } else if (state is FailedAcceptingTask) {
+                    acceptTaskPopup(context, false,
+                        state.error); // Gọi hàm hiển thị popup thất bại
+                  }
                 }
                 return const CircularProgressIndicator();
               },
@@ -253,6 +275,77 @@ class _TasksNotificationsState extends State<TasksNotifications> {
         ),
       ),
     );
+  }
+
+  void acceptTaskPopup(BuildContext context, bool isSuccess, String message) {
+    // Đảm bảo dialog được gọi sau khi build hoàn tất
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title:
+                Text(isSuccess ? 'Nhận đơn thành công' : 'Nhận đơn thất bại!'),
+            content: isSuccess
+                ? Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.3),
+                          spreadRadius: 4,
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.green.shade100,
+                      radius: 30,
+                      child: const Icon(
+                        Icons.done_outline_sharp,
+                        color: Colors.green,
+                        size: 30,
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: [
+                      Text(message),
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.3),
+                              spreadRadius: 4,
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          backgroundColor: Colors.red.shade100,
+                          radius: 30,
+                          child: const Icon(
+                            Icons.do_not_disturb_outlined,
+                            color: Colors.red,
+                            size: 30,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ), // Hiển thị thông báo lỗi nếu thất bại
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Đóng popup
+                },
+                child: const Text('Đồng ý'),
+              ),
+            ],
+          );
+        },
+      );
+    });
   }
 
   Widget _buildTaskCard(context, Task task) {

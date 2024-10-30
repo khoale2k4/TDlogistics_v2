@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:tdlogistic_v2/auth/data/models/user_model.dart';
-import 'package:tdlogistic_v2/customer/UI/screens/chat_box.dart';
-import 'package:tdlogistic_v2/customer/UI/screens/create_order.dart';
+import 'package:tdlogistic_v2/core/service/socket_for_customer.dart';
+import 'package:tdlogistic_v2/customer/UI/screens/map_widget.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/cus_info.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/history.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
+import 'package:tdlogistic_v2/customer/UI/screens/home_page.dart';
 
 class NavigatePage extends StatefulWidget {
   final User user;
@@ -17,20 +18,27 @@ class NavigatePage extends StatefulWidget {
 class _NavigatePageState extends State<NavigatePage> {
   int _currentIndex = 0; // Index hiện tại của bottom navigation
   late User user; // Sử dụng late để đảm bảo user được khởi tạo
+  late List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
     user = widget.user; // Khởi tạo user từ widget
     _pages = [
-      const CreateOrder(),
+      const HomePage(),
       const History(),
-      const ChatBox(),
+      const MapWidget(),
+      // const ChatBox(),
       CustomerInfor(user: user), // Truyền user vào CustomerInfor
     ];
   }
 
-  late List<Widget> _pages;
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    disconnect();
+    super.dispose();
+  }
 
   // Hàm cập nhật trang khi chọn tab khác
   void onTabTapped(int index) {
@@ -59,14 +67,14 @@ class _NavigatePageState extends State<NavigatePage> {
             icon: _buildIconWithCircle(Icons.history, 1),
             label: 'Lịch sử',
           ),
-          // BottomNavigationBarItem(
-          //   icon: _buildIconWithCircle(Icons.map, 2),
-          //   label: 'Bản đồ',
-          // ),
           BottomNavigationBarItem(
-            icon: _buildIconWithCircle(Icons.message, 2),
-            label: 'Tin nhắn',
+            icon: _buildIconWithCircle(Icons.map, 2),
+            label: 'Bản đồ',
           ),
+          // BottomNavigationBarItem(
+          //   icon: _buildIconWithCircle(Icons.notifications_active_outlined, 2),
+          //   label: 'Thông báo',
+          // ),
           BottomNavigationBarItem(
             icon: _buildIconWithCircle(Icons.person, 3),
             label: 'Bạn',

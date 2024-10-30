@@ -63,3 +63,7 @@ void connectSocket(String userId) async {
     print('Unable to connect: $e');
   }
 }
+
+void disconnect(){ 
+  socket!.disconnect();
+}

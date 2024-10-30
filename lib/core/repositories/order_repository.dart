@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:tdlogistic_v2/customer/data/models/calculate_fee_payload.dart';
+import 'package:tdlogistic_v2/customer/data/models/create_order.dart';
 import '../models/order_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
@@ -24,7 +25,7 @@ class OrderRepository {
         headers: headers,
         body: json.encode(
           {
-            "addition": {"sort": [], "page": page, "size": status == "PROCESSING"?100: 3, "group": []},
+            "addition": {"sort": [], "page": page, "size": 5, "group": []},
             "criteria": [
               {
                 "field": "statusCode",
@@ -163,9 +164,41 @@ class OrderRepository {
     }
   }
 
-  Future<Order> createOrder(Order order) async {
-    // Implement API call to create order
-    return order;
+  Future<Map<String, dynamic>> createOrder(String token, CreateOrderObject order) async {
+    try {
+      final url = Uri.parse('$baseUrl/order/create');
+      final headers = {
+        'Content-Type': 'application/json',
+        "authorization": "Bearer $token"
+      };
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: json.encode(
+          order.toJson()
+        ),
+      );
+      print(response.body);
+
+      final responseData = json.decode(response.body);
+      if (response.statusCode == 200) {
+        return {
+          "success": true,
+          "message": responseData["message"],
+          "data": responseData["data"],
+        };
+      } else {
+        return {
+          "success": false,
+          "message": responseData["message"],
+          "data": responseData["data"],
+        };
+      }
+    } catch (error) {
+      print("Error getting orders: ${error.toString()}");
+      return {"success": false, "message": error.toString(), "data": null};
+    }
   }
 
   Future<Map<String, dynamic>> updateImage(

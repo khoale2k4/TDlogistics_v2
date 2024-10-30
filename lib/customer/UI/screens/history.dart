@@ -59,54 +59,74 @@ class _HistoryState extends State<History> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Hoạt động",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(150),
+        child: AppBar(
+          elevation: 0,
+          backgroundColor: mainColor,
+          flexibleSpace: Column(
+            children: [
+              Container(
+                height: 160,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 5,
+                      spreadRadius: 1,
+                    )
+                  ],
+                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    var baseWidth = 75.0;
+                    if (constraints.maxWidth > 600) {
+                      baseWidth = constraints.maxWidth / 4;
+                    }
+                    return Center(
+                      child: Container(
+                        padding: const EdgeInsets.only(top: 40),
+                        child: Image.asset(
+                          'lib/assets/logo.png',
+                          height: baseWidth,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                indicatorColor: Colors.white,
+                indicatorWeight: 3,
+                labelStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+                unselectedLabelStyle: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.normal,
+                    color: Colors.black),
+                tabs: const [
+                  Tab(
+                    text: "Đang xử lý",
+                  ),
+                  Tab(text: "Đang gửi hàng"),
+                  Tab(text: "Đang giao hàng"),
+                  Tab(text: "Đã hoàn thành"),
+                  Tab(text: "Đã huỷ"),
+                ],
+              ),
+            ],
+          ),
         ),
-        bottom: TabBar(
-          padding: const EdgeInsets.all(0),
-          controller: _tabController,
-          isScrollable: true,
-          tabs: const [
-            Tab(
-              child: Text(
-                "Đang xử lý",
-                style:
-                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-            Tab(
-              child: Text(
-                "Đang gửi hàng",
-                style:
-                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-            Tab(
-              child: Text(
-                "Đang giao hàng",
-                style:
-                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-            Tab(
-              child: Text(
-                "Đã hoàn thành",
-                style:
-                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-            Tab(
-              child: Text(
-                "Đã huỷ",
-                style:
-                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: mainColor,
       ),
       backgroundColor: Colors.white,
       body: TabBarView(
@@ -123,14 +143,9 @@ class _HistoryState extends State<History> with SingleTickerProviderStateMixin {
   }
 }
 
-class ProcessingOrdersTab extends StatefulWidget {
+class ProcessingOrdersTab extends StatelessWidget {
   const ProcessingOrdersTab({super.key});
 
-  @override
-  State<ProcessingOrdersTab> createState() => _ProcessingOrdersTabState();
-}
-
-class _ProcessingOrdersTabState extends State<ProcessingOrdersTab> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ProcessingOrderBloc, OrderState>(
@@ -176,7 +191,6 @@ class _ProcessingOrdersTabState extends State<ProcessingOrdersTab> {
   }
 }
 
-// Tương tự, tạo các widget khác cho các tab còn lại
 class TakingOrdersTab extends StatelessWidget {
   const TakingOrdersTab({super.key});
 
@@ -387,11 +401,12 @@ class _OrderListViewState extends State<OrderListView> {
     setState(() {
       filteredOrders = widget.orders.where((order) {
         final searchTerm = searchController.text.toLowerCase();
-        
+
         if (selectedFilter == 'name') {
           return (order.nameReceiver ?? '').toLowerCase().contains(searchTerm);
         } else if (selectedFilter == 'location') {
-          final location = '${order.detailDest ?? ''}, ${order.districtDest ?? ''}, ${order.provinceDest ?? ''}';
+          final location =
+              '${order.detailDest ?? ''}, ${order.districtDest ?? ''}, ${order.provinceDest ?? ''}';
           return location.toLowerCase().contains(searchTerm);
         } else if (selectedFilter == 'phone') {
           return (order.phoneNumberReceiver ?? '').contains(searchTerm);
@@ -414,8 +429,10 @@ class _OrderListViewState extends State<OrderListView> {
                 value: selectedFilter,
                 items: const [
                   DropdownMenuItem(value: 'name', child: Text('Lọc theo tên')),
-                  DropdownMenuItem(value: 'location', child: Text('Lọc theo địa điểm')),
-                  DropdownMenuItem(value: 'phone', child: Text('Lọc theo số điện thoại')),
+                  DropdownMenuItem(
+                      value: 'location', child: Text('Lọc theo địa điểm')),
+                  DropdownMenuItem(
+                      value: 'phone', child: Text('Lọc theo số điện thoại')),
                 ],
                 onChanged: (String? newValue) {
                   setState(() {
@@ -447,7 +464,8 @@ class _OrderListViewState extends State<OrderListView> {
             itemBuilder: (context, index) {
               final order = filteredOrders[index];
               return ListTile(
-                contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                 leading: CircleAvatar(
                   backgroundColor: Colors.green.withOpacity(0.1),
                   child: const Icon(Icons.local_shipping, color: Colors.green),
@@ -465,7 +483,8 @@ class _OrderListViewState extends State<OrderListView> {
                     const SizedBox(height: 4.0),
                     Row(
                       children: [
-                        const Icon(Icons.person, size: 16.0, color: Colors.grey),
+                        const Icon(Icons.person,
+                            size: 16.0, color: Colors.grey),
                         const SizedBox(width: 4.0),
                         Text(
                           'Người nhận: ${order.nameReceiver ?? ''}',
@@ -487,7 +506,8 @@ class _OrderListViewState extends State<OrderListView> {
                     const SizedBox(height: 4.0),
                     Row(
                       children: [
-                        const Icon(Icons.location_on, size: 16.0, color: Colors.grey),
+                        const Icon(Icons.location_on,
+                            size: 16.0, color: Colors.grey),
                         const SizedBox(width: 4.0),
                         Expanded(
                           child: Text(
@@ -575,17 +595,19 @@ class _OrderListViewState extends State<OrderListView> {
                   _buildOrderDetailTile(
                       'SĐT người gửi', order.phoneNumberSender, Icons.phone),
                   _buildOrderDetailTile(
+                      'Địa chỉ gửi',
+                      '${order.provinceSource ?? ''}, ${order.districtSource ?? ''}, ${order.wardSource ?? ''}, ${order.detailSource ?? ''}',
+                      Icons.location_on),
+                  const Divider(),
+                  _buildOrderDetailTile(
                       'Người nhận', order.nameReceiver, Icons.person),
                   _buildOrderDetailTile(
                       'SĐT người nhận', order.phoneNumberReceiver, Icons.phone),
                   _buildOrderDetailTile(
-                      'Địa chỉ gửi',
-                      '${order.provinceSource ?? ''}, ${order.districtSource ?? ''}, ${order.wardSource ?? ''}, ${order.detailSource ?? ''}',
-                      Icons.location_on),
-                  _buildOrderDetailTile(
                       'Địa chỉ nhận',
                       '${order.provinceDest ?? ''}, ${order.districtDest ?? ''}, ${order.wardDest ?? ''}, ${order.detailDest ?? ''}',
                       Icons.location_on),
+                  const Divider(),
                   _buildOrderDetailTile(
                       'Khối lượng',
                       '${order.mass?.toStringAsFixed(2) ?? ''} kg',
@@ -614,6 +636,7 @@ class _OrderListViewState extends State<OrderListView> {
                   if (order.journies != null)
                     _buildJourneyList(order.journies!),
                   _buildImageSignatureSection(order),
+                  _buildCancelSubmitButton(order),
                 ],
               ),
             ),
@@ -806,6 +829,49 @@ class _OrderListViewState extends State<OrderListView> {
         timestamp != null
             ? '${timestamp.day}/${timestamp.month}/${timestamp.year} ${timestamp.hour}:${timestamp.minute}'
             : 'Không rõ thời gian',
+      ),
+    );
+  }
+
+  Widget _buildCancelSubmitButton(Order order) {
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade200,
+            ),
+            child: const Text(
+              "Từ chối",
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(width: 8),
+          order.statusCode != "DELIVERING"? ElevatedButton(
+            onPressed: null,
+            
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey.shade200,
+            ),
+            child: const Text(
+              "Đã nhận",
+              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+            ),
+          ):
+          ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade200,
+            ),
+            child: const Text(
+              "Đã nhận",
+              style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
       ),
     );
   }

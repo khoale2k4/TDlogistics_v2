@@ -1,15 +1,16 @@
 // ignore_for_file: library_prefixes
 
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:tdlogistic_v2/auth/data/models/user_model.dart';
-import 'package:tdlogistic_v2/core/models/order_model.dart';
 import 'package:tdlogistic_v2/core/service/notification.dart';
 
 import 'package:flutter/material.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/botton_navigator.dart';
+import 'package:tdlogistic_v2/shipper/bloc/task_bloc.dart';
+import 'package:tdlogistic_v2/shipper/bloc/task_event.dart';
 import 'package:tdlogistic_v2/shipper/data/models/task.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 class SocketPage extends StatefulWidget {
   final User user;
@@ -23,11 +24,11 @@ class SocketPage extends StatefulWidget {
 
 class _SocketPageState extends State<SocketPage> {
   late String token;
-  late WebSocketChannel channel;
   late ShipperNavigatePage childWidget;
   List<Task> tasks = [
     // Task(id:"123")
   ];
+  late IO.Socket socket;
 
   @override
   void initState() {
@@ -71,7 +72,7 @@ class _SocketPageState extends State<SocketPage> {
     print('Bearer $token');
     String host = "https://api.tdlogistics.net.vn/";
     try {
-      IO.Socket socket = IO.io(
+      socket = IO.io(
         host,
         IO.OptionBuilder()
             .setTransports(['websocket']) // Sử dụng transport websocket
@@ -92,16 +93,10 @@ class _SocketPageState extends State<SocketPage> {
           try {
             _showNotification("Đơn hàng mới", data['message']);
             // sửa task chỗ này
-            Task newTask = Task();
-            newTask.id = data["detail"]["orderId"];
-            newTask.order = Order();
             print(data["detail"]["orderId"]);
-            print(data["message"]
-                .split("có một yêu cầu tiếp nhận đơn hàng mới tại ")[1]);
-            newTask.order!.detailSource = data["message"]
-                .split("có một yêu cầu tiếp nhận đơn hàng mới tại ")[1];
-            setState(() {
-              tasks.add(newTask);
+            print(data["message"]);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              context.read<PendingOrderBloc>().add(GetPendingTask());
             });
           } catch (error) {
             print("Lỗi khi nhận đơn hàng từ socket: ${error.toString()}");
@@ -123,8 +118,7 @@ class _SocketPageState extends State<SocketPage> {
 
   @override
   void dispose() {
-    // Đóng kết nối khi trang bị hủy
-    channel.sink.close();
+    socket.disconnect();
     super.dispose();
   }
 

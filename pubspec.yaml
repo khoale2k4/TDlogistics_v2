@@ -30,6 +30,10 @@ dependencies:
   dio: ^5.7.0
   http_parser: ^4.0.2
   path_provider: ^2.1.4
+  dvhcvn: ^2.0.20240901
+  geocoding: ^3.0.0
+  flutter_polyline_points: ^2.1.0
+  location: ^7.0.1
 
 dev_dependencies:
   flutter_test:

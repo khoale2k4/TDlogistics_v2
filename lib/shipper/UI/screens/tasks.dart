@@ -65,25 +65,13 @@ class _TasksWidgetState extends State<TasksWidget>
         backgroundColor: mainColor,
         bottom: TabBar(
           controller: _tabController,
-          // Thêm indicator để làm nổi bật tab được chọn
-          indicator: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            color: Colors.white.withOpacity(0.3),
-          ),
-          // Thêm padding cho tabs
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          // Tạo hiệu ứng chuyển đổi màu sắc
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          // Thêm animation duration
+          isScrollable: false,
+          indicatorColor: Colors.white,
+          indicatorWeight: 3,
           labelStyle: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
+              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
           unselectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.normal,
-            fontSize: 14,
-          ),
+              fontSize: 12, fontWeight: FontWeight.normal, color: Colors.black),
           tabs: [
             Tab(
               child: AnimatedDefaultTextStyle(
@@ -130,51 +118,6 @@ class _TasksWidgetState extends State<TasksWidget>
           return const Center(child: CircularProgressIndicator());
         } else if (state is TaskLoaded && state.totalTasks > 0) {
           return Column(children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  // DropdownButton để chọn loại lọc
-                  DropdownButton<String>(
-                    value: _selectedFilter,
-                    items: const [
-                      DropdownMenuItem(
-                          value: 'name', child: Text('Lọc theo tên')),
-                      DropdownMenuItem(
-                          value: 'location', child: Text('Lọc theo địa điểm')),
-                      DropdownMenuItem(
-                          value: 'phone',
-                          child: Text('Lọc theo số điện thoại')),
-                    ],
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedFilter = newValue!;
-                      });
-                    },
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // TextField để nhập thông tin tìm kiếm
-                  TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      labelText:
-                          _getLabelText(), // Thay đổi label text dựa trên loại lọc đã chọn
-                      prefixIcon:
-                          const Icon(Icons.search), // Thêm icon tìm kiếm
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                    onChanged: (value) {
-                      // Thực hiện logic tìm kiếm tại đây
-                      print('Tìm kiếm theo $_selectedFilter: $value');
-                    },
-                  ),
-                ],
-              ),
-            ),
             Expanded(
               child: TaskListView(tasks: state.tasks),
             ),
@@ -299,7 +242,7 @@ class _TasksWidgetState extends State<TasksWidget>
 
 class TaskListView extends StatefulWidget {
   final List<Task> tasks;
-  final isSender;
+  final bool isSender;
 
   const TaskListView({super.key, required this.tasks, this.isSender = true});
 
@@ -308,51 +251,12 @@ class TaskListView extends StatefulWidget {
 }
 
 class _TaskListViewState extends State<TaskListView> {
-  final TextEditingController searchController = TextEditingController();
-  String selectedFilter = "name";
-  List<Task> filteredOrders = [];
-
-  @override
-  void initState() {
-    super.initState();
-    // Lắng nghe khi có sự thay đổi trong textfield
-    searchController.addListener(_filterOrders);
-    filteredOrders = widget.tasks;
-  }
-
-  @override
-  void dispose() {
-    searchController.dispose();
-    super.dispose();
-  }
-
-  void _filterOrders() {
-    setState(() {
-      filteredOrders = widget.tasks.where((task) {
-        final searchTerm = searchController.text.toLowerCase();
-
-        if (selectedFilter == 'name') {
-          return (task.order!.nameReceiver ?? '')
-              .toLowerCase()
-              .contains(searchTerm);
-        } else if (selectedFilter == 'location') {
-          final location =
-              '${task.order!.detailDest ?? ''}, ${task.order!.districtDest ?? ''}, ${task.order!.provinceDest ?? ''}';
-          return location.toLowerCase().contains(searchTerm);
-        } else if (selectedFilter == 'phone') {
-          return (task.order!.phoneNumberReceiver ?? '').contains(searchTerm);
-        }
-        return false;
-      }).toList();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
       itemCount: widget.tasks.length,
       itemBuilder: (context, index) {
-        final task = filteredOrders[index];
+        final task = widget.tasks[index];
         // sửa cái này
         bool agent = true;
         return ListTile(
@@ -638,38 +542,40 @@ class _TaskListViewState extends State<TaskListView> {
         ),
         const SizedBox(height: 8),
         SizedBox(
-          height: 100, // Chiều cao của ListView ngang
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal, // Cuộn theo chiều ngang
-            itemCount: images.length,
-            itemBuilder: (context, index) {
-              return GestureDetector(
-                onTap: () {
-                  // Khi nhấn vào ảnh, mở một màn hình mới để phóng to ảnh
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          FullScreenImage(image: images[index]),
-                    ),
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                      right: 8), // Khoảng cách giữa các ảnh
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10), // Bo góc ảnh
-                    child: Image.memory(
-                      images[index],
-                      fit: BoxFit.fitWidth,
-                      width: 200, // Chiều rộng của mỗi ảnh
-                      height: 200, // Chiều cao của mỗi ảnh
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
+          height: images.isNotEmpty ? 100 : 20, // Chiều cao của ListView ngang
+          child: images.isNotEmpty
+              ? ListView.builder(
+                  scrollDirection: Axis.horizontal, // Cuộn theo chiều ngang
+                  itemCount: images.length,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () {
+                        // Khi nhấn vào ảnh, mở một màn hình mới để phóng to ảnh
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                FullScreenImage(image: images[index]),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                            right: 8), // Khoảng cách giữa các ảnh
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10), // Bo góc ảnh
+                          child: Image.memory(
+                            images[index],
+                            fit: BoxFit.fitWidth,
+                            width: 200, // Chiều rộng của mỗi ảnh
+                            height: 200, // Chiều cao của mỗi ảnh
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                )
+              : const Text("Chưa có hình ảnh"),
         ),
         const SizedBox(height: 8),
         // Nút thêm ảnh

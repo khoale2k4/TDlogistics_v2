@@ -22,6 +22,7 @@ import 'package:tdlogistic_v2/shipper/data/models/task.dart';
 import 'package:tdlogistic_v2/shipper/data/repositories/task_repository.dart';
 import '../auth/bloc/auth_bloc.dart';
 import '../auth/data/repositories/auth_repository.dart.dart';
+import 'package:dvhcvn/dvhcvn.dart' as dvhcvn;
 import 'app_bloc.dart';
 
 class MyApp extends StatelessWidget {
@@ -119,6 +120,11 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<AcceptTask>(
           create: (context) => AcceptTask(
+            secureStorageService: secureStorageService,
+          ),
+        ),
+        BlocProvider<CreateOrderBloc>(
+          create: (context) => CreateOrderBloc(
             secureStorageService: secureStorageService,
           ),
         ),

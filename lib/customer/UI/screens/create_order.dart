@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tdlogistic_v2/core/models/order_model.dart';
+import 'package:tdlogistic_v2/core/constant.dart';
+import 'package:tdlogistic_v2/customer/UI/screens/map2markers.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_bloc.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_event.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_state.dart';
-import 'package:tdlogistic_v2/core/constant.dart';
+import 'package:dvhcvn/dvhcvn.dart' as dvhcvn;
+import 'package:tdlogistic_v2/customer/data/models/create_order.dart';
 
 class CreateOrder extends StatefulWidget {
   const CreateOrder({super.key});
@@ -16,28 +18,34 @@ class CreateOrder extends StatefulWidget {
 class _CreateOrderState extends State<CreateOrder> {
   bool isCalculating = false;
   num fee = 0;
+  double _buttonX = 350.0;
+  double _buttonY = 50.0;
 
   // Trang nhập thông tin chữ
   final _senderNameController = TextEditingController();
   final _senderAddressController = TextEditingController();
   final _senderDistrictController = TextEditingController();
-  final _senderCityController = TextEditingController(text: "TPHCM");
+  final _senderWardController = TextEditingController();
+  final _senderCityController = TextEditingController();
   final _senderPhoneController = TextEditingController();
   final _receiverNameController = TextEditingController();
   final _receiverAddressController = TextEditingController();
+  final _receiverWardController = TextEditingController();
   final _receiverDistrictController = TextEditingController();
-  final _receiverCityController = TextEditingController(text: "TPHCM");
+  final _receiverCityController = TextEditingController();
   final _receiverPhoneController = TextEditingController();
 
   // Validation flags
   bool _isSenderNameValid = true;
   bool _isSenderAddressValid = true;
   bool _isSenderDistrictValid = true;
+  bool _isSenderWardValid = true;
   bool _isSenderCityValid = true;
   bool _isSenderPhoneValid = true;
   bool _isReceiverNameValid = true;
   bool _isReceiverAddressValid = true;
   bool _isReceiverDistrictValid = true;
+  bool _isReceiverWardValid = true;
   bool _isReceiverCityValid = true;
   bool _isReceiverPhoneValid = true;
 
@@ -76,7 +84,7 @@ class _CreateOrderState extends State<CreateOrder> {
   ////////////////////////////////
 
   // Trang nhập thông tin số
-  final _cashOnDeliveryController = TextEditingController();
+  final _cashOnDeliveryController = TextEditingController(text: "0");
   final _lengthController = TextEditingController();
   final _widthController = TextEditingController();
   final _heightController = TextEditingController();
@@ -114,7 +122,7 @@ class _CreateOrderState extends State<CreateOrder> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 0);
+    _pageController = PageController(initialPage: 1);
     // WidgetsBinding.instance.addPostFrameCallback((_) {
     //   context.read<OrderBlocCus>().add(StartOrder());
     // });
@@ -122,7 +130,7 @@ class _CreateOrderState extends State<CreateOrder> {
 
   late PageController _pageController;
   final _numberController = TextEditingController();
-  int _currentPage = 0;
+  int _currentPage = 1;
 
   @override
   void dispose() {
@@ -150,41 +158,99 @@ class _CreateOrderState extends State<CreateOrder> {
   }
 
   void handleNewOrder(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đơn hàng đã được tạo thành công!')),
-    );
-    Navigator.of(context).pop();
+    print("Đang tạo đơn hàng");
+    context.read<CreateOrderBloc>().add(
+          CreateOrderEvent(
+            CreateOrderObject(
+              cod: (int.parse(_cashOnDeliveryController.text)),
+              detailDest: _receiverAddressController.text,
+              detailSource: _senderAddressController.text,
+              districtDest: _receiverDistrictController.text,
+              districtSource: _senderDistrictController.text,
+              height: (int.parse(_heightController.text)),
+              length: (int.parse(_lengthController.text)),
+              mass: (int.parse(_weightController.text)),
+              width: (int.parse(_widthController.text)),
+              nameReceiver: _receiverNameController.text,
+              nameSender: _senderNameController.text,
+              phoneNumberReceiver: _receiverPhoneController.text,
+              phoneNumberSender: _senderPhoneController.text,
+              provinceDest: _receiverCityController.text,
+              provinceSource: _senderCityController.text,
+              serviceType: _selectedDeliveryMethod,
+              wardDest: _receiverWardController.text,
+              wardSource: _senderWardController.text,
+            ),
+          ),
+        );
+    // ScaffoldMessenger.of(context).showSnackBar(
+    //   const SnackBar(content: Text('Đơn hàng đã được tạo thành công!')),
+    // );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Container(
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-            Expanded(
-              child: PageView(
-                physics: const NeverScrollableScrollPhysics(),
-                controller: _pageController,
-                onPageChanged: (int page) {
-                  setState(() {
-                    _currentPage = page;
-                  });
+      body: Stack(
+        children: [
+          // Main content
+          Column(
+            children: [
+              const SizedBox(height: 50),
+              Expanded(
+                child: PageView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  controller: _pageController,
+                  onPageChanged: (int page) {
+                    setState(() {
+                      _currentPage = page;
+                    });
+                  },
+                  children: [
+                    _buildMain(context),
+                    _buildTextInputPage(),
+                    _buildNumberInputPage(),
+                    _buildConfirmPage(context),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              _buildNextButton(),
+              const SizedBox(height: 50),
+            ],
+          ),
+
+          // Draggable button
+          Positioned(
+            left: _buttonX,
+            top: _buttonY,
+            child: GestureDetector(
+              onPanUpdate: (details) {
+                setState(() {
+                  _buttonX += details.delta.dx;
+                  _buttonY += details.delta.dy;
+                });
+              },
+              child: FloatingActionButton(
+                backgroundColor: Colors.white,
+                onPressed: () {
+                  Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Map2Markers(
+                            startAddress: "${_senderAddressController.text} ${_senderWardController.text} ${_senderDistrictController.text} ${_senderCityController.text}",
+                            endAddress: "${_receiverAddressController.text} ${_receiverWardController.text} ${_receiverDistrictController.text} ${_receiverCityController.text}",
+                            ),
+                        ),
+                      );
+                  
                 },
-                children: [
-                  _buildMain(context),
-                  _buildTextInputPage(),
-                  _buildNumberInputPage(),
-                  _buildConfirmPage(context),
-                ],
+                child: const Icon(Icons.map, color: mainColor),
               ),
             ),
-            const SizedBox(height: 10),
-            _buildNextButton(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -195,31 +261,6 @@ class _CreateOrderState extends State<CreateOrder> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Container(
-            height: 200,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(150),
-                bottomRight: Radius.circular(150),
-              ),
-            ),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.only(top: 70.0, left: 20, right: 20),
-                child: Column(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Image.asset('lib/assets/logo.png', height: 75),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
           const SizedBox(height: 50),
           Container(
             decoration: BoxDecoration(
@@ -241,109 +282,6 @@ class _CreateOrderState extends State<CreateOrder> {
     );
   }
 
-  Widget _buildStatusLabel(String? statusCode) {
-    // Custom method to create colored status labels
-    Color labelColor;
-    String statusText;
-
-    switch (statusCode) {
-      case "1":
-        labelColor = Colors.orange;
-        statusText = "Chờ xác nhận";
-        break;
-      case "2":
-        labelColor = Colors.blue;
-        statusText = "Đang giao";
-        break;
-      case "3":
-        labelColor = Colors.green;
-        statusText = "Hoàn thành";
-        break;
-      case "4":
-        labelColor = mainColor;
-        statusText = "Đã hủy";
-        break;
-      default:
-        labelColor = Colors.grey;
-        statusText = "Không xác định";
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: labelColor.withOpacity(0.1),
-        border: Border.all(color: labelColor),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        statusText,
-        style: TextStyle(color: labelColor),
-      ),
-    );
-  }
-
-  void _showOrderDetailsDialog(BuildContext context, Order order) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(order.trackingNumber ?? ''),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Người gửi: ${order.nameSender ?? ''}'),
-                Text('SĐT: ${order.phoneNumberSender ?? ''}'),
-                const SizedBox(height: 8),
-                Text('Người nhận: ${order.nameReceiver ?? ''}'),
-                Text('SĐT: ${order.phoneNumberReceiver ?? ''}'),
-                const SizedBox(height: 8),
-                Text(
-                    'Địa chỉ gửi: ${order.provinceSource ?? ''}, ${order.districtSource ?? ''}, ${order.wardSource ?? ''}, ${order.detailSource ?? ''}'),
-                const SizedBox(height: 8),
-                Text(
-                    'Địa chỉ nhận: ${order.provinceDest ?? ''}, ${order.districtDest ?? ''}, ${order.wardDest ?? ''}, ${order.detailDest ?? ''}'),
-                const SizedBox(height: 8),
-                Text('Khối lượng: ${order.mass?.toStringAsFixed(2) ?? ''} kg'),
-                Text('Phí: ${order.fee?.toStringAsFixed(2) ?? ''} VNĐ'),
-                const SizedBox(height: 8),
-                Text('Trạng thái đơn hàng: ${order.statusCode ?? ''}'),
-                const SizedBox(height: 8),
-
-                // Thay thế ListView.builder bằng Column + List.generate
-                order.journies != null
-                    ? Column(
-                        children:
-                            List.generate(order.journies!.length, (index) {
-                          final journey = order.journies![index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4.0),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.done),
-                                Text(journey.message ?? ""),
-                              ],
-                            ),
-                          );
-                        }),
-                      )
-                    : const SizedBox.shrink(),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Đóng'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Widget _buildTextInputPage() {
     return SingleChildScrollView(
       child: Container(
@@ -353,65 +291,177 @@ class _CreateOrderState extends State<CreateOrder> {
           children: [
             const Text(
               'Thông tin người gửi:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             ),
             const SizedBox(height: 10),
             _buildTextField(
-              controller: _senderNameController,
-              labelText: 'Tên người gửi',
-              isValid: _isSenderNameValid,
-            ),
-            _buildTextField(
-              controller: _senderAddressController,
-              labelText: 'Số nhà, tên đường',
-              isValid: _isSenderAddressValid,
-            ),
-            _buildTextField(
-              controller: _senderDistrictController,
-              labelText: 'Quận huyện',
-              isValid: _isSenderDistrictValid,
-            ),
-            _buildTextField(
-              controller: _senderCityController,
+                controller: _senderNameController,
+                labelText: 'Tên người gửi',
+                isValid: _isSenderNameValid,
+                onChanged: (value) {
+                  _isSenderNameValid = true;
+                }),
+            _buildDropdown(
+              items: (dvhcvn.level1s.map((level) => level.name).toList()
+                ..insert(0, "Vui lòng chọn tỉnh thành")),
+              selectedValue: _senderCityController.text.isNotEmpty
+                  ? _senderCityController.text
+                  : null,
               labelText: 'Tỉnh thành',
               isValid: _isSenderCityValid,
+              onChanged: (value) {
+                setState(() {
+                  _senderCityController.text = value ?? "";
+                  _senderDistrictController.clear();
+                  _senderWardController.clear();
+                  _isSenderCityValid =
+                      value != null && value != "Vui lòng chọn tỉnh thành";
+                });
+              },
             ),
+            if (_senderCityController.text.isNotEmpty)
+              _buildDropdown(
+                items: (dvhcvn
+                        .findLevel1ByName(_senderCityController.text)
+                        ?.children
+                        .map((level) => level.name)
+                        .toList() ??
+                    []),
+                selectedValue: _senderDistrictController.text.isNotEmpty
+                    ? _senderDistrictController.text
+                    : null,
+                labelText: 'Quận/Huyện',
+                isValid: _isSenderDistrictValid,
+                onChanged: (value) {
+                  setState(() {
+                    _senderDistrictController.text = value ?? "";
+                    _senderWardController.clear();
+                    _isSenderDistrictValid = value != null;
+                  });
+                },
+              ),
+            if (_senderDistrictController.text.isNotEmpty)
+              _buildDropdown(
+                items: (dvhcvn
+                        .findLevel1ByName(_senderCityController.text)
+                        ?.findLevel2ByName(_senderDistrictController.text)!
+                        .children
+                        .map((level) => level.name)
+                        .toList() ??
+                    []),
+                selectedValue: _senderWardController.text.isNotEmpty
+                    ? _senderWardController.text
+                    : null,
+                labelText: 'Phường xã',
+                isValid: _isSenderWardValid,
+                onChanged: (value) {
+                  setState(() {
+                    _senderWardController.text = value ?? "";
+                    _isSenderWardValid = value != null;
+                  });
+                },
+              ),
             _buildTextField(
-              controller: _senderPhoneController,
-              labelText: 'Số điện thoại',
-              isValid: _isSenderPhoneValid,
-            ),
+                controller: _senderAddressController,
+                labelText: 'Số nhà, tên đường',
+                isValid: _isSenderAddressValid,
+                onChanged: (value) {
+                  _isSenderAddressValid = true;
+                }),
+            _buildTextField(
+                controller: _senderPhoneController,
+                labelText: 'Số điện thoại',
+                isValid: _isSenderPhoneValid,
+                onChanged: (value) {
+                  _isSenderPhoneValid = true;
+                }),
             const SizedBox(height: 20),
             const Text(
               'Thông tin người nhận:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             ),
             const SizedBox(height: 10),
             _buildTextField(
-              controller: _receiverNameController,
-              labelText: 'Tên người nhận',
-              isValid: _isReceiverNameValid,
-            ),
-            _buildTextField(
-              controller: _receiverAddressController,
-              labelText: 'Số nhà, tên đường',
-              isValid: _isReceiverAddressValid,
-            ),
-            _buildTextField(
-              controller: _receiverDistrictController,
-              labelText: 'Quận huyện',
-              isValid: _isReceiverDistrictValid,
-            ),
-            _buildTextField(
-              controller: _receiverCityController,
+                controller: _receiverNameController,
+                labelText: 'Tên người nhận',
+                isValid: _isReceiverNameValid,
+                onChanged: (value) {
+                  _isReceiverNameValid = true;
+                }),
+            _buildDropdown(
+              items: (dvhcvn.level1s.map((level) => level.name).toList()
+                ..insert(0, "Vui lòng chọn tỉnh thành")),
+              selectedValue: _receiverCityController.text.isNotEmpty
+                  ? _receiverCityController.text
+                  : null,
               labelText: 'Tỉnh thành',
               isValid: _isReceiverCityValid,
+              onChanged: (value) {
+                setState(() {
+                  _receiverCityController.text = value ?? "";
+                  _receiverDistrictController.clear();
+                  _receiverWardController.clear();
+                  _isReceiverCityValid =
+                      value != null && value != "Vui lòng chọn tỉnh thành";
+                });
+              },
             ),
+            if (_receiverCityController.text.isNotEmpty)
+              _buildDropdown(
+                items: (dvhcvn
+                        .findLevel1ByName(_receiverCityController.text)
+                        ?.children
+                        .map((level) => level.name)
+                        .toList() ??
+                    []),
+                selectedValue: _receiverDistrictController.text.isNotEmpty
+                    ? _receiverDistrictController.text
+                    : null,
+                labelText: 'Quận/Huyện',
+                isValid: _isReceiverDistrictValid,
+                onChanged: (value) {
+                  setState(() {
+                    _receiverDistrictController.text = value ?? "";
+                    _receiverWardController.clear();
+                    _isReceiverDistrictValid = value != null;
+                  });
+                },
+              ),
+            if (_receiverDistrictController.text.isNotEmpty)
+              _buildDropdown(
+                items: (dvhcvn
+                        .findLevel1ByName(_receiverCityController.text)
+                        ?.findLevel2ByName(_receiverDistrictController.text)!
+                        .children
+                        .map((level) => level.name)
+                        .toList() ??
+                    []),
+                selectedValue: _receiverWardController.text.isNotEmpty
+                    ? _receiverWardController.text
+                    : null,
+                labelText: 'Phường xã',
+                isValid: _isReceiverWardValid,
+                onChanged: (value) {
+                  setState(() {
+                    _receiverWardController.text = value ?? "";
+                    _isReceiverWardValid = value != null;
+                  });
+                },
+              ),
             _buildTextField(
-              controller: _receiverPhoneController,
-              labelText: 'Số điện thoại',
-              isValid: _isReceiverPhoneValid,
-            ),
+                controller: _receiverAddressController,
+                labelText: 'Số nhà, tên đường',
+                isValid: _isReceiverAddressValid,
+                onChanged: (value) {
+                  _isReceiverAddressValid = true;
+                }),
+            _buildTextField(
+                controller: _receiverPhoneController,
+                labelText: 'Số điện thoại',
+                isValid: _isReceiverPhoneValid,
+                onChanged: (value) {
+                  _isReceiverPhoneValid = true;
+                }),
           ],
         ),
       ),
@@ -422,6 +472,7 @@ class _CreateOrderState extends State<CreateOrder> {
     required TextEditingController controller,
     required String labelText,
     required bool isValid,
+    required ValueChanged<String?> onChanged,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -432,6 +483,35 @@ class _CreateOrderState extends State<CreateOrder> {
           labelText: labelText,
           errorText: isValid ? null : 'Vui lòng nhập $labelText',
         ),
+        onChanged: onChanged,
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String labelText,
+    required List<String> items,
+    required String? selectedValue,
+    required ValueChanged<String?> onChanged,
+    required bool isValid,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: DropdownButtonFormField<String>(
+        value: selectedValue,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          border: const OutlineInputBorder(),
+          labelText: labelText,
+          errorText: isValid ? null : 'Vui lòng chọn $labelText',
+        ),
+        items: items.map((String item) {
+          return DropdownMenuItem<String>(
+            value: item,
+            child: Text(item),
+          );
+        }).toList(),
+        hint: Text('Vui lòng chọn $labelText'),
       ),
     );
   }
@@ -445,7 +525,7 @@ class _CreateOrderState extends State<CreateOrder> {
           children: [
             const Text(
               'Nhập thông tin dạng số:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             ),
             const SizedBox(height: 20),
 
@@ -525,7 +605,7 @@ class _CreateOrderState extends State<CreateOrder> {
       children: [
         const Text(
           'Phương thức giao:',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
         ),
         const SizedBox(height: 10),
         DropdownButtonFormField<String>(
@@ -562,53 +642,55 @@ class _CreateOrderState extends State<CreateOrder> {
               const Center(
                 child: Text(
                   'Xác nhận thông tin',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
                 ),
               ),
               const Text(
                 'Thông tin người gửi',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Tên người gửi: ${_senderNameController.text}'),
-                  Text('Địa chỉ người gửi: ${_senderAddressController.text}'),
-                  Text('Quận/Huyện: ${_senderDistrictController.text}'),
-                  Text('Thành phố: ${_senderCityController.text}'),
-                  Text('Số điện thoại: ${_senderPhoneController.text}'),
+                  Text('Tên người gửi: ${_senderNameController.text}', style: const TextStyle(fontSize: 18),),
+                  Text('Địa chỉ người gửi: ${_senderAddressController.text}', style: const TextStyle(fontSize: 18),),
+                  Text('Phường/Xã: ${_senderWardController.text}', style: const TextStyle(fontSize: 18),),
+                  Text('Quận/Huyện: ${_senderDistrictController.text}', style: const TextStyle(fontSize: 18),),
+                  Text('Thành phố: ${_senderCityController.text}', style: const TextStyle(fontSize: 18),),
+                  Text('Số điện thoại: ${_senderPhoneController.text}', style: const TextStyle(fontSize: 18),),
                 ],
               ),
               const SizedBox(height: 20),
               const Text(
                 'Thông tin người nhận',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Tên người nhận: ${_receiverNameController.text}'),
+                  Text('Tên người nhận: ${_receiverNameController.text}', style: const TextStyle(fontSize: 18),),
                   Text(
-                      'Địa chỉ người nhận: ${_receiverAddressController.text}'),
-                  Text('Quận/Huyện: ${_receiverDistrictController.text}'),
-                  Text('Thành phố: ${_receiverCityController.text}'),
-                  Text('Số điện thoại: ${_receiverPhoneController.text}'),
+                      'Địa chỉ người nhận: ${_receiverAddressController.text}', style: const TextStyle(fontSize: 18),),
+                  Text('Phường/Xã: ${_receiverWardController.text}', style: const TextStyle(fontSize: 18),),
+                  Text('Quận/Huyện: ${_receiverDistrictController.text}', style: const TextStyle(fontSize: 18),),
+                  Text('Thành phố: ${_receiverCityController.text}', style: const TextStyle(fontSize: 18),),
+                  Text('Số điện thoại: ${_receiverPhoneController.text}', style: const TextStyle(fontSize: 18),),
                 ],
               ),
               const SizedBox(height: 20),
               const Text(
                 'Thông tin gói hàng',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Thu hộ (COD): ${_cashOnDeliveryController.text} VNĐ'),
-                  Text('Chiều dài: ${_lengthController.text} cm'),
-                  Text('Chiều rộng: ${_widthController.text} cm'),
-                  Text('Chiều cao: ${_heightController.text} cm'),
-                  Text('Cân nặng: ${_weightController.text} kg'),
-                  Text('Phương thức giao hàng: $_selectedDeliveryMethod'),
+                  Text('Thu hộ (COD): ${_cashOnDeliveryController.text} VNĐ', style: const TextStyle(fontSize: 18),),
+                  Text('Chiều dài: ${_lengthController.text} cm', style: const TextStyle(fontSize: 18),),
+                  Text('Chiều rộng: ${_widthController.text} cm', style: const TextStyle(fontSize: 18),),
+                  Text('Chiều cao: ${_heightController.text} cm', style: const TextStyle(fontSize: 18),),
+                  Text('Cân nặng: ${_weightController.text} kg', style: const TextStyle(fontSize: 18),),
+                  Text('Phương thức giao hàng: $_selectedDeliveryMethod', style: const TextStyle(fontSize: 18),),
                   Row(
                     children: [
                       const Text('Chi phí giao hàng: '),
@@ -618,12 +700,12 @@ class _CreateOrderState extends State<CreateOrder> {
                             return const CircularProgressIndicator(); // Hiển thị loading khi đang tính phí
                           } else if (state is OrderFeeCalculated) {
                             return Text(
-                                '${state.fee} VND'); // Hiển thị phí sau khi tính toán
+                                '${state.fee} VND', style: const TextStyle(fontSize: 18),); // Hiển thị phí sau khi tính toán
                           } else if (state is OrderFeeCalculationFailed) {
                             return Text(
-                                'Lỗi: ${state.error}'); // Hiển thị lỗi nếu có vấn đề xảy ra
+                                'Lỗi: ${state.error}', style: const TextStyle(fontSize: 18),); // Hiển thị lỗi nếu có vấn đề xảy ra
                           } else {
-                            return const Text('Chưa tính phí');
+                            return const Text('Chưa tính phí', style: const TextStyle(fontSize: 18),);
                           }
                         },
                       ),
@@ -633,10 +715,25 @@ class _CreateOrderState extends State<CreateOrder> {
               ),
               const SizedBox(height: 20),
               Center(
-                child: ElevatedButton(
-                  onPressed: () => handleNewOrder(context),
-                  child: const Text('Xác nhận và tạo đơn hàng'),
-                ),
+                child: BlocBuilder<CreateOrderBloc, OrderState>(
+                    builder: (context, state) {
+                  if (state is OrderCreating) {
+                    return const CircularProgressIndicator();
+                  } else if (state is OrderCreateFaild) {
+                    return Text(state.error);
+                  } else {
+                    if (state is OrderCreated) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Đơn hàng đã được tạo thành công!')),
+                      );
+                    }
+                    return ElevatedButton(
+                      onPressed: () => handleNewOrder(context),
+                      child: const Text('Xác nhận và tạo đơn hàng'),
+                    );
+                  }
+                }),
               ),
             ],
           ),
@@ -649,14 +746,20 @@ class _CreateOrderState extends State<CreateOrder> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-          const SizedBox(width: 20,),
+        const SizedBox(
+          width: 20,
+        ),
         if (_currentPage > 0)
           ElevatedButton(
             onPressed: () {
-              _pageController.previousPage(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              );
+              if (_currentPage == 1) {
+                Navigator.pop(context);
+              } else {
+                _pageController.previousPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              }
             },
             child: const Text('Quay lại'),
           ),
@@ -675,6 +778,10 @@ class _CreateOrderState extends State<CreateOrder> {
               } else if (_currentPage == 2) {
                 // Validate number inputs on page 2
                 if (_validateNumberInputs()) {
+                  _cashOnDeliveryController.text =
+                      _cashOnDeliveryController.text == ""
+                          ? _cashOnDeliveryController.text
+                          : "0";
                   context.read<OrderBlocFee>().add(
                         CalculateFee(
                           _senderCityController.text,
@@ -708,7 +815,9 @@ class _CreateOrderState extends State<CreateOrder> {
                     'Tiếp tục',
                   ),
           ),
-          const SizedBox(width: 20,)
+        const SizedBox(
+          width: 20,
+        )
       ],
     );
   }
@@ -752,5 +861,77 @@ class _CreateOrderState extends State<CreateOrder> {
       ),
       child: const Icon(Icons.cleaning_services_outlined),
     );
+  }
+
+  void createOrderPopup(BuildContext context, bool isSuccess, String message) {
+    // Đảm bảo dialog được gọi sau khi build hoàn tất
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(isSuccess
+                ? 'Tạo đơn hàng thành công'
+                : 'Tạo đơn hàng thất bại!'),
+            content: isSuccess
+                ? Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.3),
+                          spreadRadius: 4,
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.green.shade100,
+                      radius: 30,
+                      child: const Icon(
+                        Icons.done_outline_sharp,
+                        color: Colors.green,
+                        size: 30,
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: [
+                      Text(message),
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.3),
+                              spreadRadius: 4,
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          backgroundColor: Colors.red.shade100,
+                          radius: 30,
+                          child: const Icon(
+                            Icons.do_not_disturb_outlined,
+                            color: Colors.red,
+                            size: 30,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ), // Hiển thị thông báo lỗi nếu thất bại
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Đóng popup
+                },
+                child: const Text('Đồng ý'),
+              ),
+            ],
+          );
+        },
+      );
+    });
   }
 }
