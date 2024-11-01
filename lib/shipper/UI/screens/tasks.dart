@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:tdlogistic_v2/core/models/order_model.dart';
+import 'package:tdlogistic_v2/shipper/UI/screens/map2markers.dart';
+import 'package:tdlogistic_v2/shipper/UI/screens/signature_screen.dart';
 import 'package:tdlogistic_v2/shipper/bloc/task_bloc.dart';
 import 'package:tdlogistic_v2/shipper/bloc/task_event.dart';
 import 'package:tdlogistic_v2/shipper/bloc/task_state.dart';
@@ -24,9 +26,6 @@ class _TasksWidgetState extends State<TasksWidget>
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   QRViewController? qrController;
 
-  String _selectedFilter = 'name'; // Loại lọc mặc định là theo tên
-  final TextEditingController _searchController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -43,7 +42,6 @@ class _TasksWidgetState extends State<TasksWidget>
   @override
   void dispose() {
     qrController?.dispose();
-    _searchController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -148,19 +146,6 @@ class _TasksWidgetState extends State<TasksWidget>
         );
       },
     );
-  }
-
-  String _getLabelText() {
-    switch (_selectedFilter) {
-      case 'name':
-        return 'Tìm kiếm theo tên';
-      case 'location':
-        return 'Tìm kiếm theo địa điểm';
-      case 'phone':
-        return 'Tìm kiếm theo số điện thoại';
-      default:
-        return 'Tìm kiếm';
-    }
   }
 
   Widget _buildOrderSendList(BuildContext context) {
@@ -396,7 +381,9 @@ class _TaskListViewState extends State<TaskListView> {
                     _buildOrderDetailTile(
                         'Địa chỉ gửi',
                         '${task.order?.provinceSource ?? ''}, ${task.order?.districtSource ?? ''}, ${task.order?.wardSource ?? ''}, ${task.order?.detailSource ?? ''}',
-                        Icons.location_on),
+                        Icons.location_on,
+                        address: "${task.order!.detailSource} ${task.order!.districtSource} ${task.order!.wardSource} ${task.order!.provinceSource}"
+                        ),
                   ] else ...[
                     _buildOrderDetailTile(
                         'Người nhận', task.order?.nameReceiver, Icons.person),
@@ -405,7 +392,9 @@ class _TaskListViewState extends State<TaskListView> {
                     _buildOrderDetailTile(
                         'Địa chỉ nhận',
                         '${task.order?.provinceDest ?? ''}, ${task.order?.districtDest ?? ''}, ${task.order?.wardDest ?? ''}, ${task.order?.detailDest ?? ''}',
-                        Icons.location_on),
+                        Icons.location_on,
+                        address: "${task.order!.detailDest} ${task.order!.districtDest} ${task.order!.wardDest} ${task.order!.provinceDest}"
+                        ),
                   ],
                   _buildOrderDetailTile(
                       'Khối lượng',
@@ -499,7 +488,7 @@ class _TaskListViewState extends State<TaskListView> {
                         const SizedBox(height: 16), // Khoảng cách giữa các phần
                         // Hiển thị chữ ký (không có nút thêm)
                         _buildSignatureSection(
-                            "Chữ ký người gửi", sendSignature),
+                            "Chữ ký người gửi", sendSignature, order.id!),
                       ] else ...[
                         // Hiển thị hình nhận với nút thêm ảnh
                         _buildImageGridWithAddButton(context, "Hình ảnh nhận",
@@ -508,7 +497,7 @@ class _TaskListViewState extends State<TaskListView> {
                         const SizedBox(height: 16), // Khoảng cách giữa các phần
                         const SizedBox(height: 8),
                         _buildSignatureSection(
-                            "Chữ ký người nhận", receiveSignature),
+                            "Chữ ký người nhận", receiveSignature, order.id!),
                       ]
                     ],
                   ),
@@ -530,7 +519,6 @@ class _TaskListViewState extends State<TaskListView> {
     );
   }
 
-// Widget hiển thị grid hình ảnh và thêm nút thêm ảnh
   Widget _buildImageGridWithAddButton(BuildContext context, String title,
       List<Uint8List> images, String category, String orderId) {
     return Column(
@@ -596,7 +584,6 @@ class _TaskListViewState extends State<TaskListView> {
     );
   }
 
-// Hàm xử lý sự kiện khi nhấn nút thêm ảnh
   void _onAddImagePressed(BuildContext context, List<Uint8List> images,
       String category, String orderId) async {
     final ImagePicker picker = ImagePicker();
@@ -653,7 +640,8 @@ class _TaskListViewState extends State<TaskListView> {
     }
   }
 
-  Widget _buildSignatureSection(String title, Uint8List? signature) {
+  Widget _buildSignatureSection(
+      String title, Uint8List? signature, String orderId) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -673,7 +661,9 @@ class _TaskListViewState extends State<TaskListView> {
               )
             : const Text("Chưa có chữ ký"),
         ElevatedButton.icon(
-          onPressed: () {},
+          onPressed: () {
+            _onAddSignaturePressed(context, signature, orderId);
+          },
           icon: const Icon(Icons.add),
           label: const Text('Thêm ảnh'),
           style: ElevatedButton.styleFrom(
@@ -684,7 +674,65 @@ class _TaskListViewState extends State<TaskListView> {
     );
   }
 
-  Widget _buildOrderDetailTile(String title, String? value, IconData icon) {
+  void _onAddSignaturePressed(
+      BuildContext context, Uint8List? signature, String orderId) async {
+    final ImagePicker picker = ImagePicker();
+
+    // Hiển thị tùy chọn chọn ảnh từ thư viện hoặc camera
+    final XFile? pickedFile = await showModalBottomSheet<XFile?>(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Chọn từ thư viện'),
+                onTap: () async {
+                  final XFile? file =
+                      await picker.pickImage(source: ImageSource.gallery);
+                  Navigator.pop(context, file); // Trả về file sau khi chọn
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Chụp từ camera'),
+                onTap: () async {
+                  final XFile? file =
+                      await picker.pickImage(source: ImageSource.camera);
+                  Navigator.pop(context, file); // Trả về file sau khi chụp
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Ký tên'),
+                onTap: () async {
+                  // Mở trang ký tên và trả về kết quả sau khi ký
+                  final XFile? signatureData = await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => SignatureScreen()),
+                  );
+                  Navigator.pop(context, signatureData);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (pickedFile != null) {
+      try {
+        Uint8List imageBytes = await pickedFile.readAsBytes();
+        signature = imageBytes;
+        print(imageBytes);
+      } catch (error) {
+        print("Error uploading image: ${error.toString()}");
+      }
+    }
+  }
+
+  Widget _buildOrderDetailTile(String title, String? value, IconData icon,
+      {String address = ""}) {
     return icon == Icons.phone
         ? InkWell(
             onTap: () {},
@@ -698,16 +746,38 @@ class _TaskListViewState extends State<TaskListView> {
               ),
               subtitle: Text(value ?? 'Chưa có thông tin'),
             ))
-        : ListTile(
-            leading: Icon(icon, color: Colors.green),
-            title: Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            subtitle: Text(value ?? 'Chưa có thông tin'),
-          );
+        : icon == Icons.location_on
+            ? InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Map2Markers(
+                        endAddress: address,
+                      ),
+                    ),
+                  );
+                },
+                child: ListTile(
+                  leading: Icon(icon, color: Colors.green),
+                  title: Text(
+                    "$title (Nhấn để xem)",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: Text(value ?? 'Chưa có thông tin'),
+                ))
+            : ListTile(
+                leading: Icon(icon, color: Colors.green),
+                title: Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(value ?? 'Chưa có thông tin'),
+              );
   }
 
   Widget _buildJourneyList(List<Journies> journeys) {
@@ -750,7 +820,9 @@ class _TaskListViewState extends State<TaskListView> {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              _showCancellationDialog(context);
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade200,
             ),
@@ -785,6 +857,111 @@ class _TaskListViewState extends State<TaskListView> {
                 ),
         ],
       ),
+    );
+  }
+
+  void _showCancellationDialog(BuildContext context) {
+    String? selectedReason;
+    TextEditingController otherReasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text(
+            'Lý Do Hủy Đơn Hàng',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+          ),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    title: const Text('Không thể liên lạc với khách hàng'),
+                    leading: Radio<String>(
+                      value: 'Không thể liên lạc với khách hàng',
+                      groupValue: selectedReason,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedReason = value;
+                        });
+                      },
+                    ),
+                  ),
+                  ListTile(
+                    title: const Text('Khách hàng từ chối đưa/nhận hàng'),
+                    leading: Radio<String>(
+                      value: 'Khách hàng từ chối đưa/nhận hàng',
+                      groupValue: selectedReason,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedReason = value;
+                        });
+                      },
+                    ),
+                  ),
+                  ListTile(
+                    title: const Text('Khác'),
+                    leading: Radio<String>(
+                      value: 'Khác',
+                      groupValue: selectedReason,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedReason = value;
+                        });
+                      },
+                    ),
+                  ),
+                  if (selectedReason == 'Khác')
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: TextField(
+                        controller: otherReasonController,
+                        decoration: InputDecoration(
+                          hintText: 'Nhập lý do khác',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                print('Selected Reason: ${selectedReason ?? "Không có"}');
+                print('Other Reason: ${otherReasonController.text}');
+                Navigator.of(context).pop();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.blue,
+              ),
+              child: const Text(
+                'Gửi',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey,
+              ),
+              child: const Text('Hủy'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -34,6 +34,15 @@ dependencies:
   geocoding: ^3.0.0
   flutter_polyline_points: ^2.1.0
   location: ^7.0.1
+  signature: ^5.5.0
+  flutter_launcher_icons: ^0.14.1
+  geolocator: ^13.0.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  remove_alpha_ios: true
 
 dev_dependencies:
   flutter_test:

@@ -386,7 +386,6 @@ class _OrderListViewState extends State<OrderListView> {
   @override
   void initState() {
     super.initState();
-    // Lắng nghe khi có sự thay đổi trong textfield
     searchController.addListener(_filterOrders);
     filteredOrders = widget.orders;
   }
@@ -839,40 +838,222 @@ class _OrderListViewState extends State<OrderListView> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade200,
-            ),
-            child: const Text(
-              "Từ chối",
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
-          ),
+          order.statusCode != "PROCESSING"
+              ? const ElevatedButton(
+                  onPressed: null,
+                  child: Text(
+                    "Từ chối",
+                    style: TextStyle(
+                        color: Colors.grey, fontWeight: FontWeight.bold),
+                  ),
+                )
+              : ElevatedButton(
+                  onPressed: () {
+                    _showCancellationDialog(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade200,
+                  ),
+                  child: const Text(
+                    "Từ chối",
+                    style: TextStyle(
+                        color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
+                ),
           const SizedBox(width: 8),
-          order.statusCode != "DELIVERING"? ElevatedButton(
-            onPressed: null,
-            
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey.shade200,
-            ),
-            child: const Text(
-              "Đã nhận",
-              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
-            ),
-          ):
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.shade200,
-            ),
-            child: const Text(
-              "Đã nhận",
-              style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-            ),
-          ),
+          order.statusCode != "DELIVERING"
+              ? const ElevatedButton(
+                  onPressed: null,
+                  child: Text(
+                    "Đã nhận",
+                    style: TextStyle(
+                        color: Colors.grey, fontWeight: FontWeight.bold),
+                  ),
+                )
+              : ElevatedButton(
+                  onPressed: () {
+                    _showRatingDialog(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade200,
+                  ),
+                  child: const Text(
+                    "Đã nhận",
+                    style: TextStyle(
+                        color: Colors.green, fontWeight: FontWeight.bold),
+                  ),
+                ),
         ],
       ),
+    );
+  }
+
+  void _showCancellationDialog(BuildContext context) {
+    String? selectedReason;
+    TextEditingController otherReasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text(
+            'Lý Do Hủy Đơn Hàng',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+          ),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    title: const Text('Không còn nhu cầu'),
+                    leading: Radio<String>(
+                      value: 'Không còn nhu cầu',
+                      groupValue: selectedReason,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedReason = value;
+                        });
+                      },
+                    ),
+                  ),
+                  ListTile(
+                    title: const Text('Sản phẩm không đúng mô tả'),
+                    leading: Radio<String>(
+                      value: 'Sản phẩm không đúng mô tả',
+                      groupValue: selectedReason,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedReason = value;
+                        });
+                      },
+                    ),
+                  ),
+                  ListTile(
+                    title: const Text('Khác'),
+                    leading: Radio<String>(
+                      value: 'Khác',
+                      groupValue: selectedReason,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedReason = value;
+                        });
+                      },
+                    ),
+                  ),
+                  if (selectedReason == 'Khác')
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: TextField(
+                        controller: otherReasonController,
+                        decoration: InputDecoration(
+                          hintText: 'Nhập lý do khác',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                print('Selected Reason: ${selectedReason ?? "Không có"}');
+                print('Other Reason: ${otherReasonController.text}');
+                Navigator.of(context).pop();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.blue,
+              ),
+              child: const Text(
+                'Gửi',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey,
+              ),
+              child: const Text('Hủy'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showRatingDialog(BuildContext context) {
+    double rating = 0.0;
+    TextEditingController commentController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Đánh Giá Đơn Hàng'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Phần để chọn rating
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star : Icons.star_border,
+                          color: Colors.yellow,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            rating = index + 1.0;
+                          });
+                        },
+                      );
+                    }),
+                  ),
+                  // Phần để nhập bình luận
+                  TextField(
+                    controller: commentController,
+                    decoration: const InputDecoration(
+                      hintText: 'Nhập bình luận của bạn',
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Xử lý khi người dùng nhấn nút Gửi
+                print('Rating: $rating');
+                print('Comment: ${commentController.text}');
+                Navigator.of(context).pop();
+              },
+              child: const Text('Gửi'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Đóng dialog
+              },
+              child: const Text('Hủy'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

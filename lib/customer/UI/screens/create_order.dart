@@ -90,7 +90,7 @@ class _CreateOrderState extends State<CreateOrder> {
   final _heightController = TextEditingController();
   final _weightController = TextEditingController();
 
-  String _selectedDeliveryMethod = 'Chuyển phát nhanh';
+  String _selectedDeliveryMethod = 'Giao hàng tiết kiệm';
 
   bool _isLengthEmpty = true;
   bool _isWidthEmpty = true;
@@ -98,8 +98,7 @@ class _CreateOrderState extends State<CreateOrder> {
   bool _isWeightEmpty = true;
 
   final List<String> _deliveryMethods = [
-    'Chuyển phát nhanh',
-    'Chuyển phát thường',
+    'Chuyển phát siêu tốc 2 giờ',
     'Giao hàng tiết kiệm',
   ];
 
@@ -236,15 +235,16 @@ class _CreateOrderState extends State<CreateOrder> {
                 backgroundColor: Colors.white,
                 onPressed: () {
                   Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Map2Markers(
-                            startAddress: "${_senderAddressController.text} ${_senderWardController.text} ${_senderDistrictController.text} ${_senderCityController.text}",
-                            endAddress: "${_receiverAddressController.text} ${_receiverWardController.text} ${_receiverDistrictController.text} ${_receiverCityController.text}",
-                            ),
-                        ),
-                      );
-                  
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Map2Markers(
+                        startAddress:
+                            "${_senderAddressController.text} ${_senderWardController.text} ${_senderDistrictController.text} ${_senderCityController.text}",
+                        endAddress:
+                            "${_receiverAddressController.text} ${_receiverWardController.text} ${_receiverDistrictController.text} ${_receiverCityController.text}",
+                      ),
+                    ),
+                  );
                 },
                 child: const Icon(Icons.map, color: mainColor),
               ),
@@ -575,7 +575,7 @@ class _CreateOrderState extends State<CreateOrder> {
             const SizedBox(height: 20),
 
             // Dropdown cho phương thức giao
-            _buildDropdownField(),
+            _buildDeliveryMethodSelector(),
           ],
         ),
       ),
@@ -599,145 +599,285 @@ class _CreateOrderState extends State<CreateOrder> {
     );
   }
 
-  Widget _buildDropdownField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Phương thức giao:',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+  Widget _buildDeliveryMethodSelector() {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Phương thức giao hàng',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8.0,
+              runSpacing: 8.0,
+              children: _deliveryMethods.map((String method) {
+                final isSelected = _selectedDeliveryMethod == method;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedDeliveryMethod = method;
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.blue : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isSelected ? Colors.blue : Colors.grey[300]!,
+                            width: 2,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isSelected)
+                              const Padding(
+                                padding: EdgeInsets.only(right: 8.0),
+                                child: Icon(
+                                  Icons.check_circle,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            Text(
+                              method,
+                              style: TextStyle(
+                                color:
+                                    isSelected ? Colors.white : Colors.black87,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
         ),
-        const SizedBox(height: 10),
-        DropdownButtonFormField<String>(
-          value: _selectedDeliveryMethod,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: 'Chọn phương thức giao',
-          ),
-          items: _deliveryMethods.map((String method) {
-            return DropdownMenuItem<String>(
-              value: method,
-              child: Text(method),
-            );
-          }).toList(),
-          onChanged: (String? newValue) {
-            setState(() {
-              _selectedDeliveryMethod = newValue!;
-            });
-          },
-        ),
-      ],
+      ),
     );
   }
 
   Widget _buildConfirmPage(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.only(top: 70.0, left: 20, right: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Center(
-                child: Text(
-                  'Xác nhận thông tin',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-                ),
-              ),
-              const Text(
-                'Thông tin người gửi',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return BlocListener<CreateOrderBloc, OrderState>(
+        listener: (context, state) {
+          if (state is OrderCreated) {
+            // Hiển thị dialog khi tạo đơn hàng thành công
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Thành công'),
+                  content: const Text('Đơn hàng đã được tạo thành công!'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context); // Đóng dialog
+                        // Có thể thêm navigation về trang chủ hoặc trang đơn hàng ở đây
+                      },
+                      child: const Text('Đóng'),
+                    ),
+                  ],
+                );
+              },
+            );
+          } else if (state is OrderCreateFaild) {
+            // Hiển thị dialog khi tạo đơn hàng thất bại
+            showDialog(
+              context: context,
+              barrierDismissible:
+                  false, // Không cho phép đóng dialog bằng cách chạm bên ngoài
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Thất bại'),
+                  content: Text('Không thể tạo đơn hàng: ${state.error}'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Thử lại'),
+                    ),
+                  ],
+                );
+              },
+            );
+          }
+        },
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
                 children: [
-                  Text('Tên người gửi: ${_senderNameController.text}', style: const TextStyle(fontSize: 18),),
-                  Text('Địa chỉ người gửi: ${_senderAddressController.text}', style: const TextStyle(fontSize: 18),),
-                  Text('Phường/Xã: ${_senderWardController.text}', style: const TextStyle(fontSize: 18),),
-                  Text('Quận/Huyện: ${_senderDistrictController.text}', style: const TextStyle(fontSize: 18),),
-                  Text('Thành phố: ${_senderCityController.text}', style: const TextStyle(fontSize: 18),),
-                  Text('Số điện thoại: ${_senderPhoneController.text}', style: const TextStyle(fontSize: 18),),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Thông tin người nhận',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Tên người nhận: ${_receiverNameController.text}', style: const TextStyle(fontSize: 18),),
-                  Text(
-                      'Địa chỉ người nhận: ${_receiverAddressController.text}', style: const TextStyle(fontSize: 18),),
-                  Text('Phường/Xã: ${_receiverWardController.text}', style: const TextStyle(fontSize: 18),),
-                  Text('Quận/Huyện: ${_receiverDistrictController.text}', style: const TextStyle(fontSize: 18),),
-                  Text('Thành phố: ${_receiverCityController.text}', style: const TextStyle(fontSize: 18),),
-                  Text('Số điện thoại: ${_receiverPhoneController.text}', style: const TextStyle(fontSize: 18),),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Thông tin gói hàng',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Thu hộ (COD): ${_cashOnDeliveryController.text} VNĐ', style: const TextStyle(fontSize: 18),),
-                  Text('Chiều dài: ${_lengthController.text} cm', style: const TextStyle(fontSize: 18),),
-                  Text('Chiều rộng: ${_widthController.text} cm', style: const TextStyle(fontSize: 18),),
-                  Text('Chiều cao: ${_heightController.text} cm', style: const TextStyle(fontSize: 18),),
-                  Text('Cân nặng: ${_weightController.text} kg', style: const TextStyle(fontSize: 18),),
-                  Text('Phương thức giao hàng: $_selectedDeliveryMethod', style: const TextStyle(fontSize: 18),),
-                  Row(
-                    children: [
-                      const Text('Chi phí giao hàng: '),
+                  const Center(
+                    child: Text(
+                      "Xác nhận đơn hàng",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  _buildInfoCard(
+                    'Thông tin người gửi',
+                    Icons.person_outline,
+                    [
+                      _buildInfoRow('Họ và tên', _senderNameController.text),
+                      _buildInfoRow('Địa chỉ', _senderAddressController.text),
+                      _buildInfoRow('Phường/Xã', _senderWardController.text),
+                      _buildInfoRow(
+                          'Quận/Huyện', _senderDistrictController.text),
+                      _buildInfoRow('Thành phố', _senderCityController.text),
+                      _buildInfoRow('Điện thoại', _senderPhoneController.text),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildInfoCard(
+                    'Thông tin người nhận',
+                    Icons.person_pin_circle_outlined,
+                    [
+                      _buildInfoRow('Họ và tên', _receiverNameController.text),
+                      _buildInfoRow('Địa chỉ', _receiverAddressController.text),
+                      _buildInfoRow('Phường/Xã', _receiverWardController.text),
+                      _buildInfoRow(
+                          'Quận/Huyện', _receiverDistrictController.text),
+                      _buildInfoRow('Thành phố', _receiverCityController.text),
+                      _buildInfoRow(
+                          'Điện thoại', _receiverPhoneController.text),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildInfoCard(
+                    'Thông tin gói hàng',
+                    Icons.inventory_2_outlined,
+                    [
+                      _buildInfoRow('Thu hộ (COD)',
+                          '${_cashOnDeliveryController.text} VNĐ'),
+                      _buildInfoRow('Kích thước',
+                          '${_lengthController.text}x${_widthController.text}x${_heightController.text} cm'),
+                      _buildInfoRow('Cân nặng', '${_weightController.text} kg'),
+                      _buildInfoRow(
+                          'Phương thức giao', _selectedDeliveryMethod),
                       BlocBuilder<OrderBlocFee, OrderState>(
                         builder: (context, state) {
-                          if (state is OrderFeeCalculating) {
-                            return const CircularProgressIndicator(); // Hiển thị loading khi đang tính phí
-                          } else if (state is OrderFeeCalculated) {
-                            return Text(
-                                '${state.fee} VND', style: const TextStyle(fontSize: 18),); // Hiển thị phí sau khi tính toán
-                          } else if (state is OrderFeeCalculationFailed) {
-                            return Text(
-                                'Lỗi: ${state.error}', style: const TextStyle(fontSize: 18),); // Hiển thị lỗi nếu có vấn đề xảy ra
-                          } else {
-                            return const Text('Chưa tính phí', style: const TextStyle(fontSize: 18),);
-                          }
+                          return _buildInfoRow(
+                              'Chi phí giao hàng',
+                              state is OrderFeeCalculated
+                                  ? '${state.fee} VND'
+                                  : state is OrderFeeCalculating
+                                      ? 'Đang tính...'
+                                      : 'Chưa tính phí');
                         },
                       ),
                     ],
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              Center(
-                child: BlocBuilder<CreateOrderBloc, OrderState>(
-                    builder: (context, state) {
-                  if (state is OrderCreating) {
-                    return const CircularProgressIndicator();
-                  } else if (state is OrderCreateFaild) {
-                    return Text(state.error);
-                  } else {
-                    if (state is OrderCreated) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Đơn hàng đã được tạo thành công!')),
-                      );
-                    }
-                    return ElevatedButton(
-                      onPressed: () => handleNewOrder(context),
-                      child: const Text('Xác nhận và tạo đơn hàng'),
-                    );
-                  }
-                }),
-              ),
-            ],
+            ),
           ),
+          bottomNavigationBar: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: BlocBuilder<CreateOrderBloc, OrderState>(
+              builder: (context, state) {
+                return ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: state is OrderCreating
+                      ? null
+                      : () => handleNewOrder(context),
+                  child: state is OrderCreating
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Xác nhận và tạo đơn hàng',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                );
+              },
+            ),
+          ),
+        ));
+  }
+
+  Widget _buildInfoCard(String title, IconData icon, List<Widget> children) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: Colors.blue),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            ...children,
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 16,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

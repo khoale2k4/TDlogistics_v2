@@ -73,8 +73,8 @@ class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
             label: 'Lịch sử',
           ),
           BottomNavigationBarItem(
-            icon: _buildIconWithCircle(Icons.message, 2),
-            label: 'Tin nhắn',
+            icon: _buildIconWithCircle(Icons.map, 2),
+            label: 'Bản đồ',
           ),
           BottomNavigationBarItem(
             icon: _buildIconWithCircle(Icons.person, 3),
