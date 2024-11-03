@@ -1,10 +1,9 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/history.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
+    FlutterLocalNotificationsPlugin();
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -29,7 +28,8 @@ Future<void> onDidReceiveLocalNotification(
   );
 }
 
-Future<void> selectNotification(NotificationResponse notificationResponse) async {
+Future<void> selectNotification(
+    NotificationResponse notificationResponse) async {
   String? payload = notificationResponse.payload;
   if (payload != null) {
     navigatorKey.currentState?.push(
@@ -41,15 +41,15 @@ Future<void> selectNotification(NotificationResponse notificationResponse) async
   }
 }
 
-void startNotice() async{
+Future<void> startNotice() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
-const DarwinInitializationSettings initializationSettingsDarwin =
-    DarwinInitializationSettings(
-        onDidReceiveLocalNotification: onDidReceiveLocalNotification);
+  const DarwinInitializationSettings initializationSettingsDarwin =
+      DarwinInitializationSettings(
+          onDidReceiveLocalNotification: onDidReceiveLocalNotification);
 
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
@@ -58,4 +58,17 @@ const DarwinInitializationSettings initializationSettingsDarwin =
 
   await flutterLocalNotificationsPlugin.initialize(initializationSettings,
       onDidReceiveNotificationResponse: selectNotification);
+
+  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    '123', // ID kênh trùng với ID bạn dùng ở trên trong AndroidNotificationDetails
+    'tdlogistic', // Tên kênh hiển thị cho người dùng
+    importance: Importance.max,
+    description: 'Kênh thông báo cho ứng dụng', // Mô tả kênh
+  );
+
+// Tạo kênh thông báo trên Android
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
 }

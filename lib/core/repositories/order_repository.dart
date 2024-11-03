@@ -225,6 +225,9 @@ class OrderRepository {
 
       final decodedResponse = utf8.decode(response.bodyBytes);
       var data = json.decode(decodedResponse);
+      print("Up ảnh thành công");
+      print("Đơn hàng $id");
+      print(data);
       return {'success': data["success"], 'message': data["message"]};
     } catch (error) {
       print("Error updating images: $error");

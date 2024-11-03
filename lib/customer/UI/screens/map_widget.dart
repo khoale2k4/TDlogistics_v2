@@ -3,6 +3,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'package:location/location.dart';
+
 class MapWidget extends StatefulWidget {
   const MapWidget({Key? key}) : super(key: key);
 
@@ -14,26 +16,44 @@ class _MapWidgetState extends State<MapWidget> {
   late GoogleMapController mapController;
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> _searchSuggestions = [];
-  LatLng _currentPosition = const LatLng(10.8231, 106.6297); // Tọa độ khởi tạo
-  final String _apiKey = "AIzaSyB1D4XCGPDidtXUwOw1K-gQ8VPB2c4IxC8"; // Thay bằng API Key của bạn
+  LatLng? _currentPosition; // Tọa độ khởi tạo
+  final String _apiKey =
+      "AIzaSyB1D4XCGPDidtXUwOw1K-gQ8VPB2c4IxC8"; // Thay bằng API Key của bạn
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
   }
 
+  final Location _location = Location();
+  Future<void> _goToMyLocation() async {
+    var currentLocation = await _location.getLocation();
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(currentLocation.latitude!, currentLocation.longitude!),
+          zoom: 15,
+        ),
+      ),
+    );
+  }
+
   // Gọi Places API để lấy gợi ý địa chỉ
   Future<void> _getSearchSuggestions(String query) async {
-    final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query&key=$_apiKey');
-    final response = await http.get(url);
+    try {
+      final url = Uri.parse(
+          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query&key=$_apiKey');
+      final response = await http.get(url);
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        _searchSuggestions = data['predictions'];
-      });
-    } else {
-      print("Error fetching suggestions: ${response.body}");
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _searchSuggestions = data['predictions'];
+        });
+      } else {
+        print("Error fetching suggestions: ${response.body}");
+      }
+    } catch (error) {
+      print("Error fetching location:$error");
     }
   }
 
@@ -62,20 +82,30 @@ class _MapWidgetState extends State<MapWidget> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Google Map"),
-      ),
       body: Stack(
         children: [
           GoogleMap(
             onMapCreated: _onMapCreated,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
             initialCameraPosition: CameraPosition(
-              target: _currentPosition,
+              target: _currentPosition ?? const LatLng(10.8231, 106.6297),
               zoom: 12.0,
             ),
+            markers: {
+              if (_currentPosition != null)
+                Marker(
+                  markerId: const MarkerId("start"),
+                  position: _currentPosition ?? const LatLng(10.8231, 106.6297),
+                  infoWindow: const InfoWindow(title: "Điểm đi"),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                      BitmapDescriptor.hueBlue),
+                ),
+            },
+            myLocationEnabled: true,
           ),
           Positioned(
-            top: 20,
+            top: 80,
             left: 15,
             right: 15,
             child: Column(
@@ -103,20 +133,37 @@ class _MapWidgetState extends State<MapWidget> {
                   },
                 ),
                 const SizedBox(height: 5),
-                Container(decoration: BoxDecoration(borderRadius: BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),color: Colors.white),child:
-                ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _searchSuggestions.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text(_searchSuggestions[index]['description']),
-                      onTap: () {
-                        _moveToLocation(_searchSuggestions[index]['place_id']);
-                      },
-                    );
-                  },
-                ),),
+                Container(
+                  decoration: const BoxDecoration(
+                      borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20)),
+                      color: Colors.white),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(0),
+                    shrinkWrap: true,
+                    itemCount: _searchSuggestions.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        title: Text(_searchSuggestions[index]['description']),
+                        onTap: () {
+                          _moveToLocation(
+                              _searchSuggestions[index]['place_id']);
+                        },
+                      );
+                    },
+                  ),
+                ),
               ],
+            ),
+          ),
+          Positioned(
+            bottom: 20,
+            right: 20,
+            child: FloatingActionButton(
+              onPressed: _goToMyLocation,
+              backgroundColor: Colors.white,
+              child: const Icon(Icons.my_location),
             ),
           ),
         ],

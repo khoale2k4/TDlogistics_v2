@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:tdlogistic_v2/auth/data/models/user_model.dart';
+import 'package:tdlogistic_v2/core/service/secure_storage_service.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/chat_box.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/map_widget.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/tasks.dart';
@@ -11,30 +15,36 @@ import 'package:tdlogistic_v2/shipper/bloc/task_bloc.dart';
 import 'package:tdlogistic_v2/shipper/bloc/task_event.dart';
 import 'package:tdlogistic_v2/shipper/bloc/task_state.dart';
 import 'package:tdlogistic_v2/shipper/data/models/task.dart';
+import 'package:tdlogistic_v2/shipper/data/repositories/location_repository.dart';
 
 class ShipperNavigatePage extends StatefulWidget {
   final User user;
   final List<Task> tasks;
+  final String token;
 
-  ShipperNavigatePage({super.key, required this.user, required this.tasks});
+  ShipperNavigatePage({super.key, required this.user, required this.tasks, required this.token});
 
   @override
   _ShipperNavigatePageState createState() => _ShipperNavigatePageState();
 }
 
 class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
-  int _currentIndex = 0; // Index hiện tại của bottom navigation
+  int _currentIndex = 0; 
   late User user;
+  Timer? _timer;
+  LocationRepository locationRepository = LocationRepository();
 
   // Các trang scaffold khác nhau
   List<Widget> _pages = [];
+  List<String> ordersDelevering = [];
 
   @override
   void initState() {
     super.initState();
     user = widget.user;
+    startSendingLocation(widget.token,ordersDelevering);
     _pages = [
-      const TasksWidget(),
+      TasksWidget(token: widget.token),
       const ShipperHistory(),
       const MapWidget(),
       ShipperInfor(user: user),
@@ -50,6 +60,61 @@ class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
     setState(() {
       _currentIndex = index;
     });
+  }
+
+  // Hàm để lấy vị trí hiện tại
+  Future<Position> _getCurrentPosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Kiểm tra và bật dịch vụ vị trí nếu cần
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return Future.error("Location services are disabled.");
+    }
+
+    // Kiểm tra quyền truy cập vị trí
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error("Location permissions are denied.");
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error("Location permissions are permanently denied.");
+    }
+
+    // Lấy vị trí hiện tại
+    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  }
+
+  // Hàm để bắt đầu gửi vị trí cho mỗi orderId
+  void startSendingLocation(String token, List<String> orderIds) {
+    _timer = Timer.periodic(Duration(seconds: 10), (timer) async {
+      try {
+        Position position = await _getCurrentPosition();
+        double lat = position.latitude;
+        double lng = position.longitude;
+
+        for (String orderId in orderIds) {
+          locationRepository.addRoute(token, orderId, lat, lng).then((result) {
+            if (result["success"]) {
+              print("Location updated for orderId $orderId: ${result["message"]}");
+            } else {
+              print("Failed to update location for orderId $orderId: ${result["message"]}");
+            }
+          });
+        }
+      } catch (error) {
+        print("Error retrieving location: $error");
+      }
+    });
+  }
+
+  void stopSendingLocation() {
+    _timer?.cancel();
+    print("Stopped sending location updates.");
   }
 
   @override
@@ -186,7 +251,49 @@ class _TasksNotificationsState extends State<TasksNotifications> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return BlocListener<PendingOrderBloc, TaskState>(
+        listener: (context, state) {
+          if (state is AcceptedTask) {
+            print("accept");
+            // Hiển thị dialog khi tạo đơn hàng thành công
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Thành công'),
+                  content: const Text('Nhận đơn thành công!'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context); // Đóng dialog
+                        // Có thể thêm navigation về trang chủ hoặc trang đơn hàng ở đây
+                      },
+                      child: const Text('Đóng'),
+                    ),
+                  ],
+                );
+              },
+            );
+          } else if (state is FailedAcceptingTask) {
+            showDialog(
+              context: context,
+              barrierDismissible:
+                  false, 
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Thất bại'),
+                  content: Text('Không thể nhận đơn: ${state.error}'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Đóng'),
+                    ),
+                  ],
+                );
+              },
+            );
+          }
+        },child: SafeArea(
       child: Container(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -261,11 +368,11 @@ class _TasksNotificationsState extends State<TasksNotifications> {
                     state is FailedAcceptingTask) {
                   if (state is AcceptedTask) {
                     print("success");
-                    acceptTaskPopup(
-                        context, true, ""); // Gọi hàm hiển thị popup thành công
+                    // acceptTaskPopup(
+                    //     context, true, ""); // Gọi hàm hiển thị popup thành công
                   } else if (state is FailedAcceptingTask) {
-                    acceptTaskPopup(context, false,
-                        state.error); // Gọi hàm hiển thị popup thất bại
+                    // acceptTaskPopup(context, false,
+                    //     state.error); // Gọi hàm hiển thị popup thất bại
                   }
                 }
                 return const CircularProgressIndicator();
@@ -274,7 +381,7 @@ class _TasksNotificationsState extends State<TasksNotifications> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   void acceptTaskPopup(BuildContext context, bool isSuccess, String message) {

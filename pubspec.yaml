@@ -37,11 +37,13 @@ dependencies:
   signature: ^5.5.0
   flutter_launcher_icons: ^0.14.1
   geolocator: ^13.0.1
+  share_plus: ^10.1.1
+  flutter_native_contact_picker: ^0.0.9
 
 flutter_launcher_icons:
-  android: true
+  android: "launcher_icon"
   ios: true
-  image_path: "assets/icon/icon.png"
+  image_path: "lib/assets/icon.png"
   remove_alpha_ios: true
 
 dev_dependencies:

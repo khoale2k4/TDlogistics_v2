@@ -398,7 +398,7 @@ class CompletedOrderBloc extends Bloc<OrderEvent, OrderState> {
     try {
       final fetchOrder = await orderRepository.getOrders(
           (await secureStorageService.getToken())!,
-          status: "DELIVERED_SUCCESS");
+          status: "RECEIVED");
       List<dynamic> fetchedOrders = fetchOrder["data"];
       List<Order> orders = [];
       if (fetchOrder["success"]) {
@@ -408,6 +408,7 @@ class CompletedOrderBloc extends Bloc<OrderEvent, OrderState> {
       }
       emit(OrderLoaded(orders, orders.length));
     } catch (error) {
+      print("Getting completed order: $error");
       emit(OrderError(error.toString()));
     }
   }

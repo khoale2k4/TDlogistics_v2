@@ -16,36 +16,20 @@ class _MapWidgetState extends State<MapWidget> {
   late GoogleMapController mapController;
   final TextEditingController _startSearchController = TextEditingController();
   final TextEditingController _endSearchController = TextEditingController();
+  final Location _location = Location();
   List<dynamic> _startSuggestions = [];
   List<dynamic> _endSuggestions = [];
-  final LatLng _currentPosition = const LatLng(10.8231, 106.6297); // Tọa độ khởi tạo
+  final LatLng _currentPosition =
+      const LatLng(10.8231, 106.6297); // Tọa độ khởi tạo
   LatLng? _startLocation;
   LatLng? _endLocation;
-  LatLng? _userLocation;
   final Set<Marker> _markers = {}; // Lưu trữ các marker
   Set<Polyline> _polylines = {}; // Lưu trữ đường đi
-  final String _apiKey = "AIzaSyB1D4XCGPDidtXUwOw1K-gQ8VPB2c4IxC8"; // Thay bằng API Key của bạn
+  final String _apiKey =
+      "AIzaSyB1D4XCGPDidtXUwOw1K-gQ8VPB2c4IxC8"; // Thay bằng API Key của bạn
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _getUserLocation();
-  }
-
-  Future<void> _getUserLocation() async {
-    Location location = Location();
-    try {
-      var userLocation = await location.getLocation();
-      setState(() {
-        _userLocation = LatLng(userLocation.latitude!, userLocation.longitude!);
-        _markers.add(Marker(
-          markerId: const MarkerId('user'),
-          position: _userLocation!,
-          infoWindow: const InfoWindow(title: 'Vị trí của bạn'),
-        ));
-      });
-    } catch (e) {
-      print("Error getting user location: $e");
-    }
   }
 
   // Gọi Places API để lấy gợi ý địa chỉ cho điểm bắt đầu hoặc điểm kết thúc
@@ -110,69 +94,83 @@ class _MapWidgetState extends State<MapWidget> {
       }
     }
   }
+
 // Thêm vào phần khai báo biến
-bool _isLoading = false; // Để hiển thị loading indicator
-String? _error; // Để hiển thị lỗi nếu có
+  bool _isLoading = false; // Để hiển thị loading indicator
+  String? _error; // Để hiển thị lỗi nếu có
 
 // Cải thiện hàm _calculateRoute
-Future<void> _calculateRoute() async {
-  setState(() {
-    _isLoading = true;
-    _error = null;
-  });
+  Future<void> _calculateRoute() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
-  try {
-    if (_startLocation == null || _endLocation == null) return;
+    try {
+      if (_startLocation == null || _endLocation == null) return;
 
-    // Xóa polyline cũ trước khi vẽ mới
-    _polylines.clear();
+      // Xóa polyline cũ trước khi vẽ mới
+      _polylines.clear();
 
-    final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/directions/json?origin=${_startLocation!.latitude},${_startLocation!.longitude}&destination=${_endLocation!.latitude},${_endLocation!.longitude}&key=$_apiKey');
-    
-    final response = await http.get(url);
+      final url = Uri.parse(
+          'https://maps.googleapis.com/maps/api/directions/json?origin=${_startLocation!.latitude},${_startLocation!.longitude}&destination=${_endLocation!.latitude},${_endLocation!.longitude}&key=$_apiKey');
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      
-      if (data['status'] == 'OK') {
-        final List<LatLng> polylineCoordinates = [];
-        
-        // Lấy tất cả points từ route
-        final points = PolylinePoints().decodePolyline(
-          data['routes'][0]['overview_polyline']['points']
-        );
-        
-        // Chuyển đổi points thành LatLng
-        for (var point in points) {
-          polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        if (data['status'] == 'OK') {
+          final List<LatLng> polylineCoordinates = [];
+
+          // Lấy tất cả points từ route
+          final points = PolylinePoints()
+              .decodePolyline(data['routes'][0]['overview_polyline']['points']);
+
+          // Chuyển đổi points thành LatLng
+          for (var point in points) {
+            polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+          }
+
+          setState(() {
+            _polylines.add(Polyline(
+              polylineId: const PolylineId('route'),
+              color: Colors.blue,
+              width: 5,
+              points: polylineCoordinates,
+            ));
+
+            // Di chuyển camera để hiển thị toàn bộ route
+            LatLngBounds bounds = LatLngBounds(
+              southwest: _startLocation!,
+              northeast: _endLocation!,
+            );
+            mapController
+                .animateCamera(CameraUpdate.newLatLngBounds(bounds, 100));
+          });
+        } else {
+          setState(() => _error = 'Không thể tìm được đường đi');
         }
-
-        setState(() {
-          _polylines.add(Polyline(
-            polylineId: const PolylineId('route'),
-            color: Colors.blue,
-            width: 5,
-            points: polylineCoordinates,
-          ));
-
-          // Di chuyển camera để hiển thị toàn bộ route
-          LatLngBounds bounds = LatLngBounds(
-            southwest: _startLocation!,
-            northeast: _endLocation!,
-          );
-          mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 100));
-        });
-      } else {
-        setState(() => _error = 'Không thể tìm được đường đi');
       }
+    } catch (e) {
+      setState(() => _error = 'Đã xảy ra lỗi: $e');
+    } finally {
+      setState(() => _isLoading = false);
     }
-  } catch (e) {
-    setState(() => _error = 'Đã xảy ra lỗi: $e');
-  } finally {
-    setState(() => _isLoading = false);
   }
-}
+
+  Future<void> _goToMyLocation() async {
+    var currentLocation = await _location.getLocation();
+    print("smth");
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(currentLocation.latitude!, currentLocation.longitude!),
+          zoom: 15,
+        ),
+      ),
+    );
+  }
 
   // Decode polyline từ Google Directions API
   List<LatLng> _decodePolyline(String poly) {
@@ -214,70 +212,71 @@ Future<void> _calculateRoute() async {
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(title: const Text("Tìm đường")),
-    body: Stack(
-      children: [
-        GoogleMap(
-          onMapCreated: _onMapCreated,
-          initialCameraPosition: CameraPosition(
-            target: _currentPosition,
-            zoom: 12.0,
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          GoogleMap(
+            myLocationButtonEnabled: false,
+            myLocationEnabled: true,
+            zoomControlsEnabled: false,
+            onMapCreated: _onMapCreated,
+            initialCameraPosition: CameraPosition(
+              target: _currentPosition,
+              zoom: 12.0,
+            ),
+            markers: _markers,
+            polylines: _polylines,
           ),
-          markers: _markers,
-          polylines: _polylines,
-        ),
-        Positioned(
-          top: 20,
-          left: 15,
-          right: 15,
-          child: Column(
-            children: [
-              _buildSearchField(
-                controller: _startSearchController,
-                hintText: "Điểm bắt đầu",
-                isStart: true,
-                suggestions: _startSuggestions,
-              ),
-              const SizedBox(height: 10),
-              _buildSearchField(
-                controller: _endSearchController,
-                hintText: "Điểm đến",
-                isStart: false,
-                suggestions: _endSuggestions,
-              ),
-              if (_isLoading)
-                const Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: CircularProgressIndicator(),
+          Positioned(
+            bottom: 20,
+            right: 20,
+            child: FloatingActionButton(
+              onPressed: _goToMyLocation,
+              backgroundColor: Colors.white,
+              child: const Icon(Icons.my_location),
+            ),
+          ),
+          Positioned(
+            top: 20,
+            left: 15,
+            right: 15,
+            child: Column(
+              children: [
+                _buildSearchField(
+                  controller: _startSearchController,
+                  hintText: "Điểm bắt đầu",
+                  isStart: true,
+                  suggestions: _startSuggestions,
                 ),
-              if (_error != null)
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  color: Colors.white,
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(color: Colors.red),
+                const SizedBox(height: 10),
+                _buildSearchField(
+                  controller: _endSearchController,
+                  hintText: "Điểm đến",
+                  isStart: false,
+                  suggestions: _endSuggestions,
+                ),
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: CircularProgressIndicator(),
                   ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (_userLocation != null) {
-                      mapController.animateCamera(
-                        CameraUpdate.newLatLngZoom(_userLocation!, 14.0),
-                      );
-                    }
-                  },
-                  child: const Text("Về vị trí của bạn"),
-                ),
-            ],
+                if (_error != null)
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    color: Colors.white,
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _buildSearchField({
     required TextEditingController controller,

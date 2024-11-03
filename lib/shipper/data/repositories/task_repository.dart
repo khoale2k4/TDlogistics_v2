@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:tdlogistic_v2/shipper/data/models/task.dart';
 
 class TaskRepository {
   final String baseUrl = 'https://api.tdlogistics.net.vn/v3';
@@ -74,6 +73,131 @@ class TaskRepository {
       }
     } catch (error) {
       print("Error getting tasks: ${error.toString()}");
+      return {"success": false, "message": error.toString()};
+    }
+  }
+
+  Future<dynamic> cancelTasks(String token, String taskId, String reason) async {
+    try {
+      final url = Uri.parse('$baseUrl/task/shipper/confirm_taken_fail/$reason/$taskId');
+      final headers = {
+        'Content-Type': 'application/json',
+        "authorization": "Bearer $token"
+      };
+
+      final response = await http.get(
+        url,
+        headers: headers,
+      );
+
+      final responseData = json.decode(response.body);
+      if (response.statusCode == 200) {
+        return {
+          "success": true,
+          "message": responseData["message"],
+        };
+      } else {
+        return {
+          "success": false,
+          "message": responseData["message"],
+        };
+      }
+    } catch (error) {
+      print("Error cancelling tasks: ${error.toString()}");
+      return {"success": false, "message": error.toString()};
+    }
+  }
+
+  Future<dynamic> confirmTakenTasks(String token, String taskId) async {
+    try {
+      final url = Uri.parse('$baseUrl/task/shipper/confirm_taken_success/$taskId');
+      final headers = {
+        'Content-Type': 'application/json',
+        "authorization": "Bearer $token"
+      };
+
+      final response = await http.get(
+        url,
+        headers: headers,
+      );
+
+      final responseData = json.decode(response.body);
+      if (response.statusCode == 200) {
+        return {
+          "success": true,
+          "message": responseData["message"],
+        };
+      } else {
+        return {
+          "success": false,
+          "message": responseData["message"],
+        };
+      }
+    } catch (error) {
+      print("Error cancelling tasks: ${error.toString()}");
+      return {"success": false, "message": error.toString()};
+    }
+  }
+
+  Future<dynamic> confirmDeliverTasks(String token, String taskId) async {
+    try {
+      final url = Uri.parse('$baseUrl/task/shipper/confirm_delivering/$taskId');
+      print(url);
+      final headers = {
+        'Content-Type': 'application/json',
+        "authorization": "Bearer $token"
+      };
+
+      final response = await http.get(
+        url,
+        headers: headers,
+      );
+
+      final responseData = json.decode(response.body);
+      if (response.statusCode == 200) {
+        return {
+          "success": true,
+          "message": responseData["message"],
+        };
+      } else {
+        return {
+          "success": false,
+          "message": responseData["message"],
+        };
+      }
+    } catch (error) {
+      print("Error cancelling tasks: ${error.toString()}");
+      return {"success": false, "message": error.toString()};
+    }
+  }
+
+  Future<dynamic> confirmReceivedTasks(String token, String orderId) async {
+    try {
+      final url = Uri.parse('$baseUrl/task/shipper/confirm_received/$orderId');
+      final headers = {
+        'Content-Type': 'application/json',
+        "authorization": "Bearer $token"
+      };
+
+      final response = await http.get(
+        url,
+        headers: headers,
+      );
+
+      final responseData = json.decode(response.body);
+      if (response.statusCode == 200) {
+        return {
+          "success": true,
+          "message": responseData["message"],
+        };
+      } else {
+        return {
+          "success": false,
+          "message": responseData["message"],
+        };
+      }
+    } catch (error) {
+      print("Error cancelling tasks: ${error.toString()}");
       return {"success": false, "message": error.toString()};
     }
   }

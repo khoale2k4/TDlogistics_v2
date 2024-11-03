@@ -3,6 +3,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'package:location/location.dart';
+
 class Map2Markers extends StatefulWidget {
   final String startAddress;
   final String endAddress;
@@ -20,8 +22,8 @@ class Map2Markers extends StatefulWidget {
 class _Map2MarkersState extends State<Map2Markers>
     with SingleTickerProviderStateMixin {
   late GoogleMapController mapController;
-  LatLng? _startLatLng = LatLng(10.762622, 106.660172);
-  LatLng? _endLatLng = LatLng(10.762622, 106.660172);
+  LatLng? _startLatLng;
+  LatLng? _endLatLng;
   List<LatLng> _routePoints = [];
   double _currentZoom = 12.0;
 
@@ -132,6 +134,20 @@ class _Map2MarkersState extends State<Map2Markers>
     });
   }
 
+  final Location _location = Location();
+  Future<void> _goToMyLocation() async {
+    var currentLocation = await _location.getLocation();
+    print("smth");
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(currentLocation.latitude!, currentLocation.longitude!),
+          zoom: 15,
+        ),
+      ),
+    );
+  }
+
   void _moveToLocation(LatLng location) {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
@@ -150,22 +166,25 @@ class _Map2MarkersState extends State<Map2Markers>
         children: [
           GoogleMap(
             onMapCreated: _onMapCreated,
+            myLocationButtonEnabled: false,
+            myLocationEnabled: true,
+          zoomControlsEnabled: false,
             initialCameraPosition: CameraPosition(
-              target: _startLatLng!,
+              target: _startLatLng??const LatLng(10.762622, 106.660172),
               zoom: _currentZoom,
             ),
             markers: {
               if (_startLatLng != null)
                 Marker(
                   markerId: const MarkerId("start"),
-                  position: _startLatLng!,
+                  position: _startLatLng??const LatLng(10.762622, 106.660172),
                   infoWindow: const InfoWindow(title: "Điểm đi"),
                   icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
                 ),
               if (_endLatLng != null)
                 Marker(
                   markerId: const MarkerId("end"),
-                  position: _endLatLng!,
+                  position: _endLatLng??const LatLng(10.762622, 106.660172),
                   infoWindow: const InfoWindow(title: "Điểm đến"),
                   icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
                 ),
@@ -178,6 +197,15 @@ class _Map2MarkersState extends State<Map2Markers>
                 width: 5,
               ),
             },
+          ),
+          Positioned(
+            bottom: 20,
+            right: 20,
+            child: FloatingActionButton(
+              onPressed: _goToMyLocation,
+              backgroundColor: Colors.white,
+              child: const Icon(Icons.my_location),
+            ),
           ),
           Positioned(
             top: 40,
@@ -207,62 +235,65 @@ class _Map2MarkersState extends State<Map2Markers>
             child: AnimatedBuilder(
               animation: _animation,
               builder: (context, child) {
-                return Container(
-                  height: _isExpanded ? 200 * _animation.value : 60,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
+                return AnimatedSize(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Nút mở rộng/thu nhỏ
+            InkWell(
+              onTap: _toggleLocationPanel,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Chi tiết hành trình',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // Nút mở rộng/thu nhỏ
-                      InkWell(
-                        onTap: _toggleLocationPanel,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Chi tiết hành trình',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              Icon(_isExpanded
-                                  ? Icons.keyboard_arrow_up
-                                  : Icons.keyboard_arrow_down),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Chi tiết điểm đi/đến
-                      if (_isExpanded) ...[
-                        ListTile(
-                          leading:
-                              const Icon(Icons.location_on, color: Colors.blue),
-                          title: Text(widget.startAddress),
-                          onTap: () => _moveToLocation(_startLatLng!),
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
-                          leading:
-                              const Icon(Icons.location_on, color: Colors.red),
-                          title: Text(widget.endAddress),
-                          onTap: () => _moveToLocation(_endLatLng!),
-                        ),
-                      ],
-                    ],
-                  ),
-                );
+                    ),
+                    Icon(_isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Chi tiết điểm đi/đến
+            if (_isExpanded) ...[
+              ListTile(
+                leading: const Icon(Icons.location_on, color: Colors.blue),
+                title: Text(widget.startAddress),
+                onTap: () => _moveToLocation(
+                    _startLatLng ?? const LatLng(10.762622, 106.660172)),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.location_on, color: Colors.red),
+                title: Text(widget.endAddress),
+                onTap: () => _moveToLocation(
+                    _endLatLng ?? const LatLng(10.762622, 106.660172)),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
               },
             ),
           ),

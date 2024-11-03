@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'dart:convert';
 
+import 'package:location/location.dart';
+
 class Map2Markers extends StatefulWidget {
   final String endAddress;
 
@@ -16,14 +18,45 @@ class Map2Markers extends StatefulWidget {
   _Map2MarkersState createState() => _Map2MarkersState();
 }
 
-class _Map2MarkersState extends State<Map2Markers> with SingleTickerProviderStateMixin {
+class _Map2MarkersState extends State<Map2Markers>
+    with SingleTickerProviderStateMixin {
   late GoogleMapController mapController;
   LatLng? _startLatLng;
   LatLng? _endLatLng;
   List<LatLng> _routePoints = [];
   double _currentZoom = 12.0;
 
-  final String _apiKey = "AIzaSyB1D4XCGPDidtXUwOw1K-gQ8VPB2c4IxC8"; // Thay bằng API Key của bạn
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+  bool _isExpanded = false;
+
+  final String _apiKey =
+      "AIzaSyB1D4XCGPDidtXUwOw1K-gQ8VPB2c4IxC8"; // Thay bằng API Key của bạn
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeRoute();
+
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _animation = Tween<double>(begin: 0, end: 1).animate(
+        CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
+  }
+
+  void _toggleLocationPanel() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+    });
+  }
 
   Future<void> _initializeRoute() async {
     // Lấy vị trí hiện tại của người dùng
@@ -119,10 +152,17 @@ class _Map2MarkersState extends State<Map2Markers> with SingleTickerProviderStat
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeRoute();
+  final Location _location = Location();
+  Future<void> _goToMyLocation() async {
+    var currentLocation = await _location.getLocation();
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(currentLocation.latitude!, currentLocation.longitude!),
+          zoom: 15,
+        ),
+      ),
+    );
   }
 
   @override
@@ -133,6 +173,9 @@ class _Map2MarkersState extends State<Map2Markers> with SingleTickerProviderStat
           if (_startLatLng != null)
             GoogleMap(
               onMapCreated: _onMapCreated,
+            myLocationButtonEnabled: false,
+              myLocationEnabled: true,
+              zoomControlsEnabled: false,
               initialCameraPosition: CameraPosition(
                 target: _startLatLng!,
                 zoom: _currentZoom,
@@ -143,14 +186,16 @@ class _Map2MarkersState extends State<Map2Markers> with SingleTickerProviderStat
                     markerId: const MarkerId("start"),
                     position: _startLatLng!,
                     infoWindow: const InfoWindow(title: "Vị trí của bạn"),
-                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(
+                        BitmapDescriptor.hueBlue),
                   ),
                 if (_endLatLng != null)
                   Marker(
                     markerId: const MarkerId("end"),
                     position: _endLatLng!,
                     infoWindow: const InfoWindow(title: "Điểm đến"),
-                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(
+                        BitmapDescriptor.hueRed),
                   ),
               },
               polylines: {
@@ -163,6 +208,15 @@ class _Map2MarkersState extends State<Map2Markers> with SingleTickerProviderStat
               },
             ),
           Positioned(
+            bottom: 20,
+            right: 20,
+            child: FloatingActionButton(
+              onPressed: _goToMyLocation,
+              backgroundColor: Colors.white,
+              child: const Icon(Icons.my_location),
+            ),
+          ),
+          Positioned(
             top: 40,
             left: 16,
             child: Container(
@@ -174,8 +228,80 @@ class _Map2MarkersState extends State<Map2Markers> with SingleTickerProviderStat
               ),
               child: IconButton(
                 onPressed: () => {Navigator.of(context).pop()},
-                icon: const Icon(Icons.keyboard_return, size: 30, color: Colors.black),
+                icon: const Icon(Icons.keyboard_return,
+                    size: 30, color: Colors.black),
               ),
+            ),
+          ),
+          Positioned(
+            top: 40,
+            left: 90,
+            right: 16,
+            child: AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) {
+                return AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // Nút mở rộng/thu nhỏ
+                        InkWell(
+                          onTap: _toggleLocationPanel,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Chi tiết hành trình',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                Icon(_isExpanded
+                                    ? Icons.keyboard_arrow_up
+                                    : Icons.keyboard_arrow_down),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // Chi tiết điểm đi/đến
+                        if (_isExpanded) ...[
+                          ListTile(
+                            leading: const Icon(Icons.location_on,
+                                color: Colors.blue),
+                            title: Text("Vị trí của bạn"),
+                            onTap: () => _moveToLocation(_startLatLng ??
+                                const LatLng(10.762622, 106.660172)),
+                          ),
+                          const Divider(height: 1),
+                          ListTile(
+                            leading: const Icon(Icons.location_on,
+                                color: Colors.red),
+                            title: Text(widget.endAddress),
+                            onTap: () => _moveToLocation(_endLatLng ??
+                                const LatLng(10.762622, 106.660172)),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],

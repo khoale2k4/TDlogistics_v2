@@ -299,14 +299,15 @@ class UpdateImagesShipBloc extends Bloc<TaskEvent, TaskState> {
         file.writeAsBytesSync(event.curImages[i]);
         files.add(file);
       }
-      File file =
-          await File('${tempDir.path}/image_${event.curImages.length}.png')
-              .create();
-      file.writeAsBytesSync(event.newImage);
-      files.add(file);
+      if(event.newImage != null) {
+        File file =
+            await File('${tempDir.path}/image_${event.curImages.length}.png')
+                .create();
+        file.writeAsBytesSync(event.newImage);
+        files.add(file);
+      }
       final upImageRs = await orderRepository.updateImage(event.orderId, files,
           event.category, (await secureStorageService.getToken())!);
-      print(upImageRs);
       if (upImageRs["success"]) {
         emit(AddedImage());
       } else {
@@ -333,6 +334,8 @@ class AcceptTask extends Bloc<TaskEvent, TaskState> {
     try {
       final acceptTask = await taskRepository.acceptTasks(
           (await secureStorageService.getToken())!, event.orderId);
+
+      print(acceptTask);
 
       if (acceptTask["success"]) {
         emit(AcceptedTask());
@@ -401,7 +404,6 @@ class PendingOrderBloc extends Bloc<TaskEvent, TaskState> {
         emit(AcceptedTask());
       } else {
         emit(FailedAcceptingTask(acceptTask["message"]));
-        return; // Dừng nếu thất bại, không tiếp tục tải danh sách nhiệm vụ
       }
 
       // Lấy danh sách đơn hàng đang xử lý

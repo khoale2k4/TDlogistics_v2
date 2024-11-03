@@ -25,7 +25,7 @@ class _NavigatePageState extends State<NavigatePage> {
     super.initState();
     user = widget.user; // Khởi tạo user từ widget
     _pages = [
-      const HomePage(),
+      HomePage(user: user),
       const History(),
       const MapWidget(),
       // const ChatBox(),

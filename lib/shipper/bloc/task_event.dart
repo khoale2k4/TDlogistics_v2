@@ -71,10 +71,10 @@ class AddTask extends TaskEvent{}
 class AddImageEvent extends TaskEvent {
   final String category;
   final String orderId;
-  final Uint8List newImage;
+  final Uint8List? newImage;
   final List<Uint8List> curImages;
 
-  AddImageEvent({required this.category, required this.orderId,required this.newImage, required this.curImages});
+  AddImageEvent({required this.category, required this.orderId,this.newImage, required this.curImages});
 }
 
 class GetInfo extends TaskEvent{}

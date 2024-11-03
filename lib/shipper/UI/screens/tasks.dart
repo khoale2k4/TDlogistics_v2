@@ -12,9 +12,11 @@ import 'package:tdlogistic_v2/shipper/bloc/task_event.dart';
 import 'package:tdlogistic_v2/shipper/bloc/task_state.dart';
 import 'package:tdlogistic_v2/shipper/data/models/task.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
+import 'package:tdlogistic_v2/shipper/data/repositories/task_repository.dart';
 
 class TasksWidget extends StatefulWidget {
-  const TasksWidget({super.key});
+  final String token;
+  const TasksWidget({super.key, required this.token});
 
   @override
   State<TasksWidget> createState() => _TasksWidgetState();
@@ -117,7 +119,10 @@ class _TasksWidgetState extends State<TasksWidget>
         } else if (state is TaskLoaded && state.totalTasks > 0) {
           return Column(children: [
             Expanded(
-              child: TaskListView(tasks: state.tasks),
+              child: TaskListView(
+                tasks: state.tasks,
+                token: widget.token,
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -156,7 +161,11 @@ class _TasksWidgetState extends State<TasksWidget>
         } else if (state is TaskLoaded && state.totalTasks > 0) {
           return Column(children: [
             Expanded(
-              child: TaskListView(tasks: state.tasks),
+              child: TaskListView(
+                tasks: state.tasks,
+                token: widget.token,
+                isSender: false,
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -228,8 +237,13 @@ class _TasksWidgetState extends State<TasksWidget>
 class TaskListView extends StatefulWidget {
   final List<Task> tasks;
   final bool isSender;
+  final String token;
 
-  const TaskListView({super.key, required this.tasks, this.isSender = true});
+  const TaskListView(
+      {super.key,
+      required this.tasks,
+      this.isSender = true,
+      required this.token});
 
   @override
   State<TaskListView> createState() => _TaskListViewState();
@@ -382,8 +396,8 @@ class _TaskListViewState extends State<TaskListView> {
                         'Địa chỉ gửi',
                         '${task.order?.provinceSource ?? ''}, ${task.order?.districtSource ?? ''}, ${task.order?.wardSource ?? ''}, ${task.order?.detailSource ?? ''}',
                         Icons.location_on,
-                        address: "${task.order!.detailSource} ${task.order!.districtSource} ${task.order!.wardSource} ${task.order!.provinceSource}"
-                        ),
+                        address:
+                            "${task.order!.detailSource} ${task.order!.districtSource} ${task.order!.wardSource} ${task.order!.provinceSource}"),
                   ] else ...[
                     _buildOrderDetailTile(
                         'Người nhận', task.order?.nameReceiver, Icons.person),
@@ -393,8 +407,8 @@ class _TaskListViewState extends State<TaskListView> {
                         'Địa chỉ nhận',
                         '${task.order?.provinceDest ?? ''}, ${task.order?.districtDest ?? ''}, ${task.order?.wardDest ?? ''}, ${task.order?.detailDest ?? ''}',
                         Icons.location_on,
-                        address: "${task.order!.detailDest} ${task.order!.districtDest} ${task.order!.wardDest} ${task.order!.provinceDest}"
-                        ),
+                        address:
+                            "${task.order!.detailDest} ${task.order!.districtDest} ${task.order!.wardDest} ${task.order!.provinceDest}"),
                   ],
                   _buildOrderDetailTile(
                       'Khối lượng',
@@ -408,34 +422,21 @@ class _TaskListViewState extends State<TaskListView> {
                       task.order?.statusCode, Icons.info),
 
                   const Divider(), // Thêm dòng phân cách trước khi hiển thị hành trình
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Hành trình đơn hàng',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {},
-                          icon: const Icon(
-                            Icons.map,
-                            size: 30,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
+                  const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text(
+                      'Hành trình đơn hàng',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
                     ),
                   ),
 
                   _buildJourneyList(task.order!.journies!),
                   _buildImageSignatureSection(task.order!, isSender),
-                  _buildCancelSubmitButton(isSender),
+                  _buildCancelSubmitButton(isSender, task.id!),
                 ],
               ),
             ),
@@ -530,33 +531,42 @@ class _TaskListViewState extends State<TaskListView> {
         ),
         const SizedBox(height: 8),
         SizedBox(
-          height: images.isNotEmpty ? 100 : 20, // Chiều cao của ListView ngang
+          height: images.isNotEmpty ? 100 : 20,
           child: images.isNotEmpty
               ? ListView.builder(
-                  scrollDirection: Axis.horizontal, // Cuộn theo chiều ngang
+                  scrollDirection: Axis.horizontal,
                   itemCount: images.length,
                   itemBuilder: (context, index) {
                     return GestureDetector(
-                      onTap: () {
-                        // Khi nhấn vào ảnh, mở một màn hình mới để phóng to ảnh
-                        Navigator.push(
+                      onTap: () async {
+                        bool? shouldDelete = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                FullScreenImage(image: images[index]),
+                            builder: (context) => FullScreenImage(
+                              image: images[index],
+                            ),
                           ),
                         );
+
+                        if (shouldDelete == true) {
+                          List<Uint8List> newImages =
+                              images.sublist(0, images.length);
+                          newImages.removeAt(index);
+                          _onUpdateImages(
+                              context, newImages, null, category, orderId);
+
+                          (context as Element).markNeedsBuild();
+                        }
                       },
                       child: Padding(
-                        padding: const EdgeInsets.only(
-                            right: 8), // Khoảng cách giữa các ảnh
+                        padding: const EdgeInsets.only(right: 8),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10), // Bo góc ảnh
+                          borderRadius: BorderRadius.circular(10),
                           child: Image.memory(
                             images[index],
                             fit: BoxFit.fitWidth,
-                            width: 200, // Chiều rộng của mỗi ảnh
-                            height: 200, // Chiều cao của mỗi ảnh
+                            width: 200,
+                            height: 200,
                           ),
                         ),
                       ),
@@ -566,12 +576,10 @@ class _TaskListViewState extends State<TaskListView> {
               : const Text("Chưa có hình ảnh"),
         ),
         const SizedBox(height: 8),
-        // Nút thêm ảnh
         images.length < 9
             ? ElevatedButton.icon(
                 onPressed: () {
-                  _onAddImagePressed(context, images, category,
-                      orderId); // Gọi sự kiện thêm ảnh
+                  _onAddImagePressed(context, images, category, orderId);
                 },
                 icon: const Icon(Icons.add),
                 label: const Text('Thêm ảnh'),
@@ -584,11 +592,28 @@ class _TaskListViewState extends State<TaskListView> {
     );
   }
 
+  void _onUpdateImages(BuildContext context, List<Uint8List> images,
+      Uint8List? newImage, String category, String orderId) async {
+    try {
+      context.read<UpdateImagesShipBloc>().add(
+            AddImageEvent(
+                curImages: images,
+                orderId: orderId,
+                category: category,
+                newImage: newImage),
+          );
+
+      await Future.delayed(const Duration(seconds: 1));
+      context.read<GetImagesShipBloc>().add(GetOrderImages(orderId));
+    } catch (error) {
+      print("Error updating images: $error");
+    }
+  }
+
   void _onAddImagePressed(BuildContext context, List<Uint8List> images,
       String category, String orderId) async {
     final ImagePicker picker = ImagePicker();
 
-    // Hiển thị tùy chọn chọn ảnh từ thư viện hoặc camera
     final XFile? pickedFile = await showModalBottomSheet<XFile?>(
       context: context,
       builder: (BuildContext context) {
@@ -601,7 +626,7 @@ class _TaskListViewState extends State<TaskListView> {
                 onTap: () async {
                   final XFile? file =
                       await picker.pickImage(source: ImageSource.gallery);
-                  Navigator.pop(context, file); // Trả về file sau khi chọn
+                  Navigator.pop(context, file);
                 },
               ),
               ListTile(
@@ -610,7 +635,7 @@ class _TaskListViewState extends State<TaskListView> {
                 onTap: () async {
                   final XFile? file =
                       await picker.pickImage(source: ImageSource.camera);
-                  Navigator.pop(context, file); // Trả về file sau khi chụp
+                  Navigator.pop(context, file);
                 },
               ),
             ],
@@ -622,18 +647,10 @@ class _TaskListViewState extends State<TaskListView> {
     if (pickedFile != null) {
       try {
         Uint8List imageBytes = await pickedFile.readAsBytes();
-        List<Uint8List> editableImages = List.from(images);
-        editableImages.add(imageBytes);
+        if (!mounted) return;
 
-        context.read<UpdateImagesShipBloc>().add(
-              AddImageEvent(
-                  curImages: images,
-                  orderId: orderId,
-                  category: category,
-                  newImage: imageBytes),
-            );
-        await Future.delayed(const Duration(seconds: 1));
-        context.read<GetImagesShipBloc>().add(GetOrderImages(orderId));
+        List<Uint8List> editableImages = List.from(images);
+        _onUpdateImages(context, editableImages, imageBytes, category, orderId);
       } catch (error) {
         print("Error uploading image: ${error.toString()}");
       }
@@ -813,7 +830,7 @@ class _TaskListViewState extends State<TaskListView> {
     );
   }
 
-  Widget _buildCancelSubmitButton(bool isSender) {
+  Widget _buildCancelSubmitButton(bool isSender, String taskId) {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: Row(
@@ -821,7 +838,7 @@ class _TaskListViewState extends State<TaskListView> {
         children: [
           ElevatedButton(
             onPressed: () {
-              _showCancellationDialog(context);
+              _showCancellationDialog(context, taskId);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade200,
@@ -834,7 +851,18 @@ class _TaskListViewState extends State<TaskListView> {
           const SizedBox(width: 8),
           isSender
               ? ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () async {
+                    TaskRepository taskRepository = TaskRepository();
+                    taskRepository.confirmTakenTasks(widget.token, taskId);
+                    await Future.delayed(const Duration(seconds: 1));
+                    taskRepository.confirmDeliverTasks(widget.token, taskId);
+
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      context.read<TaskBlocShipReceive>().add(StartTask());
+                      context.read<TaskBlocShipSend>().add(StartTask());
+                    });
+                    Navigator.pop(context);
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade100,
                   ),
@@ -845,7 +873,16 @@ class _TaskListViewState extends State<TaskListView> {
                   ),
                 )
               : ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    TaskRepository taskRepository = TaskRepository();
+                    taskRepository.confirmReceivedTasks(widget.token, taskId);
+
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      context.read<TaskBlocShipReceive>().add(StartTask());
+                      context.read<TaskBlocShipSend>().add(StartTask());
+                    });
+                    Navigator.pop(context);
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade100,
                   ),
@@ -860,7 +897,7 @@ class _TaskListViewState extends State<TaskListView> {
     );
   }
 
-  void _showCancellationDialog(BuildContext context) {
+  void _showCancellationDialog(BuildContext context, String taskId) {
     String? selectedReason;
     TextEditingController otherReasonController = TextEditingController();
 
@@ -906,31 +943,31 @@ class _TaskListViewState extends State<TaskListView> {
                       },
                     ),
                   ),
-                  ListTile(
-                    title: const Text('Khác'),
-                    leading: Radio<String>(
-                      value: 'Khác',
-                      groupValue: selectedReason,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedReason = value;
-                        });
-                      },
-                    ),
-                  ),
-                  if (selectedReason == 'Khác')
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: TextField(
-                        controller: otherReasonController,
-                        decoration: InputDecoration(
-                          hintText: 'Nhập lý do khác',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
+                  // ListTile(
+                  //   title: const Text('Khác'),
+                  //   leading: Radio<String>(
+                  //     value: 'Khác',
+                  //     groupValue: selectedReason,
+                  //     onChanged: (value) {
+                  //       setState(() {
+                  //         selectedReason = value;
+                  //       });
+                  //     },
+                  //   ),
+                  // ),
+                  // if (selectedReason == 'Khác')
+                  //   Padding(
+                  //     padding: const EdgeInsets.only(top: 8.0),
+                  //     child: TextField(
+                  //       controller: otherReasonController,
+                  //       decoration: InputDecoration(
+                  //         hintText: 'Nhập lý do khác',
+                  //         border: OutlineInputBorder(
+                  //           borderRadius: BorderRadius.circular(10),
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ),
                 ],
               );
             },
@@ -940,6 +977,8 @@ class _TaskListViewState extends State<TaskListView> {
               onPressed: () {
                 print('Selected Reason: ${selectedReason ?? "Không có"}');
                 print('Other Reason: ${otherReasonController.text}');
+                TaskRepository taskRepository = TaskRepository();
+                taskRepository.cancelTasks(widget.token, taskId, "TIMEOUT");
                 Navigator.of(context).pop();
               },
               style: TextButton.styleFrom(
@@ -974,20 +1013,51 @@ class FullScreenImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Nền đen để làm nổi bật ảnh
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.transparent, // Thanh app trong suốt
-        elevation: 0, // Chưa có bóng đổ
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white, size: 40),
           onPressed: () {
-            Navigator.of(context).pop(); // Đóng màn hình khi nhấn nút X
+            Navigator.of(context).pop(false); // Đóng màn hình mà không xoá
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red, size: 30),
+            onPressed: () async {
+              // Hiển thị hộp thoại xác nhận xoá
+              bool confirmDelete = await showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text("Xác nhận xoá"),
+                      content: const Text(
+                          "Bạn có chắc chắn muốn xoá ảnh này không?"),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text("Huỷ"),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text("Xoá"),
+                        ),
+                      ],
+                    ),
+                  ) ??
+                  false;
+
+              if (confirmDelete) {
+                Navigator.of(context).pop(true); // Trả về true để xoá ảnh
+              }
+            },
+          ),
+        ],
       ),
       body: Center(
         child: InteractiveViewer(
-          child: Image.memory(image), // Hiển thị ảnh toàn màn hình
+          child: Image.memory(image),
         ),
       ),
     );

@@ -47,7 +47,10 @@ void connectSocket(String userId) async {
     socket!.on('message', (data) async {
       if (data['category'] == 'ORDER' && data['type'] == 'PENDING') {
         _showNotification("Đơn hàng mới", data['message']);
+      } else if (data['category'] == 'ORDER' && data['type'] == "ACCEPTED") {
+        _showNotification("Đơn hàng được chấp nhận", data['message']);
       }
+      
     });
 
     socket!.on('error', (error) {

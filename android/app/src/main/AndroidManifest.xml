@@ -8,15 +8,22 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.VIBRATE" />
+
 
     <application
         android:label="TDLogistic"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/launcher_icon"
         android:requestLegacyExternalStorage="true"
         android:theme="@style/LaunchTheme"
         android:hardwareAccelerated="true"
-        android:windowSoftInputMode="adjustResize">
+        android:windowSoftInputMode="adjustResize"
+        android:exported="true">
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.NotificationReceiver"
+            android:exported="true"/>
         
         <activity
             android:name=".MainActivity"

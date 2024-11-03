@@ -17,12 +17,9 @@ class ShipperHistory extends StatefulWidget {
 }
 
 class _ShipperHistoryState extends State<ShipperHistory> {
-  String _selectedFilter = 'name'; // Loại lọc mặc định là theo tên
-  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
-    // TODO: implement initState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TaskBlocSearchShip>().add(const GetTasks());
     });
@@ -31,22 +28,7 @@ class _ShipperHistoryState extends State<ShipperHistory> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
-    _searchController.dispose();
     super.dispose();
-  }
-
-  String _getLabelText() {
-    switch (_selectedFilter) {
-      case 'name':
-        return 'Tìm kiếm theo tên';
-      case 'location':
-        return 'Tìm kiếm theo địa điểm';
-      case 'phone':
-        return 'Tìm kiếm theo số điện thoại';
-      default:
-        return 'Tìm kiếm';
-    }
   }
 
   @override
@@ -72,53 +54,9 @@ class _ShipperHistoryState extends State<ShipperHistory> {
           return const Center(child: CircularProgressIndicator());
         } else if (state is TaskLoaded && state.totalTasks > 0) {
           return Column(children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  // DropdownButton để chọn loại lọc
-                  DropdownButton<String>(
-                    value: _selectedFilter,
-                    items: const [
-                      DropdownMenuItem(
-                          value: 'name', child: Text('Lọc theo tên')),
-                      DropdownMenuItem(
-                          value: 'location', child: Text('Lọc theo địa điểm')),
-                      DropdownMenuItem(
-                          value: 'phone',
-                          child: Text('Lọc theo số điện thoại')),
-                    ],
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedFilter = newValue!;
-                      });
-                    },
-                  ),
 
-                  const SizedBox(height: 20),
-
-                  // TextField để nhập thông tin tìm kiếm
-                  TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      labelText:
-                          _getLabelText(), // Thay đổi label text dựa trên loại lọc đã chọn
-                      prefixIcon:
-                          const Icon(Icons.search), // Thêm icon tìm kiếm
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                    onChanged: (value) {
-                      // Thực hiện logic tìm kiếm tại đây
-                      print('Tìm kiếm theo $_selectedFilter: $value');
-                    },
-                  ),
-                ],
-              ),
-            ),
             Expanded(
-              child: TaskListView(tasks: state.tasks, searchController: _searchController,),
+              child: TaskListView(tasks: state.tasks),
             ),
             ElevatedButton(
               onPressed: () {
@@ -154,52 +92,24 @@ class _ShipperHistoryState extends State<ShipperHistory> {
 class TaskListView extends StatefulWidget {
   final List<Task> tasks;
   final bool isSender;
-  final TextEditingController searchController;
 
-  const TaskListView({super.key, required this.tasks, this.isSender = true, required this.searchController});
+  const TaskListView({super.key, required this.tasks, this.isSender = true});
 
   @override
   State<TaskListView> createState() => _TaskListViewState();
 }
 
 class _TaskListViewState extends State<TaskListView> {
-  final TextEditingController searchController = TextEditingController();
-  String selectedFilter = "name";
-  List<Task> filteredOrders = [];
-
+  List<Task> tasks = [];
   @override
   void initState() {
+    tasks = widget.tasks;
     super.initState();
-    // Lắng nghe khi có sự thay đổi trong textfield
-    searchController.addListener(_filterOrders);
-    filteredOrders = widget.tasks;
   }
 
   @override
   void dispose() {
-    searchController.dispose();
     super.dispose();
-  }
-
-  void _filterOrders() {
-    setState(() {
-      filteredOrders = widget.tasks.where((task) {
-        final searchTerm = searchController.text.toLowerCase();
-
-        if (selectedFilter == 'name') {
-          return (task.order!.nameReceiver ?? '')
-              .toLowerCase()
-              .contains(searchTerm);
-        } else if (selectedFilter == 'location') {
-          final location =
-              '${task.order!.detailDest ?? ''}, ${task.order!.districtDest ?? ''}, ${task.order!.provinceDest ?? ''}';
-          return location.toLowerCase().contains(searchTerm);
-        } else if (selectedFilter == 'phone') {
-          return (task.order!.phoneNumberReceiver ?? '').contains(searchTerm);
-        }
-        return false;
-      }).toList();
-    });
   }
 
   @override
@@ -207,7 +117,7 @@ class _TaskListViewState extends State<TaskListView> {
     return ListView.builder(
       itemCount: widget.tasks.length,
       itemBuilder: (context, index) {
-        final task = filteredOrders[index];
+        final task = tasks[index];
         return ListTile(
           contentPadding:
               const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
@@ -465,37 +375,39 @@ class _TaskListViewState extends State<TaskListView> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        GridView.builder(
-          shrinkWrap: true, // Đảm bảo GridView không chiếm toàn bộ không gian
-          physics:
-              const NeverScrollableScrollPhysics(), // Tắt cuộn riêng của GridView
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 1, // Số cột
-            crossAxisSpacing: 8, // Khoảng cách giữa các cột
-            mainAxisSpacing: 8, // Khoảng cách giữa các hàng
-          ),
-          itemCount: images.length,
-          itemBuilder: (context, index) {
-            return GestureDetector(
-              onTap: () {
-                // Khi nhấn vào ảnh, mở một màn hình mới để phóng to ảnh
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => FullScreenImage(image: images[index]),
-                  ),
-                );
-              },
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10), // Bo góc ảnh
-                child: Image.memory(
-                  images[index],
-                  fit: BoxFit.scaleDown,
-                ),
-              ),
-            );
-          },
-        ),
+        images.isNotEmpty
+              ? ListView.builder(
+                  scrollDirection: Axis.horizontal, // Cuộn theo chiều ngang
+                  itemCount: images.length,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () {
+                        // Khi nhấn vào ảnh, mở một màn hình mới để phóng to ảnh
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                FullScreenImage(image: images[index]),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                            right: 8), // Khoảng cách giữa các ảnh
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10), // Bo góc ảnh
+                          child: Image.memory(
+                            images[index],
+                            fit: BoxFit.fitWidth,
+                            width: 200, // Chiều rộng của mỗi ảnh
+                            height: 200, // Chiều cao của mỗi ảnh
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                )
+              : const Text("Chưa có hình ảnh"),
       ],
     );
   }

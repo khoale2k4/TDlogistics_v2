@@ -3,10 +3,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/core/models/order_model.dart';
+import 'package:tdlogistic_v2/customer/UI/screens/map2markers.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_bloc.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_event.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_state.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
+import 'package:share_plus/share_plus.dart';
 
 class History extends StatefulWidget {
   const History({super.key});
@@ -59,73 +61,63 @@ class _HistoryState extends State<History> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(150),
-        child: AppBar(
-          elevation: 0,
-          backgroundColor: mainColor,
-          flexibleSpace: Column(
-            children: [
-              Container(
-                height: 160,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(30),
-                    bottomRight: Radius.circular(30),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 5,
-                      spreadRadius: 1,
-                    )
-                  ],
+      appBar: AppBar(
+        toolbarHeight: 100,
+        backgroundColor: mainColor,
+        title: Column(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.all(
+                  Radius.circular(30),
                 ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    var baseWidth = 75.0;
-                    if (constraints.maxWidth > 600) {
-                      baseWidth = constraints.maxWidth / 4;
-                    }
-                    return Center(
-                      child: Container(
-                        padding: const EdgeInsets.only(top: 40),
-                        child: Image.asset(
-                          'lib/assets/logo.png',
-                          height: baseWidth,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                indicatorColor: Colors.white,
-                indicatorWeight: 3,
-                labelStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
-                unselectedLabelStyle: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.normal,
-                    color: Colors.black),
-                tabs: const [
-                  Tab(
-                    text: "Đang xử lý",
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 5,
+                    spreadRadius: 1,
                   ),
-                  Tab(text: "Đang gửi hàng"),
-                  Tab(text: "Đang giao hàng"),
-                  Tab(text: "Đã hoàn thành"),
-                  Tab(text: "Đã huỷ"),
                 ],
               ),
-            ],
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(0),
+                      child: Image.asset(
+                        'lib/assets/logo.png',
+                        height: 75,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          indicatorColor: Colors.white,
+          labelStyle: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.normal,
+            color: Colors.black,
+          ),
+          tabs: const [
+            Tab(text: "Đang xử lý"),
+            Tab(text: "Đang gửi hàng"),
+            Tab(text: "Đang giao hàng"),
+            Tab(text: "Đã hoàn thành"),
+            Tab(text: "Đã huỷ"),
+          ],
         ),
       ),
       backgroundColor: Colors.white,
@@ -135,8 +127,8 @@ class _HistoryState extends State<History> with SingleTickerProviderStateMixin {
           ProcessingOrdersTab(),
           TakingOrdersTab(),
           DeliveringOrdersTab(),
-          CancelledOrdersTab(),
           CompletedOrdersTab(),
+          CancelledOrdersTab(),
         ],
       ),
     );
@@ -292,15 +284,18 @@ class CancelledOrdersTab extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         } else if (state is OrderLoaded && state.orders.isNotEmpty) {
           return Column(children: [
-            OrderListView(orders: state.orders),
+            Expanded(
+              child: OrderListView(orders: state.orders),
+            ),
             ElevatedButton(
               onPressed: () {
                 context
-                    .read<CancelledOrderBloc>()
+                    .read<TakingOrderBloc>()
                     .add(AddOrder(state.orders, state.page));
               },
               child: const Text('Tải thêm'),
-            )
+            ),
+            const SizedBox(height: 20),
           ]);
         } else if (state is OrderError) {
           return Center(child: Text('Lỗi: ${state.error}'));
@@ -334,11 +329,13 @@ class CompletedOrdersTab extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         } else if (state is OrderLoaded && state.orders.isNotEmpty) {
           return Column(children: [
-            OrderListView(orders: state.orders),
+            Expanded(
+              child: OrderListView(orders: state.orders),
+            ),
             ElevatedButton(
               onPressed: () {
                 context
-                    .read<CompletedOrderBloc>()
+                    .read<TakingOrderBloc>()
                     .add(AddOrder(state.orders, state.page));
               },
               child: const Text('Tải thêm'),
@@ -569,6 +566,18 @@ class _OrderListViewState extends State<OrderListView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          // Gọi phương thức chia sẻ
+                          Share.share("abcde");
+                        },
+                        icon: const Icon(Icons.share),
+                        label: const Text("Chia sẻ"),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                        ),
+                      ),
                       IconButton(
                         icon: const Icon(Icons.close, size: 30),
                         onPressed: () {
@@ -596,7 +605,11 @@ class _OrderListViewState extends State<OrderListView> {
                   _buildOrderDetailTile(
                       'Địa chỉ gửi',
                       '${order.provinceSource ?? ''}, ${order.districtSource ?? ''}, ${order.wardSource ?? ''}, ${order.detailSource ?? ''}',
-                      Icons.location_on),
+                      Icons.location_on,
+                      sendAddress:
+                          '${order.provinceSource ?? ''}, ${order.districtSource ?? ''}, ${order.wardSource ?? ''}, ${order.detailSource ?? ''}',
+                      receiveAddress:
+                          '${order.provinceDest ?? ''}, ${order.districtDest ?? ''}, ${order.wardDest ?? ''}, ${order.detailDest ?? ''}'),
                   const Divider(),
                   _buildOrderDetailTile(
                       'Người nhận', order.nameReceiver, Icons.person),
@@ -605,7 +618,11 @@ class _OrderListViewState extends State<OrderListView> {
                   _buildOrderDetailTile(
                       'Địa chỉ nhận',
                       '${order.provinceDest ?? ''}, ${order.districtDest ?? ''}, ${order.wardDest ?? ''}, ${order.detailDest ?? ''}',
-                      Icons.location_on),
+                      Icons.location_on,
+                      sendAddress:
+                          '${order.provinceSource ?? ''}, ${order.districtSource ?? ''}, ${order.wardSource ?? ''}, ${order.detailSource ?? ''}',
+                      receiveAddress:
+                          '${order.provinceDest ?? ''}, ${order.districtDest ?? ''}, ${order.wardDest ?? ''}, ${order.detailDest ?? ''}'),
                   const Divider(),
                   _buildOrderDetailTile(
                       'Khối lượng',
@@ -635,7 +652,8 @@ class _OrderListViewState extends State<OrderListView> {
                   if (order.journies != null)
                     _buildJourneyList(order.journies!),
                   _buildImageSignatureSection(order),
-                  _buildCancelSubmitButton(order),
+                  if (order.statusCode != "RECEIVED")
+                    _buildCancelSubmitButton(order),
                 ],
               ),
             ),
@@ -728,36 +746,40 @@ class _OrderListViewState extends State<OrderListView> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        GridView.builder(
-          shrinkWrap: true, // Đảm bảo GridView không chiếm toàn bộ không gian
-          physics:
-              const NeverScrollableScrollPhysics(), // Tắt cuộn riêng của GridView
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 1, // Số cột
-            crossAxisSpacing: 8, // Khoảng cách giữa các cột
-            mainAxisSpacing: 8, // Khoảng cách giữa các hàng
-          ),
-          itemCount: images.length,
-          itemBuilder: (context, index) {
-            return GestureDetector(
-              onTap: () {
-                // Khi nhấn vào ảnh, mở một màn hình mới để phóng to ảnh
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => FullScreenImage(image: images[index]),
-                  ),
-                );
-              },
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10), // Bo góc ảnh
-                child: Image.memory(
-                  images[index],
-                  fit: BoxFit.scaleDown,
-                ),
-              ),
-            );
-          },
+        SizedBox(
+          height: images.isNotEmpty ? 100 : 20,
+          child: images.isNotEmpty
+              ? ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: images.length,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () async {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FullScreenImage(
+                              image: images[index],
+                            ),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.memory(
+                            images[index],
+                            fit: BoxFit.fitWidth,
+                            width: 200,
+                            height: 200,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                )
+              : const Text("Chưa có hình ảnh"),
         ),
       ],
     );
@@ -786,17 +808,41 @@ class _OrderListViewState extends State<OrderListView> {
     );
   }
 
-  Widget _buildOrderDetailTile(String title, String? value, IconData icon) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.green),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      subtitle: Text(value ?? 'Chưa có thông tin'),
-    );
+  Widget _buildOrderDetailTile(String title, String? value, IconData icon,
+      {String sendAddress = "", String receiveAddress = ""}) {
+    return icon == Icons.location_on
+        ? InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => Map2Markers(
+                    startAddress: sendAddress,
+                    endAddress: receiveAddress,
+                  ),
+                ),
+              );
+            },
+            child: ListTile(
+              leading: Icon(icon, color: Colors.green),
+              title: Text(
+                "$title (Nhấn để xem)",
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Text(value ?? 'Chưa có thông tin'),
+            ))
+        : ListTile(
+            leading: Icon(icon, color: Colors.green),
+            title: Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            subtitle: Text(value ?? 'Chưa có thông tin'),
+          );
   }
 
   Widget _buildJourneyList(List<Journies> journeys) {
@@ -838,16 +884,8 @@ class _OrderListViewState extends State<OrderListView> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          order.statusCode != "PROCESSING"
-              ? const ElevatedButton(
-                  onPressed: null,
-                  child: Text(
-                    "Từ chối",
-                    style: TextStyle(
-                        color: Colors.grey, fontWeight: FontWeight.bold),
-                  ),
-                )
-              : ElevatedButton(
+          (order.statusCode == "PROCESSING" || order.statusCode == "TAKING")
+              ? ElevatedButton(
                   onPressed: () {
                     _showCancellationDialog(context);
                   },
@@ -858,6 +896,14 @@ class _OrderListViewState extends State<OrderListView> {
                     "Từ chối",
                     style: TextStyle(
                         color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
+                )
+              : const ElevatedButton(
+                  onPressed: null,
+                  child: Text(
+                    "Từ chối",
+                    style: TextStyle(
+                        color: Colors.grey, fontWeight: FontWeight.bold),
                   ),
                 ),
           const SizedBox(width: 8),
