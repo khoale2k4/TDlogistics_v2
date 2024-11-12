@@ -1,9 +1,14 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:tdlogistic_v2/core/models/order_model.dart';
 import 'package:tdlogistic_v2/core/service/secure_storage_service.dart';
+import 'package:tdlogistic_v2/core/service/send_location.dart';
 import 'package:tdlogistic_v2/customer/data/models/calculate_fee_payload.dart';
+import 'package:tdlogistic_v2/customer/data/models/shipping_bill.dart';
+import 'package:tdlogistic_v2/customer/data/repositories/locations.dart';
 import 'order_event.dart';
 import 'order_state.dart';
 import '../../core/repositories/order_repository.dart';
@@ -140,7 +145,7 @@ class GetImagesBloc extends Bloc<OrderEvent, OrderState> {
         for (int i = 0; i < sigImageIds.length; i++) {
           bool isSend = (sigImageIds[i]["type"] == "SEND");
           final imageRs = await orderRepository.getOrderImageById(
-              imageIds[i]["id"], (await secureStorageService.getToken())!);
+              sigImageIds[i]["id"], (await secureStorageService.getToken())!, isSign: true);
           if (isSend) {
             sendSig = imageRs["data"];
           } else {
@@ -291,7 +296,6 @@ class DeliveringOrderBloc extends Bloc<OrderEvent, OrderState> {
       List<Order> orders = [];
       if (fetchOrder["success"]) {
         for (int i = 0; i < fetchedOrders.length; i++) {
-          // print(fetchedOrders[i]);
           orders.add(Order.fromJson(fetchedOrders[i]));
         }
       }
@@ -445,13 +449,40 @@ class CreateOrderBloc extends Bloc<OrderEvent, OrderState> {
   CreateOrderBloc({required this.secureStorageService})
       : super(OrderLoading()) {
     on<CreateOrderEvent>(createOrder);
+    on<CreateShippingBill>(createShippingBill);
+    on<GetShippingBill>(getShippingBill);
   }
 
   Future<void> createOrder(event, emit) async {
     emit(OrderCreating());
     try {
+      print("debug");
+      final tempDir = await getTemporaryDirectory();
+      int i = 0;
+      List<File> files = [];
+      for (final image in event.files) {
+        File file = await File('${tempDir.path}/file$i.png').create();
+        file.writeAsBytesSync(image);
+        files.add(file);
+        i++;
+      }
+      late Map<String, dynamic> createShippingBill;
+      if (event.sb != null) {
+        createShippingBill = await orderRepository.createShippingBill(
+            (await secureStorageService.getToken())!, event.sb);
+        // print(createShippingBill);
+        if (!createShippingBill["success"]) {
+          emit(OrderCreateFaild(createShippingBill["message"]));
+          return;
+        }
+        if (event.ci != null)
+          event.ci.shippingBillId = createShippingBill["data"]["id"];
+      }
       final orderCreate = await orderRepository.createOrder(
-          (await secureStorageService.getToken())!, event.order);
+          (await secureStorageService.getToken())!,
+          event.order,
+          files,
+          event.ci);
       if (orderCreate["success"]) {
         emit(OrderCreated());
       } else {
@@ -463,6 +494,136 @@ class CreateOrderBloc extends Bloc<OrderEvent, OrderState> {
     } catch (error) {
       print("Lỗi khi tạo đơn hàng $error");
       emit(OrderCreateFaild(error.toString()));
+    }
+  }
+
+  Future<void> createShippingBill(event, emit) async {
+    try {
+      emit(OrderCreating());
+      final createShippingBill = await orderRepository.createShippingBill(
+          (await secureStorageService.getToken())!, event.sb);
+      if (createShippingBill["success"]) {
+        emit(CreatedShippingBill());
+      } else {
+        emit(FailedCreatingBill(createShippingBill["message"]));
+      }
+    } catch (error) {
+      print("Lỗi khi tạo bảo hiểm đơn hàng: $error");
+      emit(FailedCreatingBill(error.toString()));
+    }
+  }
+
+  Future<void> getShippingBill(event, emit) async {
+    try {
+      emit(OrderCreating());
+      final createShippingBill = await orderRepository
+          .getShippingBill((await secureStorageService.getToken())!);
+      if (createShippingBill["success"]) {
+        emit(
+            GotShippingBill(ShippingBill.fromJson(createShippingBill["data"])));
+      } else {
+        emit(FailedGettingBill(createShippingBill["message"]));
+      }
+    } catch (error) {
+      print("Lỗi khi tạo bảo hiểm đơn hàng: $error");
+      emit(FailedCreatingBill(error.toString()));
+    }
+  }
+}
+
+class GetLocationBloc extends Bloc<OrderEvent, OrderState> {
+  final SecureStorageService secureStorageService;
+  final LocationRepository locationRepository = LocationRepository();
+
+  GetLocationBloc({required this.secureStorageService})
+      : super(GettingLocations()) {
+    on<GetLocations>(getLocations);
+    on<AddLocation>(addLocation);
+    on<UpdateLocation>(updateLocation);
+    on<UpdateFavoriteLocation>(updateFavoriteLocations);
+  }
+
+  Future<void> getLocations(event, emit) async {
+    emit(GettingLocations());
+    try {
+      final getLocations = await locationRepository
+          .getLocations((await secureStorageService.getToken())!);
+      if (getLocations["success"]) {
+        emit(GotLocations(
+            favLocations: getLocations["data"][1],
+            locations: getLocations["data"][0]));
+      } else {
+        emit(FailGettingLocations(getLocations["message"]));
+      }
+    } catch (error) {
+      print("Lỗi khi lấy địa điểm $error");
+      emit(FailGettingLocations(error.toString()));
+    }
+  }
+
+  Future<void> addLocation(event, emit) async {
+    try {
+      if (event.loc != null) {
+        await locationRepository.createLocations(
+            (await secureStorageService.getToken())!,
+            event.loc.name,
+            event.loc.lat,
+            event.loc.lng);
+      } else {
+        await locationRepository.createFavLocations(
+            (await secureStorageService.getToken())!,
+            event.faLoc.description,
+            event.faLoc.name,
+            event.faLoc.phoneNumber,
+            event.faLoc.lat,
+            event.faLoc.lng);
+      }
+    } catch (error) {
+      print("Error adding location or favorite location: ${error.toString()}");
+    }
+  }
+
+  Future<void> updateLocation(event, emit) async {
+    try {
+      await locationRepository.updateLocation(
+          (await secureStorageService.getToken())!, event.loc);
+    } catch (error) {
+      print("Lỗi khi cập nhật địa điểm $error");
+    }
+  }
+
+  Future<void> updateFavoriteLocations(event, emit) async {
+    try {
+      await locationRepository.updateFavoriteLocation(
+          (await secureStorageService.getToken())!, event.favLoc);
+    } catch (error) {
+      print("Lỗi khi cập nhật địa điểm ưa thích $error");
+    }
+  }
+}
+
+class GetPositionsBloc extends Bloc<OrderEvent, OrderState> {
+  final LocationRepository locationRepository = LocationRepository();
+  final SecureStorageService secureStorageService;
+
+  GetPositionsBloc({required this.secureStorageService})
+      : super(GettingPositions()) {
+    on<GetPositions>(getPos);
+  }
+
+  Future<void> getPos(event, emit) async {
+    emit(GettingPositions());
+    try {
+      final getPos = await locationRepository.getPositions(
+          (await secureStorageService.getToken())!, event.orderId);
+          // print(getPos);
+      if (getPos["success"]) {
+        emit(getPos["data"]);
+      } else {
+        emit(FailedGetPositions(getPos["message"]));
+      }
+    } catch (error) {
+      emit(FailedGetPositions(error.toString()));
     }
   }
 }

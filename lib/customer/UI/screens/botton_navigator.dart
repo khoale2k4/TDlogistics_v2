@@ -6,6 +6,7 @@ import 'package:tdlogistic_v2/customer/UI/screens/cus_info.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/history.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/home_page.dart';
+import 'package:tdlogistic_v2/customer/UI/screens/vouchers.dart';
 
 class NavigatePage extends StatefulWidget {
   final User user;
@@ -27,7 +28,8 @@ class _NavigatePageState extends State<NavigatePage> {
     _pages = [
       HomePage(user: user),
       const History(),
-      const MapWidget(),
+      VoucherPage(),
+      // const MapWidget(),
       // const ChatBox(),
       CustomerInfor(user: user), // Truyền user vào CustomerInfor
     ];
@@ -68,8 +70,8 @@ class _NavigatePageState extends State<NavigatePage> {
             label: 'Lịch sử',
           ),
           BottomNavigationBarItem(
-            icon: _buildIconWithCircle(Icons.map, 2),
-            label: 'Bản đồ',
+            icon: _buildIconWithCircle(Icons.percent, 2),
+            label: 'Khuyến mãi',
           ),
           // BottomNavigationBarItem(
           //   icon: _buildIconWithCircle(Icons.notifications_active_outlined, 2),

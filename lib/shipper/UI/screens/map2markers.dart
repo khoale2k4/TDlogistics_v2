@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'dart:convert';
 
 import 'package:location/location.dart';
+import 'package:tdlogistic_v2/core/constant.dart';
 
 class Map2Markers extends StatefulWidget {
   final String endAddress;
@@ -31,7 +32,7 @@ class _Map2MarkersState extends State<Map2Markers>
   bool _isExpanded = false;
 
   final String _apiKey =
-      "AIzaSyB1D4XCGPDidtXUwOw1K-gQ8VPB2c4IxC8"; // Thay bằng API Key của bạn
+      ggApiKey; // Thay bằng API Key của bạn
 
   @override
   void initState() {

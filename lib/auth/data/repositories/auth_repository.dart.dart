@@ -87,10 +87,10 @@ class AuthRepository {
       http.Response response =
           await http.get(url, headers: {"authorization": "Bearer $token"});
       dynamic responseData = jsonDecode(response.body);
-      if(responseData["data"] == null) {
+      if (responseData["data"] == null) {
         url = Uri.parse('$baseUrl/staff/');
         response =
-          await http.get(url, headers: {"authorization": "Bearer $token"});
+            await http.get(url, headers: {"authorization": "Bearer $token"});
       }
       responseData = jsonDecode(response.body);
       return User.fromJson(responseData["data"]);
@@ -150,5 +150,54 @@ class AuthRepository {
       "message": jsonDecode(response.body)["message"],
       "data": null
     };
+  }
+
+  Future<Map<String, dynamic>> updateInfo(
+      String token, String? lName, String? fName, String? email) async {
+    try {
+      final url = Uri.parse('$baseUrl/customer/update');
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token' 
+      };
+
+      Map<String, dynamic> body = {};
+
+      if (lName != null) {
+        body['lastName'] = lName;
+      }
+      if (fName != null) {
+        body['firstName'] = fName;
+      }
+      if (email != null) {
+        body['email'] = email;
+      }
+
+      final response = await http.put(
+        url,
+        headers: headers,
+        body: json.encode(body),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode <= 209) {
+        return {
+          "success": true,
+          "message": "Cập nhật thông tin thành công",
+          "data": json.decode(response.body)
+        };
+      } else {
+        return {
+          "success": false,
+          "message": "Cập nhật thông tin thất bại!",
+          "data": null
+        };
+      }
+    } catch (error) {
+      return {
+        "success": false,
+        "message": "Lỗi update info: ${error.toString()}",
+        "data": null
+      };
+    }
   }
 }

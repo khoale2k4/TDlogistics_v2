@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:location/location.dart';
+import 'package:tdlogistic_v2/core/constant.dart';
 
 class Map2Markers extends StatefulWidget {
   final String startAddress;
@@ -28,7 +29,7 @@ class _Map2MarkersState extends State<Map2Markers>
   double _currentZoom = 12.0;
 
   final String _apiKey =
-      "AIzaSyB1D4XCGPDidtXUwOw1K-gQ8VPB2c4IxC8"; // Thay bằng API Key của bạn
+      ggApiKey; // Thay bằng API Key của bạn
 
   Future<void> _initializeRoute() async {
     _startLatLng = await _getLatLngFromAddress(widget.startAddress);

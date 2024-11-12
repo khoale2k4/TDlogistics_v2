@@ -73,8 +73,9 @@ class AddImageEvent extends TaskEvent {
   final String orderId;
   final Uint8List? newImage;
   final List<Uint8List> curImages;
+  bool isSign;
 
-  AddImageEvent({required this.category, required this.orderId,this.newImage, required this.curImages});
+  AddImageEvent({required this.category, required this.orderId,this.newImage, required this.curImages, this.isSign = false});
 }
 
 class GetInfo extends TaskEvent{}
@@ -86,3 +87,9 @@ class AcceptTaskEvent extends TaskEvent{
 }
 
 class GetPendingTask extends TaskEvent{}
+
+class DeleteImage extends TaskEvent{
+  final String id;
+
+  DeleteImage(this.id);
+}

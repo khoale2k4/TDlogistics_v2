@@ -43,3 +43,13 @@ class AuthFailure extends AuthState {
 }
 
 class StaffLoggining extends AuthState {}
+
+class UpdatedInfo extends AuthState{}
+
+class FailedUpdateInfo extends AuthState{
+  final String error;
+
+  FailedUpdateInfo({required this.error});
+}
+
+class UpdatingInfo extends AuthState{}

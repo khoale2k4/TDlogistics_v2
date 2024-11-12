@@ -13,6 +13,7 @@ import 'package:tdlogistic_v2/shipper/bloc/task_state.dart';
 import 'package:tdlogistic_v2/shipper/data/models/task.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
 import 'package:tdlogistic_v2/shipper/data/repositories/task_repository.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class TasksWidget extends StatefulWidget {
   final String token;
@@ -93,12 +94,12 @@ class _TasksWidgetState extends State<TasksWidget>
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
-            onPressed: _showQRScanner,
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
+        //     onPressed: _showQRScanner,
+        //   ),
+        // ],
       ),
       backgroundColor: Colors.white,
       body: TabBarView(
@@ -356,6 +357,7 @@ class _TaskListViewState extends State<TaskListView> {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Card(
+              color: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15.0),
               ),
@@ -387,29 +389,34 @@ class _TaskListViewState extends State<TaskListView> {
                     ),
                   ),
                   const Divider(),
-                  if (widget.isSender) ...[
+
+                  // Hiển thị thông tin người gửi/nhận dựa trên vai trò
+                  if (isSender) ...[
                     _buildOrderDetailTile(
                         'Người gửi', task.order?.nameSender, Icons.person),
                     _buildOrderDetailTile('SĐT người gửi',
                         task.order?.phoneNumberSender, Icons.phone),
                     _buildOrderDetailTile(
-                        'Địa chỉ gửi',
-                        '${task.order?.provinceSource ?? ''}, ${task.order?.districtSource ?? ''}, ${task.order?.wardSource ?? ''}, ${task.order?.detailSource ?? ''}',
-                        Icons.location_on,
-                        address:
-                            "${task.order!.detailSource} ${task.order!.districtSource} ${task.order!.wardSource} ${task.order!.provinceSource}"),
+                      'Địa chỉ gửi',
+                      '${task.order?.provinceSource ?? ''}, ${task.order?.districtSource ?? ''}, ${task.order?.wardSource ?? ''}, ${task.order?.detailSource ?? ''}',
+                      Icons.location_on,
+                      address:
+                          "${task.order!.detailSource} ${task.order!.districtSource} ${task.order!.wardSource} ${task.order!.provinceSource}",
+                    ),
                   ] else ...[
                     _buildOrderDetailTile(
                         'Người nhận', task.order?.nameReceiver, Icons.person),
                     _buildOrderDetailTile('SĐT người nhận',
                         task.order?.phoneNumberReceiver, Icons.phone),
                     _buildOrderDetailTile(
-                        'Địa chỉ nhận',
-                        '${task.order?.provinceDest ?? ''}, ${task.order?.districtDest ?? ''}, ${task.order?.wardDest ?? ''}, ${task.order?.detailDest ?? ''}',
-                        Icons.location_on,
-                        address:
-                            "${task.order!.detailDest} ${task.order!.districtDest} ${task.order!.wardDest} ${task.order!.provinceDest}"),
+                      'Địa chỉ nhận',
+                      '${task.order?.provinceDest ?? ''}, ${task.order?.districtDest ?? ''}, ${task.order?.wardDest ?? ''}, ${task.order?.detailDest ?? ''}',
+                      Icons.location_on,
+                      address:
+                          "${task.order!.detailDest} ${task.order!.districtDest} ${task.order!.wardDest} ${task.order!.provinceDest}",
+                    ),
                   ],
+
                   _buildOrderDetailTile(
                       'Khối lượng',
                       '${task.order?.mass?.toStringAsFixed(2) ?? ''} kg',
@@ -417,11 +424,16 @@ class _TaskListViewState extends State<TaskListView> {
                   _buildOrderDetailTile(
                       'Phí',
                       '${task.order?.fee?.toStringAsFixed(2) ?? ''} VNĐ',
-                      Icons.attach_money),
-                  _buildOrderDetailTile('Trạng thái đơn hàng',
-                      task.order?.statusCode, Icons.info),
+                      Icons.attach_money,
+                      qrData: (!task.order!.paid! &&
+                              (isSender != task.order!.receiverWillPay))
+                          ? task.order?.qrcode
+                          : ""),
+                  _buildOrderDetailTile('Trạng thái thanh toán',
+                      (task.order!.paid!)?"Đã thanh toán":"Chưa thanh toán", (Icons.info)),
+                  const Divider(),
 
-                  const Divider(), // Thêm dòng phân cách trước khi hiển thị hành trình
+                  // Hành trình đơn hàng
                   const Padding(
                     padding: EdgeInsets.all(8.0),
                     child: Text(
@@ -433,8 +445,8 @@ class _TaskListViewState extends State<TaskListView> {
                       ),
                     ),
                   ),
-
                   _buildJourneyList(task.order!.journies!),
+                  const Divider(),
                   _buildImageSignatureSection(task.order!, isSender),
                   _buildCancelSubmitButton(isSender, task.id!),
                 ],
@@ -472,9 +484,13 @@ class _TaskListViewState extends State<TaskListView> {
                 );
               } else if (state is GotImages) {
                 List<Uint8List> sendImages = state.sendImages;
+                List<String> sendIds = state.sendIds;
                 List<Uint8List> receiveImages = state.receiveImages;
+                List<String> receiveIds = state.receiveIds;
                 Uint8List? sendSignature = state.sendSignature;
+                String sendSignId = state.sendSignId;
                 Uint8List? receiveSignature = state.receiveSignature;
+                String receiveSignId = state.receiveSignId;
 
                 return Padding(
                   padding: const EdgeInsets.all(8),
@@ -484,21 +500,25 @@ class _TaskListViewState extends State<TaskListView> {
                       // Hiển thị hình gửi với nút thêm ảnh
                       if (isSender) ...[
                         _buildImageGridWithAddButton(context, "Hình ảnh gửi",
-                            sendImages, "SEND", order.id!),
+                            sendImages, "SEND", order.id!, sendIds),
 
                         const SizedBox(height: 16), // Khoảng cách giữa các phần
                         // Hiển thị chữ ký (không có nút thêm)
-                        _buildSignatureSection(
-                            "Chữ ký người gửi", sendSignature, order.id!),
+                        _buildSignatureSection("Chữ ký người gửi",
+                            sendSignature, order.id!, "SEND", sendSignId),
                       ] else ...[
                         // Hiển thị hình nhận với nút thêm ảnh
                         _buildImageGridWithAddButton(context, "Hình ảnh nhận",
-                            receiveImages, "RECEIVE", order.id!),
+                            receiveImages, "RECEIVE", order.id!, receiveIds),
 
                         const SizedBox(height: 16), // Khoảng cách giữa các phần
                         const SizedBox(height: 8),
                         _buildSignatureSection(
-                            "Chữ ký người nhận", receiveSignature, order.id!),
+                            "Chữ ký người nhận",
+                            receiveSignature,
+                            order.id!,
+                            "RECEIVE",
+                            receiveSignId),
                       ]
                     ],
                   ),
@@ -520,87 +540,118 @@ class _TaskListViewState extends State<TaskListView> {
     );
   }
 
-  Widget _buildImageGridWithAddButton(BuildContext context, String title,
-      List<Uint8List> images, String category, String orderId) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: images.isNotEmpty ? 100 : 20,
-          child: images.isNotEmpty
-              ? ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: images.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () async {
-                        bool? shouldDelete = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FullScreenImage(
-                              image: images[index],
+  Widget _buildImageGridWithAddButton(
+      BuildContext context,
+      String title,
+      List<Uint8List> images,
+      String category,
+      String orderId,
+      List<String> ids) {
+    return BlocListener<UpdateImagesShipBloc, TaskState>(
+      listener: (context, state) {
+        if (state is FailedImage) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Thất bại'),
+                content: Text('Không thể thêm ảnh: ${state.error}'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Thử lại'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: images.isNotEmpty ? 100 : 20,
+            child: images.isNotEmpty
+                ? ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: images.length,
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTap: () async {
+                          bool? shouldDelete = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FullScreenImage(
+                                image: images[index],
+                              ),
+                            ),
+                          );
+
+                          if (shouldDelete == true) {
+                            //
+                            context
+                                .read<UpdateImagesShipBloc>()
+                                .add(DeleteImage(ids[index]));
+                            await Future.delayed(const Duration(seconds: 1));
+                            context
+                                .read<GetImagesShipBloc>()
+                                .add(GetOrderImages(orderId));
+                            (context as Element).markNeedsBuild();
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.memory(
+                              images[index],
+                              fit: BoxFit.fitWidth,
+                              width: 200,
+                              height: 200,
                             ),
                           ),
-                        );
-
-                        if (shouldDelete == true) {
-                          List<Uint8List> newImages =
-                              images.sublist(0, images.length);
-                          newImages.removeAt(index);
-                          _onUpdateImages(
-                              context, newImages, null, category, orderId);
-
-                          (context as Element).markNeedsBuild();
-                        }
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.memory(
-                            images[index],
-                            fit: BoxFit.fitWidth,
-                            width: 200,
-                            height: 200,
-                          ),
                         ),
-                      ),
-                    );
+                      );
+                    },
+                  )
+                : const Text("Chưa có hình ảnh"),
+          ),
+          const SizedBox(height: 8),
+          images.length < 9
+              ? ElevatedButton.icon(
+                  onPressed: () {
+                    _onAddImagePressed(context, images, category, orderId);
                   },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Thêm ảnh'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                  ),
                 )
-              : const Text("Chưa có hình ảnh"),
-        ),
-        const SizedBox(height: 8),
-        images.length < 9
-            ? ElevatedButton.icon(
-                onPressed: () {
-                  _onAddImagePressed(context, images, category, orderId);
-                },
-                icon: const Icon(Icons.add),
-                label: const Text('Thêm ảnh'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                ),
-              )
-            : Container(),
-      ],
+              : Container(),
+        ],
+      ),
     );
   }
 
   void _onUpdateImages(BuildContext context, List<Uint8List> images,
-      Uint8List? newImage, String category, String orderId) async {
+      Uint8List? newImage, String category, String orderId,
+      {bool isSign = false}) async {
     try {
       context.read<UpdateImagesShipBloc>().add(
             AddImageEvent(
-                curImages: images,
+                curImages: [],
                 orderId: orderId,
                 category: category,
-                newImage: newImage),
+                newImage: newImage,
+                isSign: isSign),
           );
 
       await Future.delayed(const Duration(seconds: 1));
@@ -657,8 +708,8 @@ class _TaskListViewState extends State<TaskListView> {
     }
   }
 
-  Widget _buildSignatureSection(
-      String title, Uint8List? signature, String orderId) {
+  Widget _buildSignatureSection(String title, Uint8List? signature,
+      String orderId, String category, String signatureId) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -668,31 +719,63 @@ class _TaskListViewState extends State<TaskListView> {
         ),
         const SizedBox(height: 8),
         signature != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.memory(
-                  signature,
-                  height: 100,
-                  fit: BoxFit.contain, // Đảm bảo chữ ký không bị cắt
+            ? GestureDetector(
+                onTap: () async {
+                  bool? shouldDelete = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FullScreenImage(
+                        image: signature,
+                      ),
+                    ),
+                  );
+
+                  if (shouldDelete == true) {
+                    context.read<UpdateImagesShipBloc>().add(AddImageEvent(
+                        category: category,
+                        curImages: [],
+                        newImage: null,
+                        orderId: orderId,
+                        isSign: true));
+                    await Future.delayed(const Duration(seconds: 1));
+                    context
+                        .read<GetImagesShipBloc>()
+                        .add(GetOrderImages(orderId));
+                    (context as Element).markNeedsBuild();
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.memory(
+                      signature,
+                      fit: BoxFit.fitWidth,
+                      width: 200,
+                      height: 200,
+                    ),
+                  ),
                 ),
               )
             : const Text("Chưa có chữ ký"),
-        ElevatedButton.icon(
-          onPressed: () {
-            _onAddSignaturePressed(context, signature, orderId);
-          },
-          icon: const Icon(Icons.add),
-          label: const Text('Thêm ảnh'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
-          ),
-        )
+        signature == null
+            ? ElevatedButton.icon(
+                onPressed: () {
+                  _onAddSignaturePressed(context, signature, orderId, category);
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Thêm ảnh'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                ),
+              )
+            : Container(),
       ],
     );
   }
 
-  void _onAddSignaturePressed(
-      BuildContext context, Uint8List? signature, String orderId) async {
+  void _onAddSignaturePressed(BuildContext context, Uint8List? signature,
+      String orderId, String category) async {
     final ImagePicker picker = ImagePicker();
 
     // Hiển thị tùy chọn chọn ảnh từ thư viện hoặc camera
@@ -741,7 +824,8 @@ class _TaskListViewState extends State<TaskListView> {
       try {
         Uint8List imageBytes = await pickedFile.readAsBytes();
         signature = imageBytes;
-        print(imageBytes);
+        _onUpdateImages(context, [], imageBytes, category, orderId,
+            isSign: true);
       } catch (error) {
         print("Error uploading image: ${error.toString()}");
       }
@@ -749,7 +833,39 @@ class _TaskListViewState extends State<TaskListView> {
   }
 
   Widget _buildOrderDetailTile(String title, String? value, IconData icon,
-      {String address = ""}) {
+      {String address = "", String qrData = ""}) {
+    void _showQrDialog() {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text("Thanh toán"),
+            content: Container(
+              // Wrap QrImage in a Container
+              width: 200,
+              height: 200,
+              child: QrImageView(
+                data: qrData,
+                version: QrVersions.auto,
+                size: 200.0,
+                errorStateBuilder: (context, error) {
+                  return const Center(child: Text("Không thể tạo mã QR"));
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text("Đóng"),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
     return icon == Icons.phone
         ? InkWell(
             onTap: () {},
@@ -763,38 +879,54 @@ class _TaskListViewState extends State<TaskListView> {
               ),
               subtitle: Text(value ?? 'Chưa có thông tin'),
             ))
-        : icon == Icons.location_on
+        : qrData != ""
             ? InkWell(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Map2Markers(
-                        endAddress: address,
-                      ),
-                    ),
-                  );
+                  _showQrDialog();
                 },
                 child: ListTile(
                   leading: Icon(icon, color: Colors.green),
                   title: Text(
-                    "$title (Nhấn để xem)",
+                    title,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  trailing: const Icon(Icons.qr_code),
                   subtitle: Text(value ?? 'Chưa có thông tin'),
                 ))
-            : ListTile(
-                leading: Icon(icon, color: Colors.green),
-                title: Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: Text(value ?? 'Chưa có thông tin'),
-              );
+            : icon == Icons.location_on
+                ? InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Map2Markers(
+                            endAddress: address,
+                          ),
+                        ),
+                      );
+                    },
+                    child: ListTile(
+                      leading: Icon(icon, color: Colors.green),
+                      title: Text(
+                        "$title (Nhấn để xem)",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Text(value ?? 'Chưa có thông tin'),
+                    ))
+                : ListTile(
+                    leading: Icon(icon, color: (value == "Chưa thanh toán"?Colors.red:Colors.green)),
+                    title: Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Text(value ?? 'Chưa có thông tin'),
+                  );
   }
 
   Widget _buildJourneyList(List<Journies> journeys) {

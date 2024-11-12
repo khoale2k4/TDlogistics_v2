@@ -97,7 +97,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         service.saveToken(loginRs["token"]);
         emit(Authenticated(loginRs["data"], loginRs["token"]));
       } else {
-        emit(AuthFailure(loginRs["message"], event.username, event.password, true));
+        emit(AuthFailure(
+            loginRs["message"], event.username, event.password, true));
       }
     } catch (error) {
       emit(Unauthenticated(event.username, event.password, "", true));
@@ -110,5 +111,33 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _toCus(ToCustomer event, Emitter<AuthState> emit) async {
     emit(Unauthenticated("", "", "", false));
+  }
+}
+
+class UserBloc extends Bloc<AuthEvent, AuthState> {
+  final SecureStorageService secureStorageService;
+  final AuthRepository authRepository = AuthRepository();
+
+  UserBloc({required this.secureStorageService}) : super(AuthInitial()) {
+    on<UpdateInfo>(updateInfo);
+  }
+
+  Future<void> updateInfo(event, emit) async {
+    try {
+      emit(UpdatingInfo());
+      final updateInfo = await authRepository.updateInfo(
+          (await secureStorageService.getToken())!,
+          event.lName,
+          event.fName,
+          event.email);
+      if (updateInfo["success"]) {
+        emit(UpdatedInfo());
+      } else {
+        emit(FailedUpdateInfo(error: updateInfo["message"]));
+      }
+    } catch (error) {
+      print("Lỗi cập nhật thông tin: ${error.toString()}");
+      emit(FailedUpdateInfo(error: error.toString()));
+    }
   }
 }

@@ -1,8 +1,14 @@
 // ignore_for_file: must_be_immutable
 
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:equatable/equatable.dart';
 import 'package:tdlogistic_v2/core/models/order_model.dart';
+import 'package:tdlogistic_v2/customer/data/models/cargo_insurance.dart';
 import 'package:tdlogistic_v2/customer/data/models/create_order.dart';
+import 'package:tdlogistic_v2/customer/data/models/favorite_location.dart';
+import 'package:tdlogistic_v2/customer/data/models/shipping_bill.dart';
 
 abstract class OrderEvent extends Equatable {
   const OrderEvent();
@@ -56,8 +62,11 @@ class GetOrders extends OrderEvent {
 
 class CreateOrderEvent extends OrderEvent {
   final CreateOrderObject order;
+  final List<Uint8List> files;
+  late ShippingBill? sb;
+  late CargoInsurance? ci;
 
-  const CreateOrderEvent(this.order);
+  CreateOrderEvent(this.order, this.files, this.sb, this.ci);
 
   @override
   List<Object?> get props => [order];
@@ -102,4 +111,40 @@ class AddOrder extends OrderEvent{
   int page = 1;
 
   AddOrder(this.orders, this.page);
+}
+
+class GetLocations extends OrderEvent{}
+
+class AddLocation extends OrderEvent{
+  Location? loc;
+  FavoriteLocation? faLoc;
+
+  AddLocation({this.loc, this.faLoc});
+}
+
+class GetPositions extends OrderEvent {
+  final String orderId;
+  
+  const GetPositions(this.orderId);
+}
+
+class CreateShippingBill extends OrderEvent{
+  final ShippingBill sb;
+
+  CreateShippingBill(this.sb);
+}
+
+class GetShippingBill extends OrderEvent{}
+
+
+class UpdateFavoriteLocation extends OrderEvent{
+  final FavoriteLocation favLoc;
+
+  UpdateFavoriteLocation(this.favLoc);
+}
+
+class UpdateLocation extends OrderEvent{
+  final Location loc;
+
+  UpdateLocation(this.loc);
 }

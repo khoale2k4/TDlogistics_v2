@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:tdlogistic_v2/auth/data/models/user_model.dart';
-import 'package:tdlogistic_v2/core/service/secure_storage_service.dart';
-import 'package:tdlogistic_v2/shipper/UI/screens/chat_box.dart';
+import 'package:tdlogistic_v2/core/service/google.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/map_widget.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/tasks.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/shipper_info.dart';
@@ -63,37 +62,12 @@ class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
   }
 
   // Hàm để lấy vị trí hiện tại
-  Future<Position> _getCurrentPosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Kiểm tra và bật dịch vụ vị trí nếu cần
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error("Location services are disabled.");
-    }
-
-    // Kiểm tra quyền truy cập vị trí
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error("Location permissions are denied.");
-      }
-    }
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error("Location permissions are permanently denied.");
-    }
-
-    // Lấy vị trí hiện tại
-    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-  }
 
   // Hàm để bắt đầu gửi vị trí cho mỗi orderId
   void startSendingLocation(String token, List<String> orderIds) {
     _timer = Timer.periodic(Duration(seconds: 10), (timer) async {
       try {
-        Position position = await _getCurrentPosition();
+        Position position = await getCurrentPosition();
         double lat = position.latitude;
         double lng = position.longitude;
 
@@ -386,6 +360,10 @@ class _TasksNotificationsState extends State<TasksNotifications> {
 
   void acceptTaskPopup(BuildContext context, bool isSuccess, String message) {
     // Đảm bảo dialog được gọi sau khi build hoàn tất
+    if(isSuccess) {
+      context.read<TaskBlocShipReceive>().add(StartTask());
+      context.read<TaskBlocShipSend>().add(StartTask());
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       showDialog(
         context: context,

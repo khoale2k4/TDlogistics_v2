@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:location/location.dart';
+import 'package:tdlogistic_v2/core/constant.dart';
 
 class MapWidget extends StatefulWidget {
   const MapWidget({super.key});
@@ -26,7 +27,7 @@ class _MapWidgetState extends State<MapWidget> {
   final Set<Marker> _markers = {}; // Lưu trữ các marker
   Set<Polyline> _polylines = {}; // Lưu trữ đường đi
   final String _apiKey =
-      "AIzaSyB1D4XCGPDidtXUwOw1K-gQ8VPB2c4IxC8"; // Thay bằng API Key của bạn
+      ggApiKey; // Thay bằng API Key của bạn
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;

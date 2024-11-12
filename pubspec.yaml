@@ -39,6 +39,8 @@ dependencies:
   geolocator: ^13.0.1
   share_plus: ^10.1.1
   flutter_native_contact_picker: ^0.0.9
+  flutter_background_service: ^5.0.10
+  qr_flutter: ^4.1.0
 
 flutter_launcher_icons:
   android: "launcher_icon"

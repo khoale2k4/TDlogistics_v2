@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/core/models/order_model.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/map2markers.dart';
+import 'package:tdlogistic_v2/customer/UI/screens/map_widget.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_bloc.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_event.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_state.dart';
@@ -150,16 +151,16 @@ class ProcessingOrdersTab extends StatelessWidget {
               Expanded(
                 child: OrderListView(orders: state.orders),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  // final newOrder = Order(/* thông tin đơn hàng mới */);
-                  context
-                      .read<ProcessingOrderBloc>()
-                      .add(AddOrder(state.orders, state.page));
-                },
-                child: const Text('Tải thêm'),
-              ),
-              const SizedBox(height: 20),
+              // ElevatedButton(
+              //   onPressed: () {
+              //     // final newOrder = Order(/* thông tin đơn hàng mới */);
+              //     context
+              //         .read<ProcessingOrderBloc>()
+              //         .add(AddOrder(state.orders, state.page));
+              //   },
+              //   child: const Text('Tải thêm'),
+              // ),
+              // const SizedBox(height: 50),
             ],
           );
         } else if (state is OrderError) {
@@ -376,6 +377,9 @@ class OrderListView extends StatefulWidget {
 }
 
 class _OrderListViewState extends State<OrderListView> {
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoadingMore = false;
+  bool _isRefreshing = false;
   final TextEditingController searchController = TextEditingController();
   String selectedFilter = "name";
   List<Order> filteredOrders = [];
@@ -384,12 +388,14 @@ class _OrderListViewState extends State<OrderListView> {
   void initState() {
     super.initState();
     searchController.addListener(_filterOrders);
+    _scrollController.addListener(_onScroll);
     filteredOrders = widget.orders;
   }
 
   @override
   void dispose() {
     searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -412,121 +418,203 @@ class _OrderListViewState extends State<OrderListView> {
     });
   }
 
+  void _onScroll() {
+    print("Scolling");
+    if (_scrollController.position.pixels <= 50 && !_isRefreshing) {
+      print("Refreshing");
+      _refreshOrders();
+    } else if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 50 &&
+        !_isLoadingMore) {
+      print("Loading more");
+      _loadMoreOrders();
+    }
+  }
+
+  Future<void> _refreshOrders() async {
+    setState(() {
+      _isRefreshing = true;
+    });
+    // Call the API or function to reload the data
+    await Future.delayed(const Duration(seconds: 1)); // Simulate a network call
+    setState(() {
+      _isRefreshing = false;
+    });
+  }
+
+  Future<void> _loadMoreOrders() async {
+    setState(() {
+      _isLoadingMore = true;
+    });
+    // Call the API or function to load more data
+    await Future.delayed(const Duration(seconds: 1)); // Simulate a network call
+    setState(() {
+      _isLoadingMore = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              // DropdownButton để chọn loại lọc
-              DropdownButton<String>(
-                value: selectedFilter,
-                items: const [
-                  DropdownMenuItem(value: 'name', child: Text('Lọc theo tên')),
-                  DropdownMenuItem(
-                      value: 'location', child: Text('Lọc theo địa điểm')),
-                  DropdownMenuItem(
-                      value: 'phone', child: Text('Lọc theo số điện thoại')),
-                ],
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedFilter = newValue!;
-                    _filterOrders(); // Cập nhật danh sách sau khi đổi bộ lọc
-                  });
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              // TextField để nhập thông tin tìm kiếm
-              TextField(
-                controller: searchController,
-                decoration: InputDecoration(
-                  labelText: _getLabelText(),
-                  prefixIcon: const Icon(Icons.search), // Thêm icon tìm kiếm
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        // Padding(
+        //   padding: const EdgeInsets.all(16.0),
+        //   child: Column(
+        //     children: [
+        //       DropdownButton<String>(
+        //         value: selectedFilter,
+        //         items: const [
+        //           DropdownMenuItem(value: 'name', child: Text('Lọc theo tên')),
+        //           DropdownMenuItem(
+        //               value: 'location', child: Text('Lọc theo địa điểm')),
+        //           DropdownMenuItem(
+        //               value: 'phone', child: Text('Lọc theo số điện thoại')),
+        //         ],
+        //         onChanged: (String? newValue) {
+        //           setState(() {
+        //             selectedFilter = newValue!;
+        //             _filterOrders();
+        //           });
+        //         },
+        //       ),
+        //       const SizedBox(height: 20),
+        //       TextField(
+        //         controller: searchController,
+        //         decoration: InputDecoration(
+        //           labelText: _getLabelText(),
+        //           prefixIcon: const Icon(Icons.search),
+        //           border: OutlineInputBorder(
+        //             borderRadius: BorderRadius.circular(8.0),
+        //           ),
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
         Expanded(
-          child: ListView.builder(
-            itemCount: filteredOrders.length,
-            itemBuilder: (context, index) {
-              final order = filteredOrders[index];
-              return ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                leading: CircleAvatar(
-                  backgroundColor: Colors.green.withOpacity(0.1),
-                  child: const Icon(Icons.local_shipping, color: Colors.green),
-                ),
-                title: Text(
-                  order.trackingNumber ?? '',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16.0,
+          child: Stack(
+            children: [
+              ListView.builder(
+                controller: _scrollController,
+                itemCount: filteredOrders.length,
+                itemBuilder: (context, index) {
+                  final order = filteredOrders[index];
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 8.0, horizontal: 16.0),
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.green.withOpacity(0.1),
+                      child:
+                          const Icon(Icons.local_shipping, color: Colors.green),
+                    ),
+                    title: Text(
+                      order.trackingNumber ?? '',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16.0,
+                      ),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 4.0),
+                        Row(
+                          children: [
+                            const Icon(Icons.person,
+                                size: 16.0, color: Colors.grey),
+                            const SizedBox(width: 4.0),
+                            Text(
+                              'Người nhận: ${order.nameReceiver ?? ''}',
+                              style: const TextStyle(fontSize: 14.0),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4.0),
+                        Row(
+                          children: [
+                            const Icon(Icons.phone,
+                                size: 16.0, color: Colors.grey),
+                            const SizedBox(width: 4.0),
+                            Text(
+                              'SĐT: ${order.phoneNumberReceiver ?? ''}',
+                              style: const TextStyle(fontSize: 14.0),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4.0),
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on,
+                                size: 16.0, color: Colors.grey),
+                            const SizedBox(width: 4.0),
+                            Expanded(
+                              child: Text(
+                                'Địa chỉ: ${order.detailDest ?? ''}, ${order.districtDest ?? ''}, ${order.provinceDest ?? ''}',
+                                style: const TextStyle(fontSize: 14.0),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    tileColor: Colors.white,
+                    onTap: () {
+                      _showOrderDetailsBottomSheet(context, order);
+                      context
+                          .read<GetImagesBloc>()
+                          .add(GetOrderImages(order.id!));
+                    },
+                  );
+                },
+              ),
+              if (_isLoadingMore) ...[
+                Positioned(
+                  bottom: 20,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      width: 60, // Adjust the size as needed
+                      height: 60,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 3, // Adjust the thickness as needed
+                        color: mainColor, // Set the color of the indicator
+                      ),
+                    ),
+                  ),
+                )
+              ],
+              if (_isRefreshing)
+                Positioned(
+                  top: 10,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      width: 60, // Adjust the size as needed
+                      height: 60,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 3, // Adjust the thickness as needed
+                        color: mainColor, // Set the color of the indicator
+                      ),
+                    ),
                   ),
                 ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 4.0),
-                    Row(
-                      children: [
-                        const Icon(Icons.person,
-                            size: 16.0, color: Colors.grey),
-                        const SizedBox(width: 4.0),
-                        Text(
-                          'Người nhận: ${order.nameReceiver ?? ''}',
-                          style: const TextStyle(fontSize: 14.0),
-                        )
-                      ],
-                    ),
-                    const SizedBox(height: 4.0),
-                    Row(
-                      children: [
-                        const Icon(Icons.phone, size: 16.0, color: Colors.grey),
-                        const SizedBox(width: 4.0),
-                        Text(
-                          'SĐT: ${order.phoneNumberReceiver ?? ''}',
-                          style: const TextStyle(fontSize: 14.0),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4.0),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on,
-                            size: 16.0, color: Colors.grey),
-                        const SizedBox(width: 4.0),
-                        Expanded(
-                          child: Text(
-                            'Địa chỉ: ${order.detailDest ?? ''}, ${order.districtDest ?? ''}, ${order.provinceDest ?? ''}',
-                            style: const TextStyle(fontSize: 14.0),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                tileColor: Colors.white,
-                onTap: () {
-                  // Xử lý khi người dùng nhấn vào đơn hàng
-                  _showOrderDetailsBottomSheet(context, order);
-                  context.read<GetImagesBloc>().add(GetOrderImages(order.id!));
-                },
-              );
-            },
+            ],
           ),
         ),
       ],
@@ -632,19 +720,41 @@ class _OrderListViewState extends State<OrderListView> {
                       'Phí',
                       '${order.fee?.toStringAsFixed(2) ?? ''} VNĐ',
                       Icons.attach_money),
-                  _buildOrderDetailTile(
-                      'Trạng thái đơn hàng', order.statusCode, Icons.info),
 
+                  _buildOrderDetailTile(
+                      'Trạng thái thanh toán',
+                      (order.paid!) ? "Đã thanh toán" : "Chưa thanh toán",
+                      (Icons.info)),
                   const Divider(), // Thêm dòng phân cách trước khi hiển thị hành trình
-                  const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text(
-                      'Hành trình đơn hàng',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Hành trình đơn hàng',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                        (order.statusCode == "PROCESSING" ||
+                                order.statusCode == "TAKING")
+                            ? Container()
+                            : TextButton(
+                                child: const Text("Xem"),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => TaskRouteWidget(
+                                              orderId: order.id!,
+                                            )),
+                                  );
+                                },
+                              ),
+                      ],
                     ),
                   ),
 
@@ -834,7 +944,9 @@ class _OrderListViewState extends State<OrderListView> {
               subtitle: Text(value ?? 'Chưa có thông tin'),
             ))
         : ListTile(
-            leading: Icon(icon, color: Colors.green),
+            leading: Icon(icon,
+                color:
+                    (value == "Chưa thanh toán" ? Colors.red : Colors.green)),
             title: Text(
               title,
               style: const TextStyle(

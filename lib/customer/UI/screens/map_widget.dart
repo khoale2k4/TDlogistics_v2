@@ -1,173 +1,92 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:tdlogistic_v2/customer/bloc/order_bloc.dart';
+import 'package:tdlogistic_v2/customer/bloc/order_event.dart';
+import 'package:tdlogistic_v2/customer/bloc/order_state.dart';
 
-import 'package:location/location.dart';
+class TaskRouteWidget extends StatefulWidget {
+  final String orderId;
 
-class MapWidget extends StatefulWidget {
-  const MapWidget({Key? key}) : super(key: key);
+  const TaskRouteWidget({super.key, required this.orderId});
 
   @override
-  _MapWidgetState createState() => _MapWidgetState();
+  _TaskRouteWidgetState createState() => _TaskRouteWidgetState();
 }
 
-class _MapWidgetState extends State<MapWidget> {
+class _TaskRouteWidgetState extends State<TaskRouteWidget> {
   late GoogleMapController mapController;
-  final TextEditingController _searchController = TextEditingController();
-  List<dynamic> _searchSuggestions = [];
-  LatLng? _currentPosition; // Tọa độ khởi tạo
-  final String _apiKey =
-      "AIzaSyB1D4XCGPDidtXUwOw1K-gQ8VPB2c4IxC8"; // Thay bằng API Key của bạn
+  Set<Polyline> _polylines = {};
+  final Set<Marker> _markers = {};
+  List<LatLng> _routePoints = [];
 
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
-  }
-
-  final Location _location = Location();
-  Future<void> _goToMyLocation() async {
-    var currentLocation = await _location.getLocation();
-    mapController.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: LatLng(currentLocation.latitude!, currentLocation.longitude!),
-          zoom: 15,
-        ),
-      ),
-    );
-  }
-
-  // Gọi Places API để lấy gợi ý địa chỉ
-  Future<void> _getSearchSuggestions(String query) async {
-    try {
-      final url = Uri.parse(
-          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query&key=$_apiKey');
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          _searchSuggestions = data['predictions'];
-        });
-      } else {
-        print("Error fetching suggestions: ${response.body}");
-      }
-    } catch (error) {
-      print("Error fetching location:$error");
-    }
-  }
-
-  // Chuyển đổi địa chỉ sang tọa độ và di chuyển camera đến đó
-  Future<void> _moveToLocation(String placeId) async {
-    final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$_apiKey');
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final location = data['result']['geometry']['location'];
-      final latLng = LatLng(location['lat'], location['lng']);
-
-      mapController.animateCamera(
-        CameraUpdate.newLatLngZoom(latLng, 14.0),
-      );
-      setState(() {
-        _currentPosition = latLng;
-        _searchSuggestions = [];
-        _searchController.clear();
-      });
-    }
+  @override
+  void initState() {
+    super.initState();
+    // Trigger the event to fetch position data for the given orderId
+    context.read<GetPositionsBloc>().add(GetPositions(widget.orderId));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          GoogleMap(
-            onMapCreated: _onMapCreated,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-            initialCameraPosition: CameraPosition(
-              target: _currentPosition ?? const LatLng(10.8231, 106.6297),
-              zoom: 12.0,
-            ),
-            markers: {
-              if (_currentPosition != null)
-                Marker(
-                  markerId: const MarkerId("start"),
-                  position: _currentPosition ?? const LatLng(10.8231, 106.6297),
-                  infoWindow: const InfoWindow(title: "Điểm đi"),
-                  icon: BitmapDescriptor.defaultMarkerWithHue(
-                      BitmapDescriptor.hueBlue),
-                ),
-            },
-            myLocationEnabled: true,
-          ),
-          Positioned(
-            top: 80,
-            left: 15,
-            right: 15,
-            child: Column(
-              children: [
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: "Nhập địa điểm",
-                    filled: true,
-                    fillColor: Colors.white,
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  onChanged: (query) {
-                    if (query.isNotEmpty) {
-                      _getSearchSuggestions(query);
-                    } else {
-                      setState(() {
-                        _searchSuggestions = [];
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 5),
-                Container(
-                  decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20)),
-                      color: Colors.white),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(0),
-                    shrinkWrap: true,
-                    itemCount: _searchSuggestions.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text(_searchSuggestions[index]['description']),
-                        onTap: () {
-                          _moveToLocation(
-                              _searchSuggestions[index]['place_id']);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            bottom: 20,
-            right: 20,
-            child: FloatingActionButton(
-              onPressed: _goToMyLocation,
-              backgroundColor: Colors.white,
-              child: const Icon(Icons.my_location),
-            ),
-          ),
-        ],
+      body: BlocBuilder<GetPositionsBloc, OrderState>(
+        builder: (context, state) {
+          if (state is GettingPositions) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (state is GotPositions) {
+            _routePoints = state.pos;
+            _setPolylinesAndMarkers();
+
+            return GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: _routePoints.isNotEmpty ? _routePoints.first : const LatLng(0, 0),
+                zoom: 12.0,
+              ),
+              onMapCreated: (GoogleMapController controller) {
+                mapController = controller;
+              },
+              markers: _markers,
+              polylines: _polylines,
+            );
+          } else if (state is FailedGetPositions) {
+            return Center(child: Text('Failed to load route: ${state.error}'));
+          } else {
+            return const Center(child: Text('No route data available.'));
+          }
+        },
       ),
     );
+  }
+
+  void _setPolylinesAndMarkers() {
+    setState(() {
+      // Clear previous markers and polylines
+      _polylines.clear();
+      _markers.clear();
+
+      // Add polyline connecting the points
+      _polylines.add(
+        Polyline(
+          polylineId: PolylineId(widget.orderId),
+          points: _routePoints,
+          color: Colors.blue,
+          width: 5,
+        ),
+      );
+
+      // Add markers for each point
+      for (var point in _routePoints) {
+        _markers.add(
+          Marker(
+            markerId: MarkerId('${point.latitude}-${point.longitude}'),
+            position: point,
+            infoWindow: InfoWindow(
+              title: 'Lat: ${point.latitude}, Long: ${point.longitude}',
+            ),
+          ),
+        );
+      }
+    });
   }
 }

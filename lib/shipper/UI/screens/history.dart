@@ -191,7 +191,7 @@ class _TaskListViewState extends State<TaskListView> {
           onTap: () {
             context
                 .read<GetImagesShipBloc>()
-                .add(GetOrderImages(task.order!.id!));
+                .add(GetOrderImages(task.orderId!));
             _showOrderDetailsBottomSheet(context, task);
           },
         );

@@ -37,3 +37,11 @@ class ToCustomer extends AuthEvent{}
 class LogoutRequested extends AuthEvent {}
 
 class StartApp extends AuthEvent{}
+
+class UpdateInfo extends AuthEvent{
+  String? fName;
+  String? lName;
+  String? email;
+
+  UpdateInfo({this.email, this.fName, this.lName});
+}

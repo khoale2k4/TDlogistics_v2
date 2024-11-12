@@ -22,7 +22,7 @@ class TaskFeeCalculated extends TaskState {
 class TaskFeeCalculationFailed extends TaskState {
   final String error;
 
-  const TaskFeeCalculationFailed(this. error);
+  const TaskFeeCalculationFailed(this.error);
 }
 
 class TaskLoading extends TaskState {}
@@ -55,48 +55,53 @@ class TaskError extends TaskState {
   List<Object?> get props => [error];
 }
 
-class GettingImages extends TaskState{}
+class GettingImages extends TaskState {}
 
-class GotImages extends TaskState{
+class GotImages extends TaskState {
   late List<Uint8List> sendImages;
+  late List<String> sendIds;
   late List<Uint8List> receiveImages;
+  late List<String> receiveIds;
   late Uint8List? sendSignature;
+  late String sendSignId;
   late Uint8List? receiveSignature;
+  late String receiveSignId;
 
-  GotImages(this.receiveImages, this.receiveSignature, this.sendImages, this.sendSignature);
+  GotImages(this.receiveImages, this.receiveIds, this.receiveSignature, this.receiveSignId,
+      this.sendImages, this.sendIds, this.sendSignature, this.sendSignId);
 }
 
-class AddingImage extends TaskState{}
+class AddingImage extends TaskState {}
 
-class AddedImage extends TaskState{}
+class AddedImage extends TaskState {}
 
-class FailedImage extends TaskState{
+class FailedImage extends TaskState {
   final String error;
 
   FailedImage(this.error);
 }
 
-class GettingOrderDetail extends TaskState{}
+class GettingOrderDetail extends TaskState {}
 
-class GotOrderDetail extends TaskState{
+class GotOrderDetail extends TaskState {
   final Order order;
 
   GotOrderDetail(this.order);
 }
 
-class FaildGettingOrderDetail extends TaskState{
+class FaildGettingOrderDetail extends TaskState {
   final String error;
 
   FaildGettingOrderDetail(this.error);
 }
 
-class WaitingTask extends TaskState{}
+class WaitingTask extends TaskState {}
 
-class AcceptingTask extends TaskState{}
+class AcceptingTask extends TaskState {}
 
-class AcceptedTask extends TaskState{}
+class AcceptedTask extends TaskState {}
 
-class FailedAcceptingTask extends TaskState{
+class FailedAcceptingTask extends TaskState {
   final String error;
 
   FailedAcceptingTask(this.error);

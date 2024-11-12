@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tdlogistic_v2/auth/data/models/user_model.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
-import 'package:tdlogistic_v2/customer/UI/screens/create_order.dart';
+import 'package:tdlogistic_v2/customer/UI/screens/create%20order/create_order.dart';
 
 class HomePage extends StatefulWidget {
   final User user;
@@ -11,27 +11,42 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  final ScrollController _scrollController = ScrollController();
-  double _logoHeight = 75.0;
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400), // Tốc độ của hiệu ứng
+    )..repeat(reverse: true); // Lặp lại hiệu ứng
+
+    _animation = Tween<double>(begin: 0, end: -10).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
+
+  final ScrollController _scrollController = ScrollController();
+  double _logoHeight = 75.0;
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   void _onScroll() {
     final double offset = _scrollController.offset;
     setState(() {
-      _logoHeight =
-          75.0 - (offset * 0.5).clamp(0.0, 45.0); // Logo sẽ thu nhỏ nhiều hơn
+      _logoHeight = 75.0 - (offset * 0.05).clamp(0.0, 45.0);
     });
   }
 
@@ -43,13 +58,14 @@ class _HomePageState extends State<HomePage> {
         builder: (context, constraints) {
           return Column(
             children: [
+              // App header with animated logo
               AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                height: double.parse("200") -
+                height: 200.0 -
                     (_scrollController.hasClients
                             ? _scrollController.offset * 0.4
                             : 0)
-                        .clamp(0.0, 80.0), // Thu nhỏ nhiều hơn
+                        .clamp(0.0, 80.0),
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.only(
@@ -68,9 +84,11 @@ class _HomePageState extends State<HomePage> {
                         left: 20,
                         right: 20,
                         bottom: 10),
-                    child: Image.asset(
-                      'lib/assets/logo.png',
-                      height: _logoHeight,
+                    child: Container(
+                      child: Image.asset(
+                        'lib/assets/logo.png',
+                        height: _logoHeight,
+                      ),
                     ),
                   ),
                 ),
@@ -80,12 +98,12 @@ class _HomePageState extends State<HomePage> {
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      MyServices(
-                        constraints: constraints,
-                        user: widget.user,
-                      ),
-                      MyNotifications(constraints: constraints)
+                      const SizedBox(height: 20),
+                      _buildPromotionsSection(),
+                      const SizedBox(height: 20),
+                      _buildNewsSection(),
                     ],
                   ),
                 ),
@@ -94,357 +112,225 @@ class _HomePageState extends State<HomePage> {
           );
         },
       ),
-    );
-  }
-}
-
-class MyNotifications extends StatelessWidget {
-  final BoxConstraints constraints;
-
-  const MyNotifications({
-    super.key,
-    required this.constraints,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 5,
-              spreadRadius: 1,
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      floatingActionButton: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          return Transform.translate(
+            offset: Offset(0, _animation.value),
+            child: FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreateOrder(user: widget.user),
+                  ),
+                );
+              },
+              backgroundColor: secondColor,
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    "Các thông báo quan trọng",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.notifications_active_outlined,
-                    ),
-                    onPressed: () {},
-                  ),
+                  Icon(Icons.shopping_bag_rounded),
+                  Text("Đặt ngay", style: TextStyle(fontSize: 10)),
                 ],
               ),
-              ListView.builder(
-                padding: const EdgeInsets.only(top: 20),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: notifications.length,
-                itemBuilder: (context, index) {
-                  return Column(
-                    children: [
-                      NotificationCard(noti: notifications[index]),
-                      if (index < notifications.length - 1)
-                        const SizedBox(height: 20)
-                    ],
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
-}
 
-class NotificationCard extends StatelessWidget {
-  final NotificationModel noti;
-  const NotificationCard({super.key, required this.noti});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => noti.destination),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 5,
-              spreadRadius: 1,
+  // Phần khuyến mãi lướt ngang
+  Widget _buildPromotionsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text(
+            'Khuyến mãi',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
-          ],
+          ),
         ),
-        child: Row(
-          children: [
-            // Hình ảnh ở bên trái
-            ClipRRect(
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 200,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: 4, // Số lượng khuyến mãi (ví dụ là 5)
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: _buildPromotionCard(index),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPromotionCard(int index) {
+    return Container(
+      width: 250,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 6,
+            offset: const Offset(2, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: ClipRRect(
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                bottomLeft: Radius.circular(12),
+                topLeft: Radius.circular(15),
+                topRight: Radius.circular(15),
               ),
-              child: Image.asset(
-                noti.image,
-                height: 80,
-                width: 80,
-                fit: BoxFit.cover,
-              ),
-            ),
-            // Nội dung thông báo
-            Expanded(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      noti.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      noti.shortContent,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black54,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+              child: Container(
+                width: double
+                    .infinity, // Để ảnh bao phủ toàn bộ chiều ngang của Container
+                height: 400, // Chiều cao của Container tùy ý
+                decoration: BoxDecoration(
+                  borderRadius:
+                      BorderRadius.circular(15), // Tạo bo góc (nếu cần)
+                ),
+                clipBehavior: Clip.hardEdge, // Giúp ảnh cắt theo bo góc
+                child: Image.asset(
+                  'lib/assets/ads$index.jpg',
+                  fit: BoxFit.cover, // Để ảnh bao phủ hết Container
                 ),
               ),
             ),
-            // Nút "Chi tiết"
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => noti.destination),
-                  );
-                },
-                child: const Text(
-                  'Chi tiết',
-                  style: TextStyle(color: Colors.blueAccent),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+          // Padding(
+          //   padding: const EdgeInsets.all(8.0),
+          //   child: Text(
+          //     'Giảm giá ${10 * (index + 1)}%',
+          //     style: const TextStyle(
+          //       fontWeight: FontWeight.bold,
+          //       fontSize: 16,
+          //       color: mainColor,
+          //     ),
+          //   ),
+          // ),
+        ],
       ),
     );
   }
-}
 
-class NotificationModel {
-  final String name;
-  final String shortContent;
-  final String image;
-  final Widget destination;
+  List<String> images = [];
 
-  NotificationModel({
-    required this.name,
-    required this.shortContent,
-    required this.image,
-    required this.destination,
-  });
-}
+  List<String> titles = [
+    "Ông Nguyễn Thanh Nam có đơn xin từ nhiệm vị trí Chủ tịch Hội đồng quản trị Viettel Post với lý do cá nhân.",
+    "Cổ phiếu Viettel Post tăng kịch trần trong phiên chào sàn HOSE",
+    "Cổ phiếu VTP (Viettel Post) tăng kịch biên độ trong phiên chào sàn HoSE",
+    "Cổ phiếu “họ Viettel” tăng mạnh trước thềm Viettel Post (VTP) chuyển sàn sang HoSE",
+  ];
 
-List<NotificationModel> notifications = [
-  NotificationModel(
-    name: "Thông báo 1",
-    shortContent: "Đây là thông báo",
-    image: "lib/assets/avt.jpg",
-    destination: Container(),
-  ),
-  NotificationModel(
-    name: "Thông báo 2",
-    shortContent: "Đây là thông báo",
-    image: "lib/assets/avt.jpg",
-    destination: Container(),
-  ),
-  NotificationModel(
-    name: "Thông báo 3",
-    shortContent: "Đây là thông báo",
-    image: "lib/assets/avt.jpg",
-    destination: Container(),
-  ),
-];
+  List<String> des = [
+    "Ngày 17/8 vừa qua, ông Nguyễn Thanh Nam, Chủ tịch Hội đồng quản trị Tổng Công ty cổ phần Bưu chính Viettel (Viettel Post, mã VTP) đã có đơn xin từ nhiệm.",
+    "Ngày 12/3/2024, Sở Giao dịch Chứng khoán TP. Hồ Chí Minh tổ chức Lễ trao quyết định niêm yết cho Tổng Công ty Cổ phần Bưu chính Viettel - Viettel Post (Mã chứng khoán: VTP) và đưa vào giao dịch chính thức 121.783.042 cổ phiếu VTP với tổng giá trị niêm yết hơn 1.217 tỷ đồng.",
+    "Ngoài VTP tăng kịch biên độ trong phiên giao dịch đầu tiên trên HoSE, các cổ phiếu khác \"họ Viettel\" cũng tăng mạnh.",
+    "Ngày mai (12/3), Viettel Post (mã VTP) sẽ chào sàn HoSE với mức giá tham chiếu 65.400 đồng/cổ phiếu. Phiên ngày 11/3, các cổ phiếu “họ Viettel” như VGI, CTR, VTK đều tăng mạnh trên HoSE, UPCOM, trong đó, CTR thậm chí tăng kịch trần."
+  ];
 
-class MyServices extends StatefulWidget {
-  final User user;
-  final BoxConstraints constraints;
-  MyServices({super.key, required this.constraints, required this.user});
-
-  @override
-  State<MyServices> createState() => _MyServicesState();
-}
-
-class _MyServicesState extends State<MyServices> {
-  final List<ServiceModel> services = [];
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    services.add(
-      ServiceModel(
-        name: "Đặt hàng",
-        iconPath: "lib/assets/avt.jpg",
-        destination: CreateOrder(user: widget.user),
-      ),
-    );
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 5,
-              spreadRadius: 1,
+  // Phần bài báo
+  Widget _buildNewsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text(
+            'Tin tức',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Các dịch vụ của chúng tôi",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              GridView.builder(
-                padding: const EdgeInsets.only(top: 20),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: widget.constraints.maxWidth > 600 ? 4 : 3,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1,
-                ),
-                itemCount: services.length,
-                itemBuilder: (context, index) {
-                  return ServiceCard(
-                    service: services[index],
-                    onTap: () {
-                      // Xử lý khi nhấn vào dịch vụ
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => services[index].destination,
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ],
           ),
         ),
-      ),
+        const SizedBox(height: 10),
+        ListView.builder(
+          padding: const EdgeInsets.all(0),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: 4, // Số lượng bài báo (ví dụ là 5)
+          itemBuilder: (context, index) {
+            return Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: _buildNewsArticleCard(index),
+            );
+          },
+        ),
+      ],
     );
   }
-}
 
-class ServiceCard extends StatelessWidget {
-  final ServiceModel service;
-  final VoidCallback onTap;
-
-  const ServiceCard({
-    Key? key,
-    required this.service,
-    required this.onTap,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildNewsArticleCard(int index) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                service.iconPath,
-                width: 40,
-                height: 40,
-                fit: BoxFit.cover,
+              child: Container(
+                width: 80,
+                height: 80,
+                color: Colors.grey.shade200, // Màu nền khi ảnh không tải được
+                child: Image.asset(
+                  'lib/assets/p${index + 1}.jpg',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(
+                      Icons.broken_image,
+                      color: Colors.grey,
+                      size: 50,
+                    ); // Biểu tượng khi ảnh không tải được
+                  },
+                ),
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              service.name,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titles[index],
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    des[index],
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
       ),
     );
   }
-}
-
-class ServiceModel {
-  final String name;
-  final String iconPath;
-  final Widget destination;
-
-  ServiceModel({
-    required this.name,
-    required this.iconPath,
-    required this.destination,
-  });
 }
