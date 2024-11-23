@@ -17,7 +17,7 @@ class TaskRepository {
         headers: headers,
         body: json.encode(
           {
-            "addition": {"sort": [], "page": page, "size": 3, "group": []},
+            "addition": {"sort": [], "page": page, "size": 5, "group": []},
             "criteria": [
               if (status != "")
                 {"field": "order.statusCode", "operator": "=", "value": status},
@@ -84,6 +84,7 @@ class TaskRepository {
         'Content-Type': 'application/json',
         "authorization": "Bearer $token"
       };
+      print(url);
 
       final response = await http.get(
         url,
@@ -91,7 +92,8 @@ class TaskRepository {
       );
 
       final responseData = json.decode(response.body);
-      if (response.statusCode == 200) {
+      print(responseData);
+      if (response.statusCode >= 200 && response.statusCode <= 209) {
         return {
           "success": true,
           "message": responseData["message"],

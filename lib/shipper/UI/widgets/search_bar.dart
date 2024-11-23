@@ -91,9 +91,9 @@ class _MySearchBarState extends State<MySearchBar> {
               borderRadius: BorderRadius.circular(10),
               borderSide: const BorderSide(color: Colors.red, width: 1.5),
             ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
           ),
-          onTap: widget.onTap,
           onChanged: (query) {
             if (query.isNotEmpty) {
               _getSearchSuggestions(query);
@@ -106,9 +106,9 @@ class _MySearchBarState extends State<MySearchBar> {
           },
         ),
         const SizedBox(height: 5),
-        if (_isLoading) 
-          const CircularProgressIndicator() 
-        else 
+        if (_isLoading)
+          const CircularProgressIndicator()
+        else
           Container(
             decoration: const BoxDecoration(
               borderRadius: BorderRadius.only(
@@ -125,6 +125,7 @@ class _MySearchBarState extends State<MySearchBar> {
                 return ListTile(
                   title: Text(_searchSuggestions[index]['description']),
                   onTap: () {
+                    widget.onTap();
                     setState(() {
                       widget.controller.text =
                           _searchSuggestions[index]['description'];

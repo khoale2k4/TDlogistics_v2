@@ -1,26 +1,34 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
 import 'package:http/http.dart' as http;
+import 'package:tdlogistic_v2/customer/UI/widgets/search_bar.dart';
+import 'package:tdlogistic_v2/customer/bloc/order_bloc.dart';
+import 'package:tdlogistic_v2/customer/bloc/order_event.dart';
 
 class NewLocation extends StatefulWidget {
   final String location;
+  final String locationId;
   final String address;
   final bool isFav;
   final bool isEdit;
-  final String descriptin;
+  final String description;
   final String name;
   final String phone;
-  const NewLocation(
-      {super.key,
-      required this.location,
-      this.address = "",
-      this.isFav = false,
-      this.isEdit = false,
-      this.descriptin = "",
-      this.name = "",
-      this.phone = ""});
+
+  const NewLocation({
+    super.key,
+    required this.location,
+    this.locationId = "",
+    this.address = "",
+    this.isFav = false,
+    this.isEdit = false,
+    this.description = "",
+    this.name = "",
+    this.phone = "",
+  });
 
   @override
   State<NewLocation> createState() => _NewLocationState();
@@ -28,33 +36,42 @@ class NewLocation extends StatefulWidget {
 
 class _NewLocationState extends State<NewLocation> {
   final TextEditingController _searchController = TextEditingController();
-  List<dynamic> _searchSuggestions = [];
-  final String _apiKey = ggApiKey; // Thay bằng API Key của bạn
-
-  Future<void> _getSearchSuggestions(String query) async {
-    try {
-      final url = Uri.parse(
-          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query&key=$_apiKey&language=vi');
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          _searchSuggestions = data['predictions'];
-        });
-      } else {
-        print("Error fetching suggestions: ${response.body}");
-      }
-    } catch (error) {
-      print("Error fetching location: $error");
-    }
-  }
 
   @override
   void initState() {
-    // TODO: implement initState
     _searchController.text = widget.address;
     super.initState();
+  }
+
+  void showDeleteConfirmationDialog(
+      BuildContext context, VoidCallback onConfirm) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Xác nhận xóa'),
+          content: const Text('Bạn có chắc chắn muốn xóa địa điểm này không?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Đóng popup
+              },
+              child: const Text(
+                'Hủy',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: onConfirm,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red, // Màu nền đỏ cho nút xóa
+              ),
+              child: const Text('Xóa', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -62,150 +79,98 @@ class _NewLocationState extends State<NewLocation> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chọn địa điểm'),
-      ),
-      body: Stack(
-        children: [
-          Positioned(
-            top: 80,
-            left: 15,
-            right: 15,
-            child: Column(
-              children: [
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: "Nhập địa điểm",
-                    filled: true,
-                    fillColor: Colors.white,
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  onChanged: (query) {
-                    if (query.isNotEmpty) {
-                      _getSearchSuggestions(query);
-                    } else {
-                      setState(() {
-                        _searchSuggestions = [];
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 5),
-                Container(
-                  decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20)),
-                      color: Colors.white),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(0),
-                    shrinkWrap: true,
-                    itemCount: _searchSuggestions.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text(_searchSuggestions[index]['description']),
-                        onTap: () async {
-                          if (widget.isFav) {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => NewFavMark(
-                                    address: _searchSuggestions[index]
-                                        ['description']),
-                              ),
-                            );
-                            if (result != null) {
-                              Navigator.pop(context, result);
-                            }
-                          } else {
-                            if (widget.location == "Thêm") {
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => NewMark(
-                                      address: _searchSuggestions[index]
-                                          ['description']),
-                                ),
-                              );
-                              if (result != null) {
-                                Navigator.pop(context, [
-                                  result,
-                                  _searchSuggestions[index]['description']
-                                ]);
-                              }
-                            } else {
-                              // Nếu không cần mở NewMark, pop với kết quả địa chỉ
-                              Navigator.pop(context, [
-                                widget.location,
-                                _searchSuggestions[index]['description']
-                              ]);
-                            }
-                          }
-                        },
-                      );
-                    },
-                  ),
-                ),
-                if (widget.isEdit) ...[
-                  const SizedBox(height: 5),
-                  ElevatedButton(
-                    onPressed: _searchController.text == ""
-                        ? null
-                        : () async {
-                            if (widget.isFav) {
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => NewFavMark(
-                                    address: widget.address,
-                                    descriptin: widget.descriptin,
-                                    name: widget.name,
-                                    phone: widget.phone,
-                                  ),
-                                ),
-                              );
-                              if (result != null) {
-                                Navigator.pop(context, result);
-                              }
-                            } else {
-                              if (widget.location == "Thêm") {
-                                final result = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        NewMark(address: widget.address),
-                                  ),
-                                );
-                                if (result != null) {
-                                  Navigator.pop(
-                                      context, [result, widget.address]);
-                                }
-                              } else {
-                                // Nếu không cần mở NewMark, pop với kết quả địa chỉ
-                                Navigator.pop(
-                                    context, [widget.location, widget.address]);
-                              }
-                            }
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text(
-                      'Tiếp tục',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
-              ],
+        actions: [
+          if (widget.isEdit)
+            IconButton(
+              onPressed: () {
+                print("Click delete");
+                showDeleteConfirmationDialog(context, () async {
+                  Navigator.of(context).pop();
+                  context.read<GetLocationBloc>().add(
+                      DeleteLocation(widget.locationId, isFav: widget.isFav));
+                  Navigator.of(context).pop();
+                });
+              },
+              icon: const Icon(Icons.delete, color: Colors.red),
             ),
-          ),
         ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            MySearchBar(
+              controller: _searchController,
+              icon: const Icon(Icons.search),
+              labelText: "Tìm kiếm địa điểm",
+              onChanged: () async {
+                setState(() {});
+//
+              },
+              onTap: () {},
+              onDelete: () {
+                // Xử lý khi xóa văn bản
+                setState(() {});
+              },
+            ),
+            // Các widget khác trong NewLocation
+
+            ElevatedButton(
+              onPressed: _searchController.text == ""
+                  ? null
+                  : () async {
+                      if (widget.isFav) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => NewFavMark(
+                              address: _searchController.text,
+                              descriptin: widget.description,
+                              name: widget.name,
+                              phone: widget.phone,
+                            ),
+                          ),
+                        );
+                        if (result != null) {
+                          Navigator.pop(context, result);
+                        }
+                      } else {
+                        if (widget.location != "Nhà" &&
+                            widget.location != "Công ty") {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => NewMark(
+                                address: _searchController.text,
+                                location: widget.location == "Thêm"
+                                    ? ""
+                                    : widget.location,
+                              ),
+                            ),
+                          );
+                          if (result != null) {
+                            Navigator.pop(
+                                context, [result, _searchController.text]);
+                          }
+                        } else {
+                          Navigator.pop(context,
+                              [widget.location, _searchController.text]);
+                        }
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                'Tiếp tục',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -213,7 +178,8 @@ class _NewLocationState extends State<NewLocation> {
 
 class NewMark extends StatefulWidget {
   final String address;
-  const NewMark({super.key, required this.address});
+  final String location;
+  const NewMark({super.key, required this.address, this.location = ""});
 
   @override
   State<NewMark> createState() => _NewMarkState();
@@ -226,6 +192,7 @@ class _NewMarkState extends State<NewMark> {
   @override
   void initState() {
     _addressController.text = widget.address;
+    _locationController.text = widget.location;
     super.initState();
   }
 

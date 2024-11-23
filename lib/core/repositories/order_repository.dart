@@ -21,7 +21,6 @@ class OrderRepository {
         'Content-Type': 'application/json',
         "authorization": "Bearer $token"
       };
-
       final response = await http.post(
         url,
         headers: headers,
@@ -38,6 +37,19 @@ class OrderRepository {
           },
         ),
       );
+
+      print(json.encode(
+        {
+          "addition": {"sort": [], "page": page, "size": 10, "group": []},
+          "criteria": [
+            {
+              "field": "statusCode",
+              "operator": (status == "CANCEL" ? "~" : "="),
+              "value": status
+            }
+          ]
+        },
+      ));
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {
@@ -337,8 +349,7 @@ class OrderRepository {
     }
   }
 
-  Future<Map<String, dynamic>> getShippingBill(
-      String token) async {
+  Future<Map<String, dynamic>> getShippingBill(String token) async {
     try {
       final url = Uri.parse('$baseUrl/shipping_bill/customer/get');
       final headers = {

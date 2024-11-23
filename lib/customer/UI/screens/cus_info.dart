@@ -67,12 +67,18 @@ class _CustomerInforState extends State<CustomerInfor> {
           } else if (state is UpdatedInfo) {
             // Hiển thị thông báo thành công
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Cập nhật thông tin thành công!"), backgroundColor: secondColor,),
+              const SnackBar(
+                content: Text("Cập nhật thông tin thành công!"),
+                backgroundColor: secondColor,
+              ),
             );
           } else if (state is FailedUpdateInfo) {
             // Hiển thị thông báo lỗi
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Cập nhật thông tin thất bại!"), backgroundColor: mainColor,),
+              const SnackBar(
+                content: Text("Cập nhật thông tin thất bại!"),
+                backgroundColor: mainColor,
+              ),
             );
           }
         },
@@ -119,17 +125,21 @@ class _CustomerInforState extends State<CustomerInfor> {
                     context.read<UserBloc>().add(
                           UpdateInfo(
                             email: emailController.text,
-                            fName: firstNameController .text,
+                            fName: firstNameController.text,
                             lName: lastNameController.text,
                           ),
                         );
                   },
-                  child: const Text('Lưu'),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                    backgroundColor: mainColor, // Thay đổi màu nền của nút
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(10), // Border radius
                     ),
+                  ),
+                  child: const Text(
+                    'Lưu',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -166,7 +176,8 @@ class _CustomerInforState extends State<CustomerInfor> {
     );
   }
 
-  Widget buildFieldText(BuildContext context, String title, TextEditingController controller) {
+  Widget buildFieldText(
+      BuildContext context, String title, TextEditingController controller) {
     return Container(
       padding: const EdgeInsets.all(10.0),
       decoration: BoxDecoration(
@@ -203,7 +214,8 @@ class _CustomerInforState extends State<CustomerInfor> {
                 borderRadius: BorderRadius.circular(8.0),
                 borderSide: const BorderSide(color: secondColor),
               ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+              contentPadding:
+                  const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
               enabled: title == "Số điện thoại" ? false : true,
             ),
           ),

@@ -39,7 +39,6 @@ class _SocketPageState extends State<SocketPage> {
     childWidget = ShipperNavigatePage(
       user: widget.user,
       tasks: tasks,
-      token: token
     );
     connectToSocket();
   }

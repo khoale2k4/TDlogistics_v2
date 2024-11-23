@@ -18,6 +18,7 @@ class InsuranceForm extends StatefulWidget {
   final String initialAddress;
   final String initialTaxCode;
   final String initialEmail;
+
   const InsuranceForm({
     super.key,
     this.initialNote = '',
@@ -113,7 +114,7 @@ class _InsuranceFormState extends State<InsuranceForm> {
                 Navigator.pop(context); // Đóng hộp thoại sau khi xóa
                 Navigator.pop(context);
               },
-              child: const Text('Xóa'),
+              child: const Text('Xóa', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -128,7 +129,7 @@ class _InsuranceFormState extends State<InsuranceForm> {
         backgroundColor: Colors.white,
         title: const Text(
           'Bảo hiểm',
-          style: TextStyle(color: Colors.black),
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
@@ -182,6 +183,12 @@ class _InsuranceFormState extends State<InsuranceForm> {
           decoration: const InputDecoration(
             hintText: 'Nhập ghi chú',
             border: OutlineInputBorder(),
+            filled: true,
+            fillColor: Colors.white, // Light background for input
+
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: secondColor, width: 1.5),
+            ),
           ),
           maxLines: 3,
         ),
@@ -263,13 +270,17 @@ class _InsuranceFormState extends State<InsuranceForm> {
             Positioned(
               right: 0,
               top: 0,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.red),
-                onPressed: () {
-                  setState(() {
-                    _images.removeAt(index);
-                  });
-                },
+              child: CircleAvatar(
+                maxRadius: 20,
+                backgroundColor: Colors.white,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.red),
+                  onPressed: () {
+                    setState(() {
+                      _images.removeAt(index);
+                    });
+                  },
+                ),
               ),
             ),
           ],
@@ -284,6 +295,7 @@ class _InsuranceFormState extends State<InsuranceForm> {
       subtitle: const Text('Bật để điền thông tin hoá đơn'),
       value: _isInvoiceEnabled,
       onChanged: _toggleInvoice,
+      activeColor: mainColor, // Use mainColor for the switch
     );
   }
 
@@ -304,33 +316,42 @@ class _InsuranceFormState extends State<InsuranceForm> {
           });
           WidgetsBinding.instance.addPostFrameCallback((_) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Tạo hóa đơn thành công!')),
+              const SnackBar(
+                content: Text(
+                  'Tạo hóa đơn thành công!',
+                ),
+                backgroundColor: secondColor,
+              ),
             );
           });
         } else if (state is FailedCreatingBill) {
-          // Thông báo lỗi khi tạo đơn giao hàng
           setState(() {
             isLoading = false;
           });
           WidgetsBinding.instance.addPostFrameCallback((_) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Không thể tạo hóa đơn.')),
+              const SnackBar(
+                content: Text('Không thể tạo hóa đơn.'),
+                backgroundColor: mainColor,
+              ),
             );
           });
         } else if (state is FailedGettingBill) {
-          // Thông báo lỗi khi lấy thông tin hóa đơn
           setState(() {
             isLoading = false;
           });
           WidgetsBinding.instance.addPostFrameCallback((_) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Không thể lấy thông tin hóa đơn.')),
+              const SnackBar(
+                content: Text('Không thể lấy thông tin hóa đơn.'),
+                backgroundColor: mainColor,
+              ),
             );
           });
         }
       },
       child: isLoading
-          ? const CircularProgressIndicator()
+          ? const Center(child: CircularProgressIndicator())
           : _buildFormContent(
               onFetchInvoice: () {
                 context.read<CreateOrderBloc>().add(GetShippingBill());
@@ -355,7 +376,6 @@ class _InsuranceFormState extends State<InsuranceForm> {
     );
   }
 
-// Hàm tạo nội dung chính của form
   Widget _buildFormContent({
     required VoidCallback onFetchInvoice,
     required VoidCallback onSaveInvoice,
@@ -369,6 +389,11 @@ class _InsuranceFormState extends State<InsuranceForm> {
           decoration: const InputDecoration(
             labelText: 'Tên công ty',
             border: OutlineInputBorder(),
+            filled: true,
+            fillColor: Colors.white, // Light background for input
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: secondColor, width: 1.5),
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -377,6 +402,11 @@ class _InsuranceFormState extends State<InsuranceForm> {
           decoration: const InputDecoration(
             labelText: 'Địa chỉ',
             border: OutlineInputBorder(),
+            filled: true,
+            fillColor: Colors.white, // Light background for input
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: secondColor, width: 1.5),
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -385,6 +415,11 @@ class _InsuranceFormState extends State<InsuranceForm> {
           decoration: const InputDecoration(
             labelText: 'Mã số thuế',
             border: OutlineInputBorder(),
+            filled: true,
+            fillColor: Colors.white, // Light background for input
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: secondColor, width: 1.5),
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -393,6 +428,11 @@ class _InsuranceFormState extends State<InsuranceForm> {
           decoration: const InputDecoration(
             labelText: 'Email công ty',
             border: OutlineInputBorder(),
+            filled: true,
+            fillColor: Colors.white, // Light background for input
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: secondColor, width: 1.5),
+            ),
           ),
         ),
         const SizedBox(height: 20),
@@ -401,11 +441,19 @@ class _InsuranceFormState extends State<InsuranceForm> {
           children: [
             ElevatedButton(
               onPressed: onFetchInvoice,
-              child: const Text('Hoá đơn gần nhất'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: mainColor, // Main color for button
+              ),
+              child: const Text('Hoá đơn gần nhất',
+                  style: TextStyle(color: Colors.white)),
             ),
             ElevatedButton(
               onPressed: onSaveInvoice,
-              child: const Text('Lưu hoá đơn'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: mainColor, // Main color for button
+              ),
+              child: const Text('Lưu hoá đơn',
+                  style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -424,6 +472,13 @@ class _InsuranceFormState extends State<InsuranceForm> {
         decoration: BoxDecoration(
           color: mainColor,
           borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              offset: Offset(0, 2),
+              blurRadius: 6,
+            ),
+          ],
         ),
         child: const Text(
           'Nhấn vào đây để xem chi tiết bảo hiểm',
@@ -450,8 +505,15 @@ class _InsuranceFormState extends State<InsuranceForm> {
         padding: const EdgeInsets.symmetric(vertical: 16),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: mainColor,
+          color: secondColor,
           borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              offset: Offset(0, 2),
+              blurRadius: 6,
+            ),
+          ],
         ),
         child: const Text(
           'Xong',

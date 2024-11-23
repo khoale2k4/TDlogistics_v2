@@ -136,240 +136,331 @@ class _HistoryState extends State<History> with SingleTickerProviderStateMixin {
   }
 }
 
-class ProcessingOrdersTab extends StatelessWidget {
+class ProcessingOrdersTab extends StatefulWidget {
   const ProcessingOrdersTab({super.key});
 
   @override
+  State<ProcessingOrdersTab> createState() => _ProcessingOrdersTabState();
+}
+
+class _ProcessingOrdersTabState extends State<ProcessingOrdersTab> {
+  List<Order> orders = [];
+
+  int page = 1;
+  bool isLoadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<ProcessingOrderBloc>().add(StartOrder());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ProcessingOrderBloc, OrderState>(
-      builder: (context, state) {
-        if (state is OrderLoading) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (state is OrderLoaded && state.orders.isNotEmpty) {
-          return Column(
-            children: [
-              Expanded(
-                child: OrderListView(orders: state.orders),
-              ),
-              // ElevatedButton(
-              //   onPressed: () {
-              //     // final newOrder = Order(/* thông tin đơn hàng mới */);
-              //     context
-              //         .read<ProcessingOrderBloc>()
-              //         .add(AddOrder(state.orders, state.page));
-              //   },
-              //   child: const Text('Tải thêm'),
-              // ),
-              // const SizedBox(height: 50),
-            ],
-          );
-        } else if (state is OrderError) {
-          return Center(child: Text('Lỗi: ${state.error}'));
+    return BlocListener<ProcessingOrderBloc, OrderState>(
+      listener: (context, state) {
+        if (state is OrderLoaded) {
+          setState(() {
+            isLoadingMore = false;
+            if (page == 1) {
+              orders = state.orders;
+            } else {
+              orders.addAll(state.orders);
+            }
+          });
         }
-        return const Center(
-          child: Column(
-            children: [
-              Image(
-                image: AssetImage("lib/assets/hoptrong.png"),
-              ),
-              Text(
-                'Chưa có đơn hàng nào',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              )
-            ],
-          ),
-        );
       },
+      child: Column(
+        children: [
+          Expanded(
+            child: OrderListView(
+              orders: orders,
+              refreshFunc: () async {
+                context.read<ProcessingOrderBloc>().add(StartOrder());
+                page = 1;
+              },
+              loadMoreFunc: () async {
+                if (!isLoadingMore) {
+                  setState(() {
+                    isLoadingMore = true;
+                  });
+                  page++;
+                  context
+                      .read<ProcessingOrderBloc>()
+                      .add(AddOrder(const [], page));
+                }
+              },
+              loading: isLoadingMore,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class TakingOrdersTab extends StatelessWidget {
+class TakingOrdersTab extends StatefulWidget {
   const TakingOrdersTab({super.key});
 
   @override
+  State<TakingOrdersTab> createState() => _TakingOrdersTabState();
+}
+
+class _TakingOrdersTabState extends State<TakingOrdersTab> {
+  List<Order> orders = [];
+  int page = 1;
+  bool isLoadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<TakingOrderBloc>().add(StartOrder());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<TakingOrderBloc, OrderState>(
-      builder: (context, state) {
-        if (state is OrderLoading) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (state is OrderLoaded && state.orders.isNotEmpty) {
-          return Column(children: [
-            Expanded(
-              child: OrderListView(orders: state.orders),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                context
-                    .read<TakingOrderBloc>()
-                    .add(AddOrder(state.orders, state.page));
-              },
-              child: const Text('Tải thêm'),
-            ),
-            const SizedBox(height: 20),
-          ]);
-        } else if (state is OrderError) {
-          return Center(child: Text('Lỗi: ${state.error}'));
+    return BlocListener<TakingOrderBloc, OrderState>(
+      listener: (context, state) {
+        if (state is OrderLoaded) {
+          setState(() {
+            isLoadingMore = false;
+            if (page == 1) {
+              orders = state.orders;
+            } else {
+              orders.addAll(state.orders);
+            }
+          });
         }
-        return const Center(
-          child: Column(
-            children: [
-              Image(
-                image: AssetImage("lib/assets/hoptrong.png"),
-              ),
-              Text(
-                'Chưa có đơn hàng nào',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              )
-            ],
-          ),
-        );
       },
+      child: Column(
+        children: [
+          Expanded(
+            child: OrderListView(
+              orders: orders,
+              refreshFunc: () async {
+                context.read<TakingOrderBloc>().add(StartOrder());
+
+                page = 1;
+              },
+              loadMoreFunc: () async {
+                if (!isLoadingMore) {
+                  setState(() {
+                    isLoadingMore = true;
+                  });
+                  page++;
+                  context.read<TakingOrderBloc>().add(AddOrder(const [], page));
+                }
+              },
+              loading: isLoadingMore,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class DeliveringOrdersTab extends StatelessWidget {
+class DeliveringOrdersTab extends StatefulWidget {
   const DeliveringOrdersTab({super.key});
 
   @override
+  State<DeliveringOrdersTab> createState() => _DeliveringOrdersTabState();
+}
+
+class _DeliveringOrdersTabState extends State<DeliveringOrdersTab> {
+  List<Order> orders = [];
+  int page = 1;
+  bool isLoadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<DeliveringOrderBloc>().add(StartOrder());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DeliveringOrderBloc, OrderState>(
-      builder: (context, state) {
-        if (state is OrderLoading) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (state is OrderLoaded && state.orders.isNotEmpty) {
-          return Column(children: [
-            Expanded(
-              child: OrderListView(orders: state.orders),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                context
-                    .read<DeliveringOrderBloc>()
-                    .add(AddOrder(state.orders, state.page));
-              },
-              child: const Text('Tải thêm'),
-            ),
-            const SizedBox(height: 20),
-          ]);
-        } else if (state is OrderError) {
-          return Center(child: Text('Lỗi: ${state.error}'));
+    return BlocListener<DeliveringOrderBloc, OrderState>(
+      listener: (context, state) {
+        if (state is OrderLoaded) {
+          setState(() {
+            isLoadingMore = false;
+            if (page == 1) {
+              orders = state.orders;
+            } else {
+              orders.addAll(state.orders);
+            }
+          });
         }
-        return const Center(
-          child: Column(
-            children: [
-              Image(
-                image: AssetImage("lib/assets/hoptrong.png"),
-              ),
-              Text(
-                'Chưa có đơn hàng nào',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              )
-            ],
-          ),
-        );
       },
+      child: Column(
+        children: [
+          Expanded(
+            child: OrderListView(
+              orders: orders,
+              refreshFunc: () async {
+                context.read<DeliveringOrderBloc>().add(StartOrder());
+
+                page = 1;
+              },
+              loadMoreFunc: () async {
+                if (!isLoadingMore) {
+                  setState(() {
+                    isLoadingMore = true;
+                  });
+                  page++;
+                  context
+                      .read<DeliveringOrderBloc>()
+                      .add(AddOrder(const [], page));
+                }
+              },
+              loading: isLoadingMore,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class CancelledOrdersTab extends StatelessWidget {
+class CancelledOrdersTab extends StatefulWidget {
   const CancelledOrdersTab({super.key});
 
   @override
+  State<CancelledOrdersTab> createState() => _CancelledOrdersTabState();
+}
+
+class _CancelledOrdersTabState extends State<CancelledOrdersTab> {
+  List<Order> orders = [];
+  int page = 1;
+  bool isLoadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<CancelledOrderBloc>().add(StartOrder());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CancelledOrderBloc, OrderState>(
-      builder: (context, state) {
-        if (state is OrderLoading) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (state is OrderLoaded && state.orders.isNotEmpty) {
-          return Column(children: [
-            Expanded(
-              child: OrderListView(orders: state.orders),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                context
-                    .read<TakingOrderBloc>()
-                    .add(AddOrder(state.orders, state.page));
-              },
-              child: const Text('Tải thêm'),
-            ),
-            const SizedBox(height: 20),
-          ]);
-        } else if (state is OrderError) {
-          return Center(child: Text('Lỗi: ${state.error}'));
+    return BlocListener<CancelledOrderBloc, OrderState>(
+      listener: (context, state) {
+        if (state is OrderLoaded) {
+          setState(() {
+            isLoadingMore = false;
+            if (page == 1) {
+              orders = state.orders;
+            } else {
+              orders.addAll(state.orders);
+            }
+          });
         }
-        return const Center(
-          child: Column(
-            children: [
-              Image(
-                image: AssetImage("lib/assets/hoptrong.png"),
-              ),
-              Text(
-                'Chưa có đơn hàng nào',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              )
-            ],
-          ),
-        );
       },
+      child: Column(
+        children: [
+          Expanded(
+            child: OrderListView(
+              orders: orders,
+              refreshFunc: () async {
+                context.read<CancelledOrderBloc>().add(StartOrder());
+
+                page = 1;
+              },
+              loadMoreFunc: () async {
+                if (!isLoadingMore) {
+                  setState(() {
+                    isLoadingMore = true;
+                  });
+                  page++;
+                  context
+                      .read<CancelledOrderBloc>()
+                      .add(AddOrder(const [], page));
+                }
+              },
+              loading: isLoadingMore,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class CompletedOrdersTab extends StatelessWidget {
+class CompletedOrdersTab extends StatefulWidget {
   const CompletedOrdersTab({super.key});
 
   @override
+  State<CompletedOrdersTab> createState() => _CompletedOrdersTabState();
+}
+
+class _CompletedOrdersTabState extends State<CompletedOrdersTab> {
+  List<Order> orders = [];
+  int page = 1;
+  bool isLoadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<CompletedOrderBloc>().add(StartOrder());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CompletedOrderBloc, OrderState>(
-      builder: (context, state) {
-        if (state is OrderLoading) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (state is OrderLoaded && state.orders.isNotEmpty) {
-          return Column(children: [
-            Expanded(
-              child: OrderListView(orders: state.orders),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                context
-                    .read<TakingOrderBloc>()
-                    .add(AddOrder(state.orders, state.page));
-              },
-              child: const Text('Tải thêm'),
-            ),
-            const SizedBox(height: 20),
-          ]);
-        } else if (state is OrderError) {
-          return Center(child: Text('Lỗi: ${state.error}'));
+    return BlocListener<CompletedOrderBloc, OrderState>(
+      listener: (context, state) {
+        if (state is OrderLoaded) {
+          setState(() {
+            isLoadingMore = false;
+            if (page == 1) {
+              orders = state.orders;
+            } else {
+              orders.addAll(state.orders);
+            }
+          });
         }
-        return const Center(
-          child: Column(
-            children: [
-              Image(
-                image: AssetImage("lib/assets/hoptrong.png"),
-              ),
-              Text(
-                'Chưa có đơn hàng nào',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              )
-            ],
-          ),
-        );
       },
+      child: Column(
+        children: [
+          Expanded(
+            child: OrderListView(
+              orders: orders,
+              refreshFunc: () async {
+                context.read<CompletedOrderBloc>().add(StartOrder());
+
+                page = 1;
+              },
+              loadMoreFunc: () async {
+                if (!isLoadingMore) {
+                  setState(() {
+                    isLoadingMore = true;
+                  });
+                  page++;
+                  context
+                      .read<CompletedOrderBloc>()
+                      .add(AddOrder(const [], page));
+                }
+              },
+              loading: isLoadingMore,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class OrderListView extends StatefulWidget {
   final List<Order> orders;
+  final Future<void> Function() refreshFunc;
+  final Future<void> Function() loadMoreFunc;
+  final bool loading;
 
   const OrderListView({
     super.key,
     required this.orders,
+    required this.refreshFunc,
+    required this.loadMoreFunc,
+    required this.loading,
   });
 
   @override
@@ -377,128 +468,68 @@ class OrderListView extends StatefulWidget {
 }
 
 class _OrderListViewState extends State<OrderListView> {
-  final ScrollController _scrollController = ScrollController();
-  bool _isLoadingMore = false;
-  bool _isRefreshing = false;
-  final TextEditingController searchController = TextEditingController();
-  String selectedFilter = "name";
-  List<Order> filteredOrders = [];
-
-  @override
-  void initState() {
-    super.initState();
-    searchController.addListener(_filterOrders);
-    _scrollController.addListener(_onScroll);
-    filteredOrders = widget.orders;
-  }
-
-  @override
-  void dispose() {
-    searchController.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _filterOrders() {
-    setState(() {
-      filteredOrders = widget.orders.where((order) {
-        final searchTerm = searchController.text.toLowerCase();
-
-        if (selectedFilter == 'name') {
-          return (order.nameReceiver ?? '').toLowerCase().contains(searchTerm);
-        } else if (selectedFilter == 'location') {
-          final location =
-              '${order.detailDest ?? ''}, ${order.districtDest ?? ''}, ${order.provinceDest ?? ''}';
-          return location.toLowerCase().contains(searchTerm);
-        } else if (selectedFilter == 'phone') {
-          return (order.phoneNumberReceiver ?? '').contains(searchTerm);
-        }
-        return false;
-      }).toList();
-    });
-  }
-
-  void _onScroll() {
-    print("Scolling");
-    if (_scrollController.position.pixels <= 50 && !_isRefreshing) {
-      print("Refreshing");
-      _refreshOrders();
-    } else if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 50 &&
-        !_isLoadingMore) {
-      print("Loading more");
-      _loadMoreOrders();
-    }
-  }
-
-  Future<void> _refreshOrders() async {
-    setState(() {
-      _isRefreshing = true;
-    });
-    // Call the API or function to reload the data
-    await Future.delayed(const Duration(seconds: 1)); // Simulate a network call
-    setState(() {
-      _isRefreshing = false;
-    });
-  }
-
-  Future<void> _loadMoreOrders() async {
-    setState(() {
-      _isLoadingMore = true;
-    });
-    // Call the API or function to load more data
-    await Future.delayed(const Duration(seconds: 1)); // Simulate a network call
-    setState(() {
-      _isLoadingMore = false;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Padding(
-        //   padding: const EdgeInsets.all(16.0),
-        //   child: Column(
-        //     children: [
-        //       DropdownButton<String>(
-        //         value: selectedFilter,
-        //         items: const [
-        //           DropdownMenuItem(value: 'name', child: Text('Lọc theo tên')),
-        //           DropdownMenuItem(
-        //               value: 'location', child: Text('Lọc theo địa điểm')),
-        //           DropdownMenuItem(
-        //               value: 'phone', child: Text('Lọc theo số điện thoại')),
-        //         ],
-        //         onChanged: (String? newValue) {
-        //           setState(() {
-        //             selectedFilter = newValue!;
-        //             _filterOrders();
-        //           });
-        //         },
-        //       ),
-        //       const SizedBox(height: 20),
-        //       TextField(
-        //         controller: searchController,
-        //         decoration: InputDecoration(
-        //           labelText: _getLabelText(),
-        //           prefixIcon: const Icon(Icons.search),
-        //           border: OutlineInputBorder(
-        //             borderRadius: BorderRadius.circular(8.0),
-        //           ),
-        //         ),
-        //       ),
-        //     ],
-        //   ),
-        // ),
-        Expanded(
-          child: Stack(
-            children: [
-              ListView.builder(
-                controller: _scrollController,
-                itemCount: filteredOrders.length,
-                itemBuilder: (context, index) {
-                  final order = filteredOrders[index];
+    return RefreshIndicator(
+      onRefresh: widget.refreshFunc,
+      child: widget.orders.isEmpty
+          ? const Center(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image(
+                      image: AssetImage("lib/assets/hoptrong.png"),
+                    ),
+                    Text(
+                      'Chưa có đơn hàng nào',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                    ),
+                    SizedBox(height: 250),
+                  ],
+                ),
+              ),
+            )
+          : ListView.builder(
+              itemCount: widget.orders.length + 1,
+              itemBuilder: (context, index) {
+                if (index == widget.orders.length) {
+                  return Center(
+                    child: ElevatedButton(
+                      onPressed: widget.loading
+                          ? null
+                          : () {
+                              widget.loadMoreFunc();
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            widget.loading ? Colors.grey : mainColor,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: widget.loading
+                          ? const Text(
+                              'Đang tải',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : const Text(
+                              'Tải thêm',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  );
+                } else {
+                  final order = widget.orders[index];
                   return ListTile(
                     contentPadding: const EdgeInsets.symmetric(
                         vertical: 8.0, horizontal: 16.0),
@@ -514,50 +545,7 @@ class _OrderListViewState extends State<OrderListView> {
                         fontSize: 16.0,
                       ),
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4.0),
-                        Row(
-                          children: [
-                            const Icon(Icons.person,
-                                size: 16.0, color: Colors.grey),
-                            const SizedBox(width: 4.0),
-                            Text(
-                              'Người nhận: ${order.nameReceiver ?? ''}',
-                              style: const TextStyle(fontSize: 14.0),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4.0),
-                        Row(
-                          children: [
-                            const Icon(Icons.phone,
-                                size: 16.0, color: Colors.grey),
-                            const SizedBox(width: 4.0),
-                            Text(
-                              'SĐT: ${order.phoneNumberReceiver ?? ''}',
-                              style: const TextStyle(fontSize: 14.0),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4.0),
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on,
-                                size: 16.0, color: Colors.grey),
-                            const SizedBox(width: 4.0),
-                            Expanded(
-                              child: Text(
-                                'Địa chỉ: ${order.detailDest ?? ''}, ${order.districtDest ?? ''}, ${order.provinceDest ?? ''}',
-                                style: const TextStyle(fontSize: 14.0),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                    subtitle: _buildOrderDetails(order),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -569,69 +557,61 @@ class _OrderListViewState extends State<OrderListView> {
                           .add(GetOrderImages(order.id!));
                     },
                   );
-                },
+                }
+              },
+            ),
+    );
+  }
+
+  Widget _buildOrderDetails(Order order) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 4.0),
+        Row(
+          children: [
+            const Icon(Icons.person, size: 16.0, color: Colors.grey),
+            const SizedBox(width: 4.0),
+            Text('Người nhận: ${order.nameReceiver ?? ''}'),
+          ],
+        ),
+        const SizedBox(height: 4.0),
+        Row(
+          children: [
+            const Icon(Icons.phone, size: 16.0, color: Colors.grey),
+            const SizedBox(width: 4.0),
+            Text('SĐT: ${order.phoneNumberReceiver ?? ''}'),
+          ],
+        ),
+        const SizedBox(height: 4.0),
+        Row(
+          children: [
+            const Icon(Icons.location_on, size: 16.0, color: Colors.grey),
+            const SizedBox(width: 4.0),
+            Expanded(
+              child: Text(
+                'Địa chỉ: ${order.detailDest ?? ''}, ${order.districtDest ?? ''}, ${order.provinceDest ?? ''}',
+                overflow: TextOverflow.ellipsis,
               ),
-              if (_isLoadingMore) ...[
-                Positioned(
-                  bottom: 20,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      width: 60, // Adjust the size as needed
-                      height: 60,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: const CircularProgressIndicator(
-                        strokeWidth: 3, // Adjust the thickness as needed
-                        color: mainColor, // Set the color of the indicator
-                      ),
-                    ),
-                  ),
-                )
-              ],
-              if (_isRefreshing)
-                Positioned(
-                  top: 10,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      width: 60, // Adjust the size as needed
-                      height: 60,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: const CircularProgressIndicator(
-                        strokeWidth: 3, // Adjust the thickness as needed
-                        color: mainColor, // Set the color of the indicator
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );
   }
 
   String _getLabelText() {
-    switch (selectedFilter) {
-      case 'name':
-        return 'Tìm kiếm theo tên người nhận';
-      case 'location':
-        return 'Tìm kiếm theo địa điểm người nhận';
-      case 'phone':
-        return 'Tìm kiếm theo số điện thoại người nhận';
-      default:
-        return 'Tìm kiếm';
-    }
+    // switch (selectedFilter) {
+    //   case 'name':
+    //     return 'Tìm kiếm theo tên người nhận';
+    //   case 'location':
+    //     return 'Tìm kiếm theo địa điểm người nhận';
+    //   case 'phone':
+    //     return 'Tìm kiếm theo số điện thoại người nhận';
+    //   default:
+    //     return 'Tìm kiếm';
+    // }
+    return "";
   }
 
   void _showOrderDetailsBottomSheet(BuildContext context, Order order) {
@@ -688,6 +668,8 @@ class _OrderListViewState extends State<OrderListView> {
                   const Divider(),
                   _buildOrderDetailTile(
                       'Người gửi', order.nameSender, Icons.person),
+                  // _buildOrderDetailTile(
+                  //     'Trạng thái', order.statusCode, Icons.person),
                   _buildOrderDetailTile(
                       'SĐT người gửi', order.phoneNumberSender, Icons.phone),
                   _buildOrderDetailTile(
@@ -714,11 +696,15 @@ class _OrderListViewState extends State<OrderListView> {
                   const Divider(),
                   _buildOrderDetailTile(
                       'Khối lượng',
-                      '${order.mass?.toStringAsFixed(2) ?? ''} kg',
+                      order.mass != null
+                          ? '${order.mass?.toStringAsFixed(2)} kg'
+                          : (order.fromMass != null
+                              ? "${order.fromMass} - ${order.toMass} kg"
+                              : "0 kg"),
                       Icons.line_weight),
                   _buildOrderDetailTile(
                       'Phí',
-                      '${order.fee?.toStringAsFixed(2) ?? ''} VNĐ',
+                      '${order.fee?.toStringAsFixed(0) ?? '0'} VNĐ',
                       Icons.attach_money),
 
                   _buildOrderDetailTile(
@@ -905,12 +891,24 @@ class _OrderListViewState extends State<OrderListView> {
         ),
         const SizedBox(height: 8),
         signature != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.memory(
-                  signature,
-                  height: 100,
-                  fit: BoxFit.contain, // Đảm bảo chữ ký không bị cắt
+            ? GestureDetector(
+                onTap: () async {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FullScreenImage(
+                        image: signature,
+                      ),
+                    ),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.memory(
+                    signature,
+                    height: 100,
+                    fit: BoxFit.contain, // Đảm bảo chữ ký không bị cắt
+                  ),
                 ),
               )
             : const Text("Chưa có chữ ký"),
@@ -1124,8 +1122,15 @@ class _OrderListViewState extends State<OrderListView> {
           actions: [
             TextButton(
               onPressed: () {
-                print('Selected Reason: ${selectedReason ?? "Không có"}');
-                print('Other Reason: ${otherReasonController.text}');
+                Navigator.of(context).pop();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey,
+              ),
+              child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () {
                 Navigator.of(context).pop();
               },
               style: TextButton.styleFrom(
@@ -1135,15 +1140,6 @@ class _OrderListViewState extends State<OrderListView> {
                 'Gửi',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey,
-              ),
-              child: const Text('Hủy'),
             ),
           ],
         );
@@ -1167,12 +1163,14 @@ class _OrderListViewState extends State<OrderListView> {
                 children: [
                   // Phần để chọn rating
                   Row(
+                    mainAxisSize: MainAxisSize.max,
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: List.generate(5, (index) {
                       return IconButton(
                         icon: Icon(
                           index < rating ? Icons.star : Icons.star_border,
                           color: Colors.yellow,
+                          size: 40,
                         ),
                         onPressed: () {
                           setState(() {
@@ -1196,18 +1194,15 @@ class _OrderListViewState extends State<OrderListView> {
           actions: [
             TextButton(
               onPressed: () {
-                // Xử lý khi người dùng nhấn nút Gửi
-                print('Rating: $rating');
-                print('Comment: ${commentController.text}');
-                Navigator.of(context).pop();
-              },
-              child: const Text('Gửi'),
-            ),
-            TextButton(
-              onPressed: () {
                 Navigator.of(context).pop(); // Đóng dialog
               },
               child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Gửi'),
             ),
           ],
         );

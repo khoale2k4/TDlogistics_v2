@@ -12,12 +12,10 @@ import 'package:tdlogistic_v2/shipper/bloc/task_event.dart';
 import 'package:tdlogistic_v2/shipper/bloc/task_state.dart';
 import 'package:tdlogistic_v2/shipper/data/models/task.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
-import 'package:tdlogistic_v2/shipper/data/repositories/task_repository.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class TasksWidget extends StatefulWidget {
-  final String token;
-  const TasksWidget({super.key, required this.token});
+  const TasksWidget({super.key});
 
   @override
   State<TasksWidget> createState() => _TasksWidgetState();
@@ -28,6 +26,8 @@ class _TasksWidgetState extends State<TasksWidget>
   late TabController _tabController;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   QRViewController? qrController;
+  int rcPage = 1;
+  int sdPage = 1;
 
   @override
   void initState() {
@@ -68,133 +68,27 @@ class _TasksWidgetState extends State<TasksWidget>
           controller: _tabController,
           isScrollable: false,
           indicatorColor: Colors.white,
-          indicatorWeight: 3,
           labelStyle: const TextStyle(
-              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
           unselectedLabelStyle: const TextStyle(
-              fontSize: 12, fontWeight: FontWeight.normal, color: Colors.black),
-          tabs: [
-            Tab(
-              child: AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: _tabController.index == 0
-                    ? const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
-                    : const TextStyle(fontSize: 14),
-                child: const Text("Nhận hàng"),
-              ),
-            ),
-            Tab(
-              child: AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: _tabController.index == 1
-                    ? const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
-                    : const TextStyle(fontSize: 14),
-                child: const Text("Gửi hàng"),
-              ),
-            ),
+            fontSize: 16,
+            fontWeight: FontWeight.normal,
+            color: Colors.black,
+          ),
+          tabs: const [
+            Tab(text: "Lấy hàng"),
+            Tab(text: "Giao hàng"),
           ],
         ),
-        // actions: [
-        //   IconButton(
-        //     icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
-        //     onPressed: _showQRScanner,
-        //   ),
-        // ],
       ),
       backgroundColor: Colors.white,
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildOrderReceiveList(context),
-          _buildOrderSendList(context),
-        ],
+        children: const [ReceiveOrdersTab(), SendOrdersTab()],
       ),
-    );
-  }
-
-  Widget _buildOrderReceiveList(BuildContext context) {
-    return BlocBuilder<TaskBlocShipReceive, TaskState>(
-      builder: (context, state) {
-        if (state is TaskLoading) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (state is TaskLoaded && state.totalTasks > 0) {
-          return Column(children: [
-            Expanded(
-              child: TaskListView(
-                tasks: state.tasks,
-                token: widget.token,
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                context.read<TaskBlocShipReceive>().add(AddTask());
-              },
-              child: const Text('Tải thêm'),
-            ),
-            const SizedBox(height: 20),
-          ]);
-        } else if (state is TaskError) {
-          return Center(child: Text('Lỗi: ${state.error}'));
-        }
-        return const Center(
-          child: Column(
-            children: [
-              Image(
-                image: AssetImage("lib/assets/done.png"),
-                height: 350,
-              ),
-              Text(
-                'Bạn đã hoàn thành tất cả!',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              )
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildOrderSendList(BuildContext context) {
-    return BlocBuilder<TaskBlocShipSend, TaskState>(
-      builder: (context, state) {
-        if (state is TaskLoading) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (state is TaskLoaded && state.totalTasks > 0) {
-          return Column(children: [
-            Expanded(
-              child: TaskListView(
-                tasks: state.tasks,
-                token: widget.token,
-                isSender: false,
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // final newOrder = Order(/* thông tin đơn hàng mới */);
-                context.read<TaskBlocShipSend>().add(AddTask());
-              },
-              child: const Text('Tải thêm'),
-            ),
-            const SizedBox(height: 20),
-          ]);
-        } else if (state is TaskError) {
-          return Center(child: Text('Lỗi: ${state.error}'));
-        }
-        return const Center(
-          child: Column(
-            children: [
-              Image(
-                image: AssetImage("lib/assets/done.png"),
-                height: 350,
-              ),
-              Text(
-                'Bạn đã hoàn thành tất cả!',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              )
-            ],
-          ),
-        );
-      },
     );
   }
 
@@ -235,16 +129,153 @@ class _TasksWidgetState extends State<TasksWidget>
   }
 }
 
+class ReceiveOrdersTab extends StatefulWidget {
+  const ReceiveOrdersTab({super.key});
+
+  @override
+  State<ReceiveOrdersTab> createState() => _ReceiveOrdersTabState();
+}
+
+class _ReceiveOrdersTabState extends State<ReceiveOrdersTab> {
+  List<Task> tasks = [];
+
+  int page = 1;
+  bool isLoadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<TaskBlocShipReceive>().add(StartTask());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<TaskBlocShipReceive, TaskState>(
+      listener: (context, state) {
+        if (state is TaskLoaded) {
+          setState(() {
+            isLoadingMore = false;
+            if (page == 1) {
+              tasks = state.tasks;
+            } else {
+              tasks.addAll(state.tasks);
+            }
+          });
+        }
+      },
+      child: Column(
+        children: [
+          Expanded(
+            child: TaskListView(
+              tasks: tasks,
+              reload: () async {
+                context.read<TaskBlocShipReceive>().add(StartTask());
+                page = 1;
+              },
+              onLoadMore: () async {
+                if (!isLoadingMore) {
+                  setState(() {
+                    isLoadingMore = true;
+                  });
+                  page++;
+                  context.read<TaskBlocShipReceive>().add(AddTask(page));
+                }
+              },
+              isLoading: isLoadingMore,
+              clearTasks: () async {
+                page = 1;
+                tasks.clear();
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SendOrdersTab extends StatefulWidget {
+  const SendOrdersTab({super.key});
+
+  @override
+  State<SendOrdersTab> createState() => _SendOrdersTabState();
+}
+
+class _SendOrdersTabState extends State<SendOrdersTab> {
+  List<Task> tasks = [];
+
+  int page = 1;
+  bool isLoadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<TaskBlocShipSend>().add(StartTask());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<TaskBlocShipSend, TaskState>(
+      listener: (context, state) {
+        if (state is TaskLoaded) {
+          setState(() {
+            isLoadingMore = false;
+            if (page == 1) {
+              tasks = state.tasks;
+            } else {
+              tasks.addAll(state.tasks);
+            }
+          });
+        }
+      },
+      child: Column(
+        children: [
+          Expanded(
+            child: TaskListView(
+              tasks: tasks,
+              reload: () async {
+                context.read<TaskBlocShipSend>().add(StartTask());
+                page = 1;
+              },
+              isSender: false,
+              onLoadMore: () async {
+                if (!isLoadingMore) {
+                  setState(() {
+                    isLoadingMore = true;
+                  });
+                  page++;
+                  context.read<TaskBlocShipSend>().add(AddTask(page));
+                }
+              },
+              isLoading: isLoadingMore,
+              clearTasks: () async {
+                tasks.clear();
+                page = 1;
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class TaskListView extends StatefulWidget {
   final List<Task> tasks;
   final bool isSender;
-  final String token;
+  final Future<void> Function() reload;
+  final Future<void> Function() onLoadMore;
+  final Future<void> Function() clearTasks;
+  final bool isLoading;
 
   const TaskListView(
       {super.key,
       required this.tasks,
       this.isSender = true,
-      required this.token});
+      required this.reload,
+      required this.onLoadMore,
+      required this.isLoading,
+      required this.clearTasks});
 
   @override
   State<TaskListView> createState() => _TaskListViewState();
@@ -253,96 +284,153 @@ class TaskListView extends StatefulWidget {
 class _TaskListViewState extends State<TaskListView> {
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: widget.tasks.length,
-      itemBuilder: (context, index) {
-        final task = widget.tasks[index];
-        // sửa cái này
-        bool agent = true;
-        return ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-          leading: agent
-              ? CircleAvatar(
-                  backgroundColor: Colors.red.withOpacity(0.1),
-                  child: const Icon(Icons.local_fire_department,
-                      color: Colors.red),
-                )
-              : CircleAvatar(
-                  backgroundColor: Colors.green.withOpacity(0.1),
-                  child: const Icon(Icons.local_shipping, color: Colors.green),
-                ),
-          title: Text(
-            task.order?.trackingNumber ?? '',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16.0,
-            ),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 4.0),
-              Row(
-                children: [
-                  const Icon(Icons.person, size: 16.0, color: Colors.grey),
-                  const SizedBox(width: 4.0),
-                  widget.isSender
-                      ? Text(
-                          'Người gửi: ${task.order?.nameSender ?? ''}',
-                          style: const TextStyle(fontSize: 14.0),
-                        )
-                      : Text(
-                          'Người nhận: ${task.order?.nameReceiver ?? ''}',
-                          style: const TextStyle(fontSize: 14.0),
-                        ),
-                ],
-              ),
-              const SizedBox(height: 4.0),
-              Row(
-                children: [
-                  const Icon(Icons.phone, size: 16.0, color: Colors.grey),
-                  const SizedBox(width: 4.0),
-                  Text(
-                    'SĐT: ${widget.isSender ? task.order?.phoneNumberSender : task.order?.phoneNumberReceiver ?? ''}',
-                    style: const TextStyle(fontSize: 14.0),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4.0),
-              Row(
-                children: [
-                  const Icon(Icons.location_on, size: 16.0, color: Colors.grey),
-                  const SizedBox(width: 4.0),
-                  Expanded(
-                    child: widget.isSender
-                        ? Text(
-                            'Địa chỉ: ${task.order?.detailSource ?? ''}, ${task.order?.districtSource ?? ''}, ${task.order?.provinceSource ?? ''}',
-                            style: const TextStyle(fontSize: 14.0),
-                            overflow: TextOverflow.ellipsis,
-                          )
-                        : Text(
-                            'Địa chỉ: ${task.order?.detailDest ?? ''}, ${task.order?.districtDest ?? ''}, ${task.order?.provinceDest ?? ''}',
-                            style: const TextStyle(fontSize: 14.0),
-                            overflow: TextOverflow.ellipsis,
+    return RefreshIndicator(
+      onRefresh: widget.reload,
+      child: widget.tasks.isEmpty
+          ? const Center(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Center(
+                      child: Column(
+                        children: [
+                          Image(
+                            image: AssetImage("lib/assets/done.png"),
+                            height: 350,
                           ),
-                  ),
-                ],
+                          Text(
+                            'Bạn đã hoàn thành tất cả!',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 20),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 300),
+                  ],
+                ),
               ),
-              const SizedBox(height: 4.0),
+            )
+          : ListView.builder(
+              itemCount: widget.tasks.length + 1,
+              itemBuilder: (context, index) {
+                if (index == widget.tasks.length) {
+                  return Center(
+                    child: ElevatedButton(
+                      onPressed: widget.isLoading
+                          ? null
+                          : () {
+                              widget.onLoadMore();
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            widget.isLoading ? Colors.grey : mainColor,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: widget.isLoading
+                          ? const Text(
+                              'Đang tải',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : const Text(
+                              'Tải thêm',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  );
+                } else {
+                  final task = widget.tasks[index];
+                  return _buildTaskTile(task);
+                }
+              },
+            ),
+    );
+  }
+
+  Widget _buildTaskTile(Task task) {
+    return ListTile(
+      contentPadding:
+          const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      leading: task.order!.serviceType == "SN"
+          ? CircleAvatar(
+              backgroundColor: Colors.red.withOpacity(0.1),
+              child: const Icon(Icons.local_fire_department, color: Colors.red),
+            )
+          : CircleAvatar(
+              backgroundColor: Colors.green.withOpacity(0.1),
+              child: const Icon(Icons.local_shipping, color: Colors.green),
+            ),
+      title: Text(
+        task.order?.trackingNumber ?? '',
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16.0,
+        ),
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 4.0),
+          Row(
+            children: [
+              const Icon(Icons.person, size: 16.0, color: Colors.grey),
+              const SizedBox(width: 4.0),
+              widget.isSender
+                  ? Text('Người gửi: ${task.order?.nameSender ?? ''}',
+                      style: const TextStyle(fontSize: 14.0))
+                  : Text('Người nhận: ${task.order?.nameReceiver ?? ''}',
+                      style: const TextStyle(fontSize: 14.0)),
             ],
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+          const SizedBox(height: 4.0),
+          Row(
+            children: [
+              const Icon(Icons.phone, size: 16.0, color: Colors.grey),
+              const SizedBox(width: 4.0),
+              Text(
+                  'SĐT: ${widget.isSender ? task.order?.phoneNumberSender : task.order?.phoneNumberReceiver ?? ''}',
+                  style: const TextStyle(fontSize: 14.0)),
+            ],
           ),
-          tileColor: Colors.white,
-          onTap: () {
-            context
-                .read<GetImagesShipBloc>()
-                .add(GetOrderImages(task.order!.id!));
-            _showOrderDetailsBottomSheet(context, task, widget.isSender);
-          },
-        );
+          const SizedBox(height: 4.0),
+          Row(
+            children: [
+              const Icon(Icons.location_on, size: 16.0, color: Colors.grey),
+              const SizedBox(width: 4.0),
+              Expanded(
+                child: widget.isSender
+                    ? Text(
+                        'Địa chỉ: ${task.order?.detailSource ?? ''}, ${task.order?.districtSource ?? ''}, ${task.order?.provinceSource ?? ''}',
+                        style: const TextStyle(fontSize: 14.0),
+                        overflow: TextOverflow.ellipsis)
+                    : Text(
+                        'Địa chỉ: ${task.order?.detailDest ?? ''}, ${task.order?.districtDest ?? ''}, ${task.order?.provinceDest ?? ''}',
+                        style: const TextStyle(fontSize: 14.0),
+                        overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4.0),
+        ],
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      tileColor: Colors.white,
+      onTap: () {
+        context.read<GetImagesShipBloc>().add(GetOrderImages(task.order!.id!));
+        _showOrderDetailsBottomSheet(context, task, widget.isSender);
       },
     );
   }
@@ -353,106 +441,143 @@ class _TaskListViewState extends State<TaskListView> {
       context: context,
       isScrollControlled: true,
       builder: (BuildContext context) {
-        return SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Card(
-              color: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              elevation: 5,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 40),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 30),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
+        return BlocListener<ConfirmTaskBloc, TaskState>(
+          listener: (context, state) {
+            if (state is AcceptedTask) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                context.read<TaskBlocShipReceive>().add(StartTask());
+                context.read<TaskBlocShipSend>().add(StartTask());
+              });
+              Navigator.of(context).pop();
+            } else if (state is FailedAcceptingTask) {
+              _showFailureDialog(context, state.error);
+            }
+          },
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Card(
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                ),
+                elevation: 5,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 40),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 30),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        'Chi tiết đơn hàng ${task.order?.trackingNumber ?? ''}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
+                    const Divider(),
+
+                    // Hiển thị thông tin người gửi/nhận dựa trên vai trò
+                    if (isSender) ...[
+                      _buildOrderDetailTile(
+                          'Người gửi', task.order?.nameSender, Icons.person),
+                      _buildOrderDetailTile('SĐT người gửi',
+                          task.order?.phoneNumberSender, Icons.phone),
+                      _buildOrderDetailTile(
+                        'Địa chỉ gửi',
+                        '${task.order?.provinceSource ?? ''}, ${task.order?.districtSource ?? ''}, ${task.order?.wardSource ?? ''}, ${task.order?.detailSource ?? ''}',
+                        Icons.location_on,
+                        address:
+                            "${task.order!.detailSource} ${task.order!.districtSource} ${task.order!.wardSource} ${task.order!.provinceSource}",
+                      ),
+                    ] else ...[
+                      _buildOrderDetailTile(
+                          'Người nhận', task.order?.nameReceiver, Icons.person),
+                      _buildOrderDetailTile('SĐT người nhận',
+                          task.order?.phoneNumberReceiver, Icons.phone),
+                      _buildOrderDetailTile(
+                        'Địa chỉ nhận',
+                        '${task.order?.provinceDest ?? ''}, ${task.order?.districtDest ?? ''}, ${task.order?.wardDest ?? ''}, ${task.order?.detailDest ?? ''}',
+                        Icons.location_on,
+                        address:
+                            "${task.order!.detailDest} ${task.order!.districtDest} ${task.order!.wardDest} ${task.order!.provinceDest}",
                       ),
                     ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      'Chi tiết đơn hàng ${task.order?.trackingNumber ?? ''}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
+
+                    _buildOrderDetailTile(
+                        'Khối lượng',
+                        '${task.order?.mass?.toStringAsFixed(2) ?? ''} kg',
+                        Icons.line_weight),
+                    _buildOrderDetailTile(
+                        'Phí',
+                        '${task.order?.fee?.toStringAsFixed(2) ?? ''} VNĐ',
+                        Icons.attach_money,
+                        qrData: (!task.order!.paid! &&
+                                (isSender == task.order!.receiverWillPay))
+                            ? task.order?.qrcode
+                            : ""),
+                    _buildOrderDetailTile(
+                        'Trạng thái thanh toán',
+                        (task.order!.paid!)
+                            ? "Đã thanh toán"
+                            : "Chưa thanh toán",
+                        (Icons.info)),
+                    const Divider(),
+
+                    // Hành trình đơn hàng
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text(
+                        'Hành trình đơn hàng',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
                       ),
                     ),
-                  ),
-                  const Divider(),
-
-                  // Hiển thị thông tin người gửi/nhận dựa trên vai trò
-                  if (isSender) ...[
-                    _buildOrderDetailTile(
-                        'Người gửi', task.order?.nameSender, Icons.person),
-                    _buildOrderDetailTile('SĐT người gửi',
-                        task.order?.phoneNumberSender, Icons.phone),
-                    _buildOrderDetailTile(
-                      'Địa chỉ gửi',
-                      '${task.order?.provinceSource ?? ''}, ${task.order?.districtSource ?? ''}, ${task.order?.wardSource ?? ''}, ${task.order?.detailSource ?? ''}',
-                      Icons.location_on,
-                      address:
-                          "${task.order!.detailSource} ${task.order!.districtSource} ${task.order!.wardSource} ${task.order!.provinceSource}",
-                    ),
-                  ] else ...[
-                    _buildOrderDetailTile(
-                        'Người nhận', task.order?.nameReceiver, Icons.person),
-                    _buildOrderDetailTile('SĐT người nhận',
-                        task.order?.phoneNumberReceiver, Icons.phone),
-                    _buildOrderDetailTile(
-                      'Địa chỉ nhận',
-                      '${task.order?.provinceDest ?? ''}, ${task.order?.districtDest ?? ''}, ${task.order?.wardDest ?? ''}, ${task.order?.detailDest ?? ''}',
-                      Icons.location_on,
-                      address:
-                          "${task.order!.detailDest} ${task.order!.districtDest} ${task.order!.wardDest} ${task.order!.provinceDest}",
-                    ),
+                    _buildJourneyList(task.order!.journies!),
+                    const Divider(),
+                    _buildImageSignatureSection(task.order!, isSender),
+                    _buildCancelSubmitButton(context, isSender, task.id!),
                   ],
-
-                  _buildOrderDetailTile(
-                      'Khối lượng',
-                      '${task.order?.mass?.toStringAsFixed(2) ?? ''} kg',
-                      Icons.line_weight),
-                  _buildOrderDetailTile(
-                      'Phí',
-                      '${task.order?.fee?.toStringAsFixed(2) ?? ''} VNĐ',
-                      Icons.attach_money,
-                      qrData: (!task.order!.paid! &&
-                              (isSender != task.order!.receiverWillPay))
-                          ? task.order?.qrcode
-                          : ""),
-                  _buildOrderDetailTile('Trạng thái thanh toán',
-                      (task.order!.paid!)?"Đã thanh toán":"Chưa thanh toán", (Icons.info)),
-                  const Divider(),
-
-                  // Hành trình đơn hàng
-                  const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text(
-                      'Hành trình đơn hàng',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ),
-                  _buildJourneyList(task.order!.journies!),
-                  const Divider(),
-                  _buildImageSignatureSection(task.order!, isSender),
-                  _buildCancelSubmitButton(isSender, task.id!),
-                ],
+                ),
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  void _showFailureDialog(BuildContext context, String errorMessage) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Lỗi"),
+          content: Text(errorMessage),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Đóng dialog
+              },
+              child: const Text("Đóng"),
+            ),
+          ],
         );
       },
     );
@@ -647,7 +772,7 @@ class _TaskListViewState extends State<TaskListView> {
     try {
       context.read<UpdateImagesShipBloc>().add(
             AddImageEvent(
-                curImages: [],
+                curImages: const [],
                 orderId: orderId,
                 category: category,
                 newImage: newImage,
@@ -733,7 +858,7 @@ class _TaskListViewState extends State<TaskListView> {
                   if (shouldDelete == true) {
                     context.read<UpdateImagesShipBloc>().add(AddImageEvent(
                         category: category,
-                        curImages: [],
+                        curImages: const [],
                         newImage: null,
                         orderId: orderId,
                         isSign: true));
@@ -918,7 +1043,10 @@ class _TaskListViewState extends State<TaskListView> {
                       subtitle: Text(value ?? 'Chưa có thông tin'),
                     ))
                 : ListTile(
-                    leading: Icon(icon, color: (value == "Chưa thanh toán"?Colors.red:Colors.green)),
+                    leading: Icon(icon,
+                        color: (value == "Chưa thanh toán"
+                            ? Colors.red
+                            : Colors.green)),
                     title: Text(
                       title,
                       style: const TextStyle(
@@ -962,38 +1090,44 @@ class _TaskListViewState extends State<TaskListView> {
     );
   }
 
-  Widget _buildCancelSubmitButton(bool isSender, String taskId) {
+  Widget _buildCancelSubmitButton(
+      BuildContext context, bool isSender, String taskId) {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          ElevatedButton(
-            onPressed: () {
-              _showCancellationDialog(context, taskId);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade200,
+          if (isSender)
+            ElevatedButton(
+              onPressed: () {
+                _showCancellationDialog(context, taskId);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade200,
+              ),
+              child: const Text(
+                "Từ chối",
+                style:
+                    TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
             ),
-            child: const Text(
-              "Từ chối",
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
-          ),
           const SizedBox(width: 8),
           isSender
               ? ElevatedButton(
-                  onPressed: () async {
-                    TaskRepository taskRepository = TaskRepository();
-                    taskRepository.confirmTakenTasks(widget.token, taskId);
-                    await Future.delayed(const Duration(seconds: 1));
-                    taskRepository.confirmDeliverTasks(widget.token, taskId);
-
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      context.read<TaskBlocShipReceive>().add(StartTask());
-                      context.read<TaskBlocShipSend>().add(StartTask());
-                    });
-                    Navigator.pop(context);
+                  onPressed: () {
+                    _showConfirmationDialog(
+                      context,
+                      taskId,
+                      "Xác nhận nhận hàng",
+                      "Chắc chắn đã nhận hàng?",
+                      () async {
+                        await _confirmReceivingProcess(taskId);
+                        widget.clearTasks();
+                        // if (mounted) {
+                        //   Navigator.pop(context); // Đóng dialog nếu widget vẫn tồn tại
+                        // }
+                      },
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade100,
@@ -1006,14 +1140,21 @@ class _TaskListViewState extends State<TaskListView> {
                 )
               : ElevatedButton(
                   onPressed: () {
-                    TaskRepository taskRepository = TaskRepository();
-                    taskRepository.confirmReceivedTasks(widget.token, taskId);
-
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      context.read<TaskBlocShipReceive>().add(StartTask());
-                      context.read<TaskBlocShipSend>().add(StartTask());
-                    });
-                    Navigator.pop(context);
+                    _showConfirmationDialog(
+                      context,
+                      taskId,
+                      "Xác nhận gửi hàng",
+                      "Bạn có chắc chắn muốn xác nhận gửi hàng không?",
+                      () {
+                        context
+                            .read<ConfirmTaskBloc>()
+                            .add(ConfirmTask(taskId, "confirm completed"));
+                        widget.clearTasks();
+                        // if (mounted) {
+                        //   Navigator.pop(context); // Đóng dialog nếu widget vẫn tồn tại
+                        // }
+                      },
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade100,
@@ -1026,6 +1167,62 @@ class _TaskListViewState extends State<TaskListView> {
                 ),
         ],
       ),
+    );
+  }
+
+  Future<void> _confirmReceivingProcess(String taskId) async {
+    // Kiểm tra xem widget có còn trong cây không trước khi thực hiện các thao tác async
+    if (!mounted) return;
+
+    context.read<ConfirmTaskBloc>().add(ConfirmTask(taskId, "confirm taken"));
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!mounted) return;
+    context
+        .read<ConfirmTaskBloc>()
+        .add(ConfirmTask(taskId, "confirm delivering"));
+  }
+
+  void _showConfirmationDialog(
+    BuildContext context,
+    String taskId,
+    String title,
+    String message,
+    VoidCallback onConfirm,
+  ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Đóng dialog
+              },
+              child: const Text(
+                'Hủy',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Đóng dialog
+                onConfirm(); // Thực hiện hành động xác nhận
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade100,
+              ),
+              child: const Text(
+                "Xác nhận",
+                style:
+                    TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1054,7 +1251,7 @@ class _TaskListViewState extends State<TaskListView> {
                   ListTile(
                     title: const Text('Không thể liên lạc với khách hàng'),
                     leading: Radio<String>(
-                      value: 'Không thể liên lạc với khách hàng',
+                      value: 'TIMEOUT',
                       groupValue: selectedReason,
                       onChanged: (value) {
                         setState(() {
@@ -1066,7 +1263,19 @@ class _TaskListViewState extends State<TaskListView> {
                   ListTile(
                     title: const Text('Khách hàng từ chối đưa/nhận hàng'),
                     leading: Radio<String>(
-                      value: 'Khách hàng từ chối đưa/nhận hàng',
+                      value: 'CUSTOMER_CANCELING',
+                      groupValue: selectedReason,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedReason = value;
+                        });
+                      },
+                    ),
+                  ),
+                  ListTile(
+                    title: const Text('Yêu cầu của shipper'),
+                    leading: Radio<String>(
+                      value: 'SHIPPER',
                       groupValue: selectedReason,
                       onChanged: (value) {
                         setState(() {
@@ -1107,28 +1316,27 @@ class _TaskListViewState extends State<TaskListView> {
           actions: [
             TextButton(
               onPressed: () {
-                print('Selected Reason: ${selectedReason ?? "Không có"}');
-                print('Other Reason: ${otherReasonController.text}');
-                TaskRepository taskRepository = TaskRepository();
-                taskRepository.cancelTasks(widget.token, taskId, "TIMEOUT");
-                Navigator.of(context).pop();
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.blue,
-              ),
-              child: const Text(
-                'Gửi',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
                 Navigator.of(context).pop();
               },
               style: TextButton.styleFrom(
                 foregroundColor: Colors.grey,
               ),
               child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () {
+                context.read<ConfirmTaskBloc>().add(ConfirmTask(
+                    taskId, "CANCEL",
+                    reason: selectedReason ?? "TIMEOUT"));
+                Navigator.of(context).pop();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: mainColor,
+              ),
+              child: const Text(
+                'Gửi',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );

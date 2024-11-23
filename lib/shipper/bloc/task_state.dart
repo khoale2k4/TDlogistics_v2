@@ -99,10 +99,14 @@ class WaitingTask extends TaskState {}
 
 class AcceptingTask extends TaskState {}
 
-class AcceptedTask extends TaskState {}
+class AcceptedTask extends TaskState {
+  
+}
 
 class FailedAcceptingTask extends TaskState {
   final String error;
 
   FailedAcceptingTask(this.error);
 }
+
+

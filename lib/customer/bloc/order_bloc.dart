@@ -17,12 +17,12 @@ class OrderBlocCus extends Bloc<OrderEvent, OrderState> {
   final SecureStorageService secureStorageService;
   final OrderRepository orderRepository = OrderRepository();
 
-  OrderBlocCus({required this.secureStorageService}) : super(OrderLoading()) {
+  OrderBlocCus({required this.secureStorageService}) : super(OrderLoading([])) {
     on<StartOrder>(getOrder);
   }
 
   Future<void> getOrder(StartOrder event, Emitter<OrderState> emit) async {
-    emit(OrderLoading());
+    emit(OrderLoading([]));
 
     try {
       final fetchOrder = await orderRepository
@@ -47,14 +47,14 @@ class OrderBlocSearchCus extends Bloc<OrderEvent, OrderState> {
   final SecureStorageService secureStorageService;
 
   OrderBlocSearchCus({required this.secureStorageService})
-      : super(OrderLoading()) {
+      : super(OrderLoading([])) {
     on<GetOrders>(getOrrder);
   }
 
   Future<void> getOrrder(event, emit) async {
     print("Getting order");
     if (event.status == 1) print("status = 1");
-    emit(OrderLoading());
+    emit(OrderLoading([]));
     try {
       final fetchOrder = await orderRepository
           .getOrders((await secureStorageService.getToken())!);
@@ -76,7 +76,7 @@ class OrderBlocSearchCus extends Bloc<OrderEvent, OrderState> {
 class OrderBlocFee extends Bloc<OrderEvent, OrderState> {
   final OrderRepository orderRepository = OrderRepository();
 
-  OrderBlocFee() : super(OrderLoading()) {
+  OrderBlocFee() : super(OrderLoading([])) {
     on<CalculateFee>(calculateFee);
   }
   Future<void> calculateFee(event, emit) async {
@@ -168,14 +168,14 @@ class ProcessingOrderBloc extends Bloc<OrderEvent, OrderState> {
   final SecureStorageService secureStorageService;
 
   ProcessingOrderBloc({required this.secureStorageService})
-      : super(OrderLoading()) {
+      : super(OrderLoading([])) {
     on<StartOrder>(getOrder);
     on<AddOrder>(addOrder);
   }
 
   Future<void> getOrder(event, emit) async {
     print("Getting order");
-    emit(OrderLoading());
+    emit(OrderLoading([]));
     try {
       final fetchOrder = await orderRepository.getOrders(
           (await secureStorageService.getToken())!,
@@ -197,15 +197,13 @@ class ProcessingOrderBloc extends Bloc<OrderEvent, OrderState> {
   void addOrder(AddOrder event, Emitter<OrderState> emit) async {
     if (state is OrderLoaded) {
       final currentState = state as OrderLoaded;
-      emit(OrderLoading());
-      final updatedOrders = List<Order>.from(currentState.orders);
-      print(currentState.page);
-      final newPage = currentState.page + 1;
+      emit(OrderLoading(currentState.orders));
+      List<Order> updatedOrders = [];
 
       final fetchOrder = await orderRepository.getOrders(
         (await secureStorageService.getToken())!,
         status: "PROCESSING",
-        page: newPage,
+        page: event.page,
       );
 
       List<dynamic> fetchedOrders = fetchOrder["data"];
@@ -214,7 +212,7 @@ class ProcessingOrderBloc extends Bloc<OrderEvent, OrderState> {
           updatedOrders.add(Order.fromJson(fetchedOrders[i]));
         }
       }
-      emit(OrderLoaded(updatedOrders, updatedOrders.length, page: newPage));
+      emit(OrderLoaded(updatedOrders, updatedOrders.length, page: event.page));
     }
   }
 }
@@ -224,14 +222,14 @@ class TakingOrderBloc extends Bloc<OrderEvent, OrderState> {
   final SecureStorageService secureStorageService;
 
   TakingOrderBloc({required this.secureStorageService})
-      : super(OrderLoading()) {
+      : super(OrderLoading([])) {
     on<StartOrder>(getOrder);
     on<AddOrder>(addOrder);
   }
 
   Future<void> getOrder(event, emit) async {
     print("Getting order");
-    emit(OrderLoading());
+    emit(OrderLoading([]));
     try {
       final fetchOrder = await orderRepository.getOrders(
           (await secureStorageService.getToken())!,
@@ -253,15 +251,13 @@ class TakingOrderBloc extends Bloc<OrderEvent, OrderState> {
   void addOrder(AddOrder event, Emitter<OrderState> emit) async {
     if (state is OrderLoaded) {
       final currentState = state as OrderLoaded;
-      emit(OrderLoading());
-      final updatedOrders = List<Order>.from(currentState.orders);
-      print(currentState.page);
-      final newPage = currentState.page + 1;
+      emit(OrderLoading(currentState.orders));
+      List<Order> updatedOrders = [];
 
       final fetchOrder = await orderRepository.getOrders(
         (await secureStorageService.getToken())!,
-        status: "PROCESSING",
-        page: newPage,
+        status: "TAKING",
+        page: event.page,
       );
 
       List<dynamic> fetchedOrders = fetchOrder["data"];
@@ -270,7 +266,7 @@ class TakingOrderBloc extends Bloc<OrderEvent, OrderState> {
           updatedOrders.add(Order.fromJson(fetchedOrders[i]));
         }
       }
-      emit(OrderLoaded(updatedOrders, updatedOrders.length, page: newPage));
+      emit(OrderLoaded(updatedOrders, updatedOrders.length, page: event.page));
     }
   }
 }
@@ -280,14 +276,14 @@ class DeliveringOrderBloc extends Bloc<OrderEvent, OrderState> {
   final SecureStorageService secureStorageService;
 
   DeliveringOrderBloc({required this.secureStorageService})
-      : super(OrderLoading()) {
+      : super(OrderLoading([])) {
     on<StartOrder>(getOrder);
     on<AddOrder>(addOrder);
   }
 
   Future<void> getOrder(event, emit) async {
     print("Getting order");
-    emit(OrderLoading());
+    emit(OrderLoading([]));
     try {
       final fetchOrder = await orderRepository.getOrders(
           (await secureStorageService.getToken())!,
@@ -308,15 +304,13 @@ class DeliveringOrderBloc extends Bloc<OrderEvent, OrderState> {
   void addOrder(AddOrder event, Emitter<OrderState> emit) async {
     if (state is OrderLoaded) {
       final currentState = state as OrderLoaded;
-      emit(OrderLoading());
-      final updatedOrders = List<Order>.from(currentState.orders);
-      print(currentState.page);
-      final newPage = currentState.page + 1;
+      emit(OrderLoading(currentState.orders));
+      List<Order> updatedOrders = [];
 
       final fetchOrder = await orderRepository.getOrders(
         (await secureStorageService.getToken())!,
-        status: "PROCESSING",
-        page: newPage,
+        status: "DELIVERING",
+        page: event.page,
       );
 
       List<dynamic> fetchedOrders = fetchOrder["data"];
@@ -325,7 +319,7 @@ class DeliveringOrderBloc extends Bloc<OrderEvent, OrderState> {
           updatedOrders.add(Order.fromJson(fetchedOrders[i]));
         }
       }
-      emit(OrderLoaded(updatedOrders, updatedOrders.length, page: newPage));
+      emit(OrderLoaded(updatedOrders, updatedOrders.length, page: event.page));
     }
   }
 }
@@ -335,14 +329,14 @@ class CancelledOrderBloc extends Bloc<OrderEvent, OrderState> {
   final SecureStorageService secureStorageService;
 
   CancelledOrderBloc({required this.secureStorageService})
-      : super(OrderLoading()) {
+      : super(OrderLoading([])) {
     on<StartOrder>(getOrder);
     on<AddOrder>(addOrder);
   }
 
   Future<void> getOrder(event, emit) async {
     print("Getting order");
-    emit(OrderLoading());
+    emit(OrderLoading([]));
     try {
       final fetchOrder = await orderRepository.getOrders(
           (await secureStorageService.getToken())!,
@@ -364,15 +358,13 @@ class CancelledOrderBloc extends Bloc<OrderEvent, OrderState> {
   void addOrder(AddOrder event, Emitter<OrderState> emit) async {
     if (state is OrderLoaded) {
       final currentState = state as OrderLoaded;
-      emit(OrderLoading());
-      final updatedOrders = List<Order>.from(currentState.orders);
-      print(currentState.page);
-      final newPage = currentState.page + 1;
+      emit(OrderLoading(currentState.orders));
+      final List<Order> updatedOrders = [];
 
       final fetchOrder = await orderRepository.getOrders(
         (await secureStorageService.getToken())!,
-        status: "PROCESSING",
-        page: newPage,
+        status: "CANCEL",
+        page: event.page,
       );
 
       List<dynamic> fetchedOrders = fetchOrder["data"];
@@ -381,7 +373,7 @@ class CancelledOrderBloc extends Bloc<OrderEvent, OrderState> {
           updatedOrders.add(Order.fromJson(fetchedOrders[i]));
         }
       }
-      emit(OrderLoaded(updatedOrders, updatedOrders.length, page: newPage));
+      emit(OrderLoaded(updatedOrders, updatedOrders.length, page: event.page));
     }
   }
 }
@@ -391,14 +383,14 @@ class CompletedOrderBloc extends Bloc<OrderEvent, OrderState> {
   final SecureStorageService secureStorageService;
 
   CompletedOrderBloc({required this.secureStorageService})
-      : super(OrderLoading()) {
+      : super(OrderLoading([])) {
     on<StartOrder>(getOrder);
     on<AddOrder>(addOrder); // Thêm sự kiện mới cho việc thêm đơn hàng
   }
 
   Future<void> getOrder(event, emit) async {
     print("Getting order");
-    emit(OrderLoading());
+    emit(OrderLoading([]));
     try {
       final fetchOrder = await orderRepository.getOrders(
           (await secureStorageService.getToken())!,
@@ -420,15 +412,13 @@ class CompletedOrderBloc extends Bloc<OrderEvent, OrderState> {
   void addOrder(AddOrder event, Emitter<OrderState> emit) async {
     if (state is OrderLoaded) {
       final currentState = state as OrderLoaded;
-      emit(OrderLoading());
-      final updatedOrders = List<Order>.from(currentState.orders);
-      print(currentState.page);
-      final newPage = currentState.page + 1;
+      emit(OrderLoading(currentState.orders));
+      final List<Order> updatedOrders = [];
 
       final fetchOrder = await orderRepository.getOrders(
         (await secureStorageService.getToken())!,
-        status: "PROCESSING",
-        page: newPage,
+        status: "RECEIVED",
+        page: event.page,
       );
 
       List<dynamic> fetchedOrders = fetchOrder["data"];
@@ -437,7 +427,7 @@ class CompletedOrderBloc extends Bloc<OrderEvent, OrderState> {
           updatedOrders.add(Order.fromJson(fetchedOrders[i]));
         }
       }
-      emit(OrderLoaded(updatedOrders, updatedOrders.length, page: newPage));
+      emit(OrderLoaded(updatedOrders, updatedOrders.length, page: event.page));
     }
   }
 }
@@ -447,7 +437,7 @@ class CreateOrderBloc extends Bloc<OrderEvent, OrderState> {
   final SecureStorageService secureStorageService;
 
   CreateOrderBloc({required this.secureStorageService})
-      : super(OrderLoading()) {
+      : super(OrderLoading([])) {
     on<CreateOrderEvent>(createOrder);
     on<CreateShippingBill>(createShippingBill);
     on<GetShippingBill>(getShippingBill);
@@ -489,7 +479,7 @@ class CreateOrderBloc extends Bloc<OrderEvent, OrderState> {
         emit(OrderCreateFaild(orderCreate["message"]));
       }
       await Future.delayed(const Duration(seconds: 4), () {
-        emit(OrderLoading());
+        emit(OrderLoading([]));
       });
     } catch (error) {
       print("Lỗi khi tạo đơn hàng $error");
@@ -541,6 +531,7 @@ class GetLocationBloc extends Bloc<OrderEvent, OrderState> {
     on<AddLocation>(addLocation);
     on<UpdateLocation>(updateLocation);
     on<UpdateFavoriteLocation>(updateFavoriteLocations);
+    on<DeleteLocation>(deleteLocation);
   }
 
   Future<void> getLocations(event, emit) async {
@@ -578,6 +569,7 @@ class GetLocationBloc extends Bloc<OrderEvent, OrderState> {
             event.faLoc.lat,
             event.faLoc.lng);
       }
+      await getLocations(event, emit);
     } catch (error) {
       print("Error adding location or favorite location: ${error.toString()}");
     }
@@ -587,6 +579,7 @@ class GetLocationBloc extends Bloc<OrderEvent, OrderState> {
     try {
       await locationRepository.updateLocation(
           (await secureStorageService.getToken())!, event.loc);
+      await getLocations(event, emit);
     } catch (error) {
       print("Lỗi khi cập nhật địa điểm $error");
     }
@@ -596,8 +589,18 @@ class GetLocationBloc extends Bloc<OrderEvent, OrderState> {
     try {
       await locationRepository.updateFavoriteLocation(
           (await secureStorageService.getToken())!, event.favLoc);
+      await getLocations(event, emit);
     } catch (error) {
       print("Lỗi khi cập nhật địa điểm ưa thích $error");
+    }
+  }
+
+  Future<void> deleteLocation(event, emit) async {
+    try{
+      await locationRepository.deleteLocation((await secureStorageService.getToken())!, event.locationId, isFav: event.isFav);
+      await getLocations(event, emit);
+    }catch(error){
+      print("Lỗi khi xoá địa điểm: $error");
     }
   }
 }
@@ -616,9 +619,10 @@ class GetPositionsBloc extends Bloc<OrderEvent, OrderState> {
     try {
       final getPos = await locationRepository.getPositions(
           (await secureStorageService.getToken())!, event.orderId);
-          // print(getPos);
+          print(getPos);
       if (getPos["success"]) {
-        emit(getPos["data"]);
+
+        emit(GotPositions(getPos["data"]));
       } else {
         emit(FailedGetPositions(getPos["message"]));
       }

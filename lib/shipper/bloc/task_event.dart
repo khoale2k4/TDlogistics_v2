@@ -66,7 +66,11 @@ class GetOrderImages extends TaskEvent{
   GetOrderImages(this.orderId);
 }
 
-class AddTask extends TaskEvent{}
+class AddTask extends TaskEvent{
+  final int page;
+
+  AddTask(this.page);
+}
 
 class AddImageEvent extends TaskEvent {
   final String category;
@@ -92,4 +96,12 @@ class DeleteImage extends TaskEvent{
   final String id;
 
   DeleteImage(this.id);
+}
+
+class ConfirmTask extends TaskEvent{
+  final String taskId;
+  final String type;
+  final String reason;
+
+  ConfirmTask(this.taskId, this.type, {this.reason = ""});
 }

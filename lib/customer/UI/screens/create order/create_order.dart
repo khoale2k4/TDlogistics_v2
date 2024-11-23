@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:share_plus/share_plus.dart';
@@ -8,6 +9,7 @@ import 'package:tdlogistic_v2/core/constant.dart';
 import 'package:tdlogistic_v2/core/service/google.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/create%20order/add_location.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/create%20order/all_locations.dart';
+import 'package:tdlogistic_v2/customer/UI/screens/create%20order/clause.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/create%20order/insuarance.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/create%20order/view_insurance.dart';
 import 'package:tdlogistic_v2/customer/UI/widgets/search_bar.dart';
@@ -362,7 +364,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
       context.read<CreateOrderBloc>().add(
             CreateOrderEvent(
                 CreateOrderObject(
-                  cod: (cod == null || cod == 0)? null:cod,
+                  cod: (cod == null || cod == 0) ? null : cod,
                   detailDest: "20 Lý Thái Tổ",
                   // receiverAddress["detail"],
                   detailSource: "Đường tỉnh 52, tổ 6 Khu phố Hiệp Hòa",
@@ -381,14 +383,20 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                   provinceSource: "Tỉnh Bà Rịa - Vũng Tàu",
                   // senderAddress["province"],
                   // sửa loại gửi hàng
-                  serviceType: _selectedDeliveryMethod == "Giao hàng nhanh"?"SN":"SR",
+                  serviceType: _selectedDeliveryMethod == "Giao hàng nhanh"
+                      ? "SN"
+                      : "SR",
                   wardDest: "Phường Đất Đỏ",
                   // receiverAddress["ward"],
                   wardSource: "Xã Long Mỹ",
                   // senderAddress["ward"],
                   deliverDoorToDoor: _isDoorToDoor,
-                  fromMass: _selectedWeightRange.toInt() == -1? null:_selectedWeightRange.toInt() * 5,
-                  toMass: _selectedWeightRange.toInt() == -1?null:(_selectedWeightRange.toInt() + 1) * 5,
+                  fromMass: _selectedWeightRange.toInt() == -1
+                      ? null
+                      : _selectedWeightRange.toInt() * 5,
+                  toMass: _selectedWeightRange.toInt() == -1
+                      ? null
+                      : (_selectedWeightRange.toInt() + 1) * 5,
                   goodType: getTypeCode(),
                   latDestination: receiverLL!["lat"],
                   latSource: senderLL!["lat"],
@@ -397,9 +405,10 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                   receiverWillPay: _senderWillPay,
                   takingDescription: _orderDescriptionController.text,
                   note: _noteController.text,
-                  giftOrder: _isAGift?getGift(
-                      _giftMessageController.text, giftTopics[_giftTopic]):null,
-                  
+                  giftOrder: _isAGift
+                      ? getGift(
+                          _giftMessageController.text, giftTopics[_giftTopic])
+                      : null,
                 ),
                 _images,
                 _isInsured && _isInvoiceEnabled
@@ -628,7 +637,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                     ),
                     const SizedBox(height: 20),
                     _buildSectionTitle(
-                      "Địa điểm yêu thích",
+                      "Địa điểm nhận yêu thích",
                       button: true,
                       textButton: "Thêm",
                       func: () async {
@@ -651,7 +660,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                                     description: result[2],
                                     lat: latLng["lat"],
                                     lng: latLng["lng"])));
-                            context.read<GetLocationBloc>().add(GetLocations());
+                            // context.read<GetLocationBloc>().add(GetLocations());
                           });
                         }
                       },
@@ -684,209 +693,211 @@ Số lượng hình ảnh đính kèm: ${_images.length}
   }
 
   Widget buildHorizontalLocationList(List<Location> locations) {
-  String getNameLabel(String? type) {
-    return (type ?? "???") == "HOME"
-        ? "Nhà"
-        : (type ?? "???") == "COMPANY"
-            ? "Công ty"
-            : type!;
-  }
+    String getNameLabel(String? type) {
+      return (type ?? "???") == "HOME"
+          ? "Nhà"
+          : (type ?? "???") == "COMPANY"
+              ? "Công ty"
+              : type!;
+    }
 
-  return SizedBox(
-    height: 45,
-    child: ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: locations.length + _buildTrailingButtons(locations).length,
-      itemBuilder: (context, index) {
-        if (index >= locations.length) {
-          return _buildTrailingButtons(locations)[index - locations.length];
-        } else {
-          final location = locations[index];
-          return Row(
-            children: [
-              Container(
-                margin: const EdgeInsets.all(0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(45),
-                  color: Colors.grey.shade300,
-                ),
-                child: ElevatedButton(
-                  onPressed: () async {
-                    String address = await convertLatLngToAddress(
-                            location.lat!, location.lng!) ??
-                        "";
+    return SizedBox(
+      height: 45,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: locations.length + _buildTrailingButtons(locations).length,
+        itemBuilder: (context, index) {
+          if (index >= locations.length) {
+            return _buildTrailingButtons(locations)[index - locations.length];
+          } else {
+            final location = locations[index];
+            return Row(
+              children: [
+                Container(
+                  margin: const EdgeInsets.all(0),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(45),
+                    color: Colors.grey.shade300,
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      String address = await convertLatLngToAddress(
+                              location.lat!, location.lng!) ??
+                          "";
 
-                    setState(() {
-                      if (sendering) {
-                        _senderLocation.text = getNameLabel(location.name);
-                        _senderAddress.text = address;
-                      } else {
-                        _receiverLocation.text = getNameLabel(location.name);
-                        _receiverAddress.text = address;
-                      }
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.black,
-                    backgroundColor: Colors.grey.shade300,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(45),
+                      setState(() {
+                        if (sendering) {
+                          _senderLocation.text = address;
+                          // getNameLabel(location.name);
+                          _senderAddress.text = address;
+                        } else {
+                          _receiverLocation.text = address;
+                          // getNameLabel(location.name);
+                          _receiverAddress.text = address;
+                        }
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.grey.shade300,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(45),
+                      ),
+                      elevation: 0,
                     ),
-                    elevation: 0,
+                    child: Text(
+                      getNameLabel(location.name),
+                      style: const TextStyle(fontSize: 16),
+                    ),
                   ),
-                  child: Text(
-                    getNameLabel(location.name),
-                    style: const TextStyle(fontSize: 16),
-                  ),
                 ),
-              ),
-              const SizedBox(width: 5),
-            ],
-          );
-        }
-      },
-    ),
-  );
-}
-
-List<Widget> _buildTrailingButtons(List<Location> locations) {
-  List<Widget> trailingButtons = [];
-
-  // Kiểm tra nếu không có Location nào có type là "HOME", thêm nút "Nhà"
-  bool hasHomeLocation = locations.any((location) => location.name == "HOME");
-  if (!hasHomeLocation) {
-    trailingButtons.add(
-      Row(
-        children: [
-          addButton(
-            name: "Nhà",
-            icon: const Icon(Icons.add),
-            func: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NewLocation(location: "Nhà"),
-                ),
-              );
-              if (result != null) {
-                final latLng = await getLatLngFromAddress(result[1]) ??
-                    {"lat": 0, "lng": 0};
-                context.read<GetLocationBloc>().add(AddLocation(
-                    loc: Location(
-                        name: "HOME",
-                        lat: latLng["lat"],
-                        lng: latLng["lng"])));
-                context.read<GetLocationBloc>().add(GetLocations());
-              }
-            },
-          ),
-          const SizedBox(width: 5),
-        ],
-      ),
-    );
-  }
-
-  // Kiểm tra nếu không có Location nào có type là "COMPANY", thêm nút "Công ty"
-  bool hasCompanyLocation =
-      locations.any((location) => location.name == "COMPANY");
-  if (!hasCompanyLocation) {
-    trailingButtons.add(
-      Row(
-        children: [
-          addButton(
-            name: "Công ty",
-            icon: const Icon(Icons.add),
-            func: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      const NewLocation(location: "Công ty"),
-                ),
-              );
-              if (result != null) {
-                final latLng = await getLatLngFromAddress(result[1]) ??
-                    {"lat": 0, "lng": 0};
-                context.read<GetLocationBloc>().add(AddLocation(
-                    loc: Location(
-                        name: "COMPANY",
-                        lat: latLng["lat"],
-                        lng: latLng["lng"])));
-                context.read<GetLocationBloc>().add(GetLocations());
-              }
-            },
-          ),
-          const SizedBox(width: 5),
-        ],
-      ),
-    );
-  }
-
-  // Thêm nút "Thêm"
-  trailingButtons.add(
-    Row(
-      children: [
-        addButton(
-          name: "Thêm",
-          icon: const Icon(Icons.add),
-          func: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const NewLocation(location: "Thêm"),
-              ),
+                const SizedBox(width: 5),
+              ],
             );
-            if (result != null) {
-              final latLng = await getLatLngFromAddress(result[1]) ??
-                  {"lat": 0, "lng": 0};
-              if (mounted) {
-                context.read<GetLocationBloc>().add(AddLocation(
-                    loc: Location(
-                        name: result[0],
-                        lat: latLng["lat"],
-                        lng: latLng["lng"])));
-                context.read<GetLocationBloc>().add(GetLocations());
-              }
-            }
-          },
+          }
+        },
+      ),
+    );
+  }
+
+  List<Widget> _buildTrailingButtons(List<Location> locations) {
+    List<Widget> trailingButtons = [];
+
+    // Kiểm tra nếu không có Location nào có type là "HOME", thêm nút "Nhà"
+    bool hasHomeLocation = locations.any((location) => location.name == "HOME");
+    if (!hasHomeLocation) {
+      trailingButtons.add(
+        Row(
+          children: [
+            addButton(
+              name: "Nhà",
+              icon: const Icon(Icons.add),
+              func: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NewLocation(location: "Nhà"),
+                  ),
+                );
+                if (result != null) {
+                  final latLng = await getLatLngFromAddress(result[1]) ??
+                      {"lat": 0, "lng": 0};
+                  context.read<GetLocationBloc>().add(AddLocation(
+                      loc: Location(
+                          name: "HOME",
+                          lat: latLng["lat"],
+                          lng: latLng["lng"])));
+                  // context.read<GetLocationBloc>().add(GetLocations());
+                }
+              },
+            ),
+            const SizedBox(width: 5),
+          ],
         ),
-        const SizedBox(width: 5),
-      ],
-    ),
-  );
+      );
+    }
 
-  // Thêm nút "Xem tất cả"
-  trailingButtons.add(
-    Row(
-      children: [
-        ElevatedButton.icon(
-          onPressed: () {
-            // Điều hướng đến trang xem tất cả các địa điểm
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AllLocationsPage(locations: locations),
+    // Kiểm tra nếu không có Location nào có type là "COMPANY", thêm nút "Công ty"
+    bool hasCompanyLocation =
+        locations.any((location) => location.name == "COMPANY");
+    if (!hasCompanyLocation) {
+      trailingButtons.add(
+        Row(
+          children: [
+            addButton(
+              name: "Công ty",
+              icon: const Icon(Icons.add),
+              func: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const NewLocation(location: "Công ty"),
+                  ),
+                );
+                if (result != null) {
+                  final latLng = await getLatLngFromAddress(result[1]) ??
+                      {"lat": 0, "lng": 0};
+                  context.read<GetLocationBloc>().add(AddLocation(
+                      loc: Location(
+                          name: "COMPANY",
+                          lat: latLng["lat"],
+                          lng: latLng["lng"])));
+                  // context.read<GetLocationBloc>().add(GetLocations());
+                }
+              },
+            ),
+            const SizedBox(width: 5),
+          ],
+        ),
+      );
+    }
+
+    // Thêm nút "Thêm"
+    trailingButtons.add(
+      Row(
+        children: [
+          addButton(
+            name: "Thêm",
+            icon: const Icon(Icons.add),
+            func: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NewLocation(location: "Thêm"),
+                ),
+              );
+              if (result != null) {
+                final latLng = await getLatLngFromAddress(result[1]) ??
+                    {"lat": 0, "lng": 0};
+                if (mounted) {
+                  context.read<GetLocationBloc>().add(AddLocation(
+                      loc: Location(
+                          name: result[0],
+                          lat: latLng["lat"],
+                          lng: latLng["lng"])));
+                  // context.read<GetLocationBloc>().add(GetLocations());
+                }
+              }
+            },
+          ),
+          const SizedBox(width: 5),
+        ],
+      ),
+    );
+
+    // Thêm nút "Xem tất cả"
+    trailingButtons.add(
+      Row(
+        children: [
+          ElevatedButton.icon(
+            onPressed: () {
+              // Điều hướng đến trang xem tất cả các địa điểm
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AllLocationsPage(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.location_on, color: Colors.black),
+            label:
+                const Text("Xem tất cả", style: TextStyle(color: Colors.black)),
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.grey.shade300,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(45),
               ),
-            );
-          },
-          icon: const Icon(Icons.location_on, color: Colors.black),
-          label: const Text("Xem tất cả", style:TextStyle(color: Colors.black)),
-          style: ElevatedButton.styleFrom(
-            foregroundColor: Colors.white,
-            backgroundColor: Colors.grey.shade300,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(45),
             ),
           ),
-        ),
-        const SizedBox(width: 5),
-      ],
-    ),
-  );
+          const SizedBox(width: 5),
+        ],
+      ),
+    );
 
-  return trailingButtons;
-}
-
+    return trailingButtons;
+  }
 
   Widget addButton(
       {required String name, required Icon icon, required Function() func}) {
@@ -977,10 +988,11 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
                     MaterialPageRoute(
                       builder: (context) => NewLocation(
                         location: "Thêm",
+                        locationId: location.id!,
                         address: address ?? "",
                         isEdit: true,
                         isFav: true,
-                        descriptin: location.description!,
+                        description: location.description!,
                         name: location.name!,
                         phone: location.phoneNumber!,
                       ),
@@ -988,19 +1000,23 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
                   );
                   print(result);
                   if (result != null) {
+                    final newLatLng = await getLatLngFromAddress(result[3]);
+                    if (newLatLng == null) return;
                     setState(() {
                       locations[index] = FavoriteLocation(
-                        lat: location.lat,
-                        lng: location.lng,
+                        lat: newLatLng["lat"],
+                        lng: newLatLng["lng"],
                         name: result[0],
                         phoneNumber: result[1],
                         description: result[2],
                         id: location.id,
                       );
                     });
-                    context.read<GetLocationBloc>().add(UpdateFavoriteLocation(locations[index]));
+                    context
+                        .read<GetLocationBloc>()
+                        .add(UpdateFavoriteLocation(locations[index]));
                     // await Future.delayed(const Duration(seconds: 1));
-                    context.read<GetLocationBloc>().add(GetLocations());
+                    // context.read<GetLocationBloc>().add(GetLocations());
                   }
                 },
               ),
@@ -1070,21 +1086,21 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
         onChanged: onChanged,
         decoration: InputDecoration(
           filled: true,
-          fillColor: Colors.grey.shade100,
+          fillColor: Colors.white,
           labelText: labelText,
           labelStyle: TextStyle(
-            color: isValid ? Colors.grey.shade700 : Colors.red,
+            color: isValid ? Colors.grey.shade700 : secondColor,
           ),
           errorText: isValid ? null : 'Vui lòng chọn $labelText',
           prefixIcon:
-              Icon(icon, color: isValid ? Colors.grey.shade700 : Colors.red),
+              Icon(icon, color: isValid ? Colors.grey.shade700 : Colors.black),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(color: Colors.grey.shade300),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+            borderSide: const BorderSide(color: secondColor, width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
@@ -1104,7 +1120,7 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
           style: TextStyle(color: Colors.grey.shade500),
         ),
         dropdownColor: Colors.white,
-        iconEnabledColor: Colors.blue,
+        iconEnabledColor: secondColor,
         iconSize: 28,
       ),
     );
@@ -1238,7 +1254,7 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
                           _overMaxWeight = false;
                         }
                       } else {
-                        if (int.parse(value) > 50) {
+                        if (int.parse(value) > 50 || int.parse(value) <= 0) {
                           _overMaxWeight = true;
                           _selectedWeightRange = -1;
                           _isBulky = false;
@@ -1272,6 +1288,7 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
                   'Hàng dễ vỡ',
                   'Thực phẩm',
                   'Quần áo',
+                  'Đồ tươi sống',
                   'Khác',
                 ])
                   ElevatedButton(
@@ -1393,7 +1410,9 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
                       const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(width: _isInsured ? 1 : 0,),
+                    border: Border.all(
+                      width: _isInsured ? 1 : 0,
+                    ),
                     color: Colors.blueGrey.shade50,
                   ),
                   child: Row(
@@ -1402,7 +1421,7 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
                       Checkbox(
                         value: _isInsured,
                         onChanged: (bool? value) {
-                          if (_isInsured) _handleInsuranceForm();
+                          _handleInsuranceForm();
                         },
                         checkColor: Colors.white,
                         activeColor: secondColor,
@@ -1423,7 +1442,18 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
             ),
             const SizedBox(height: 20),
             // Dropdown cho phương thức giao
-            _buildDeliveryMethodSelector(),
+            _buildDropdown(
+              items: ['Giao hàng nhanh', "Giao hàng tiết kiệm"],
+              selectedValue: _selectedDeliveryMethod,
+              labelText: 'Phương thức vận chuyển',
+              isValid: true,
+              icon: Icons.local_shipping,
+              onChanged: (value) {
+                setState(() {
+                  if (value != null) _selectedDeliveryMethod = value;
+                });
+              },
+            ),
             _buildTextField(
                 controller: _noteController,
                 labelText: "Ghi chú đơn hàng",
@@ -1488,7 +1518,7 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
       },
       decoration: InputDecoration(
         filled: true,
-        fillColor: Colors.grey.shade100,
+        fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: Colors.grey.shade300),
@@ -1503,46 +1533,6 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
         errorText: isEmpty ? null : 'Vui lòng nhập $labelText',
         contentPadding:
             const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-      ),
-    );
-  }
-
-  Widget _buildDeliveryMethodSelector() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: DropdownButtonFormField<String>(
-        value: _selectedDeliveryMethod,
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: Colors.grey.shade100,
-          labelText: 'Phương thức giao',
-          labelStyle: TextStyle(color: Colors.grey.shade700),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Colors.blue, width: 1.5),
-          ),
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-        ),
-        items: ['Giao hàng nhanh', 'Giao hàng tiết kiệm'].map((String method) {
-          return DropdownMenuItem<String>(
-            value: method,
-            child: Text(method),
-          );
-        }).toList(),
-        onChanged: (value) {
-          if (value != null) _selectedDeliveryMethod = value;
-        },
-        hint: Text(
-          'Chọn phương thức giao',
-          style: TextStyle(color: Colors.grey.shade500),
-        ),
-        icon: const Icon(Icons.arrow_drop_down, color: Colors.blue),
-        iconSize: 28,
       ),
     );
   }
@@ -1565,6 +1555,18 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
                 setState(() {
                   if (value != null) _selectedPaymentMethod = value;
                 });
+              },
+            ),
+            const SizedBox(height: 20),
+            BlocBuilder<OrderBlocFee, OrderState>(
+              builder: (context, state) {
+                return _buildInfoRow(
+                    'Chi phí tạm tính',
+                    state is OrderFeeCalculated
+                        ? '${state.fee} VND'
+                        : state is OrderFeeCalculating
+                            ? 'Đang tính...'
+                            : 'Chưa tính phí');
               },
             ),
             const SizedBox(height: 20),
@@ -1683,17 +1685,6 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
                             ? '${_selectedWeightRange * 5}-${(_selectedWeightRange + 1) * 5} kg'
                             : "> 40 kg"),
                     _buildInfoRow('Loại hàng', _selectedGoodsType ?? "Bất kì"),
-                    BlocBuilder<OrderBlocFee, OrderState>(
-                      builder: (context, state) {
-                        return _buildInfoRow(
-                            'Chi phí giao hàng',
-                            state is OrderFeeCalculated
-                                ? '${state.fee} VND'
-                                : state is OrderFeeCalculating
-                                    ? 'Đang tính...'
-                                    : 'Chưa tính phí');
-                      },
-                    ),
                     if (_isAGift) ...[
                       _buildInfoRow('Đơn quà', giftTopics[_giftTopic]),
                       _buildInfoRow('Lời nhắn', _giftMessageController.text),
@@ -1740,7 +1731,8 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
                             ),
                           );
                         },
-                        child: const Text("Xem bảo hiểm", style: TextStyle(fontSize: 16, color: mainColor)),
+                        child: const Text("Xem bảo hiểm",
+                            style: TextStyle(fontSize: 16, color: mainColor)),
                       ),
                     ],
                   ),
@@ -1750,29 +1742,64 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
         ),
         bottomNavigationBar: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: BlocBuilder<CreateOrderBloc, OrderState>(
-            builder: (context, state) {
-              return ElevatedButton(
-
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: mainColor,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-
-                  ),
-                  
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Dòng thông báo với từ "điều khoản" nổi bật
+              RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  text: 'Tạo đơn đồng nghĩa với đồng ý ',
+                  style: const TextStyle(color: Colors.black),
+                  children: [
+                    TextSpan(
+                      text: 'điều khoản',
+                      style: const TextStyle(
+                        color: mainColor,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const Clause()),
+                          );
+                        },
+                    ),
+                  ],
                 ),
-                onPressed: state is OrderCreating
-                    ? null
-                    : () => handleNewOrder(context),
-                child: state is OrderCreating
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Xác nhận và tạo đơn hàng',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-              );
-            },
+              ),
+              const SizedBox(height: 8.0),
+              BlocBuilder<CreateOrderBloc, OrderState>(
+                builder: (context, state) {
+                  return ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: mainColor,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: state is OrderCreating
+                        ? null
+                        : () => handleNewOrder(context),
+                    child: state is OrderCreating
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                            'Xác nhận và tạo đơn hàng',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),
@@ -1883,7 +1910,8 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: mainColor, // Thay đổi màu nền của nút
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 18, vertical: 8), // Giảm padding
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10), // Border radius
               ),
@@ -1899,7 +1927,6 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
                   curve: Curves.easeInOut,
                 );
               } else if (_currentPage == 2) {
-                // Validate number inputs on page 2
                 if (!_validateNumberInputs()) return;
                 _cashOnDeliveryController.text =
                     _cashOnDeliveryController.text == ""
@@ -1910,6 +1937,11 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
                   curve: Curves.easeInOut,
                 );
               } else {
+                // context.read<OrderBlocFee>().add(
+                //   CalculateFee(
+                //     _senderCityController.text,
+                //     _senderDistrictController.text, // _senderAddressController.text, // _receiverCityController.text, // _receiverDistrictController.text, // _receiverAddressController.text, // _selectedDeliveryMethod, // int.parse(_heightController.text), // int.parse(_lengthController.text), // int.parse(_weightController.text), // int.parse(_widthController.text), // ), // );
+
                 _pageController.nextPage(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
@@ -1934,8 +1966,6 @@ List<Widget> _buildTrailingButtons(List<Location> locations) {
         )
       ],
     );
-
-    // context.read<OrderBlocFee>().add( // CalculateFee( // _senderCityController.text, // _senderDistrictController.text, // _senderAddressController.text, // _receiverCityController.text, // _receiverDistrictController.text, // _receiverAddressController.text, // _selectedDeliveryMethod, // int.parse(_heightController.text), // int.parse(_lengthController.text), // int.parse(_weightController.text), // int.parse(_widthController.text), // ), // );
   }
 
   void createOrderPopup(BuildContext context, bool isSuccess, String message) {

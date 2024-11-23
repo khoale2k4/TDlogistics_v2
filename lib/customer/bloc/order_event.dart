@@ -136,7 +136,6 @@ class CreateShippingBill extends OrderEvent{
 
 class GetShippingBill extends OrderEvent{}
 
-
 class UpdateFavoriteLocation extends OrderEvent{
   final FavoriteLocation favLoc;
 
@@ -147,4 +146,11 @@ class UpdateLocation extends OrderEvent{
   final Location loc;
 
   UpdateLocation(this.loc);
+}
+
+class DeleteLocation extends OrderEvent{
+  final String locationId;
+  final bool isFav;
+
+  DeleteLocation(this.locationId, {this.isFav = false});
 }

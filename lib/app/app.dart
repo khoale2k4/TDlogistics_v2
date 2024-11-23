@@ -147,6 +147,11 @@ class _MyAppState extends State<MyApp> {
             secureStorageService: widget.secureStorageService,
           ),
         ),
+        BlocProvider<ConfirmTaskBloc>(
+          create: (context) => ConfirmTaskBloc(
+            secureStorageService: widget.secureStorageService,
+          ),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

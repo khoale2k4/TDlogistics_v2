@@ -78,25 +78,29 @@ class LocationTrackerService {
   }
 
   Future<void> _sendLocationToAPI(
-      double latitude, double longitude, String taskIs, String token) async {
-        print("Sending $taskIs's location: lat: $latitude, long: $longitude");
-    return;
+      double latitude, double longitude, String taskId, String token) async {
+        print("Sending $taskId's location: lat: $latitude, long: $longitude");
+    // return;
+    try {
     final response = await http.post(
-      Uri.parse('https://api.example.com/location'),
+      Uri.parse('https://api.tdlogistics.net.vn/v3/task/shipper/journey/add/$taskId'),
       headers: {
         'Content-Type': 'application/json',
+        "authorization": "Bearer $token"
       },
       body: jsonEncode({
-        'latitude': latitude,
-        'longitude': longitude,
-        'timestamp': DateTime.now().toIso8601String(),
+        'lat': latitude,
+        'lng': longitude,
       }),
     );
+    print(response.body);
 
-    if (response.statusCode == 200) {
+    if (response.statusCode == 201) {
       print('Location sent successfully');
     } else {
       print('Failed to send location');
+    }}catch(error) {
+      print("Lỗi khi gửi toạ độ: $error");
     }
   }
 }

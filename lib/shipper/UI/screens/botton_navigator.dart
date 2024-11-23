@@ -2,9 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:tdlogistic_v2/auth/data/models/user_model.dart';
-import 'package:tdlogistic_v2/core/service/google.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/map_widget.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/tasks.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/shipper_info.dart';
@@ -14,24 +12,23 @@ import 'package:tdlogistic_v2/shipper/bloc/task_bloc.dart';
 import 'package:tdlogistic_v2/shipper/bloc/task_event.dart';
 import 'package:tdlogistic_v2/shipper/bloc/task_state.dart';
 import 'package:tdlogistic_v2/shipper/data/models/task.dart';
-import 'package:tdlogistic_v2/shipper/data/repositories/location_repository.dart';
 
 class ShipperNavigatePage extends StatefulWidget {
   final User user;
   final List<Task> tasks;
-  final String token;
 
-  ShipperNavigatePage({super.key, required this.user, required this.tasks, required this.token});
+  ShipperNavigatePage({super.key, required this.user, required this.tasks});
 
   @override
   _ShipperNavigatePageState createState() => _ShipperNavigatePageState();
 }
 
 class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
-  int _currentIndex = 0; 
+  int _currentIndex = 0;
+  List<Task> currTasks = [];
+  int page = 1;
+  bool isLoadingMore = false;
   late User user;
-  Timer? _timer;
-  LocationRepository locationRepository = LocationRepository();
 
   // Các trang scaffold khác nhau
   List<Widget> _pages = [];
@@ -41,9 +38,8 @@ class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
   void initState() {
     super.initState();
     user = widget.user;
-    startSendingLocation(widget.token,ordersDelevering);
     _pages = [
-      TasksWidget(token: widget.token),
+      TasksWidget(),
       const ShipperHistory(),
       const MapWidget(),
       ShipperInfor(user: user),
@@ -59,36 +55,6 @@ class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
     setState(() {
       _currentIndex = index;
     });
-  }
-
-  // Hàm để lấy vị trí hiện tại
-
-  // Hàm để bắt đầu gửi vị trí cho mỗi orderId
-  void startSendingLocation(String token, List<String> orderIds) {
-    _timer = Timer.periodic(Duration(seconds: 10), (timer) async {
-      try {
-        Position position = await getCurrentPosition();
-        double lat = position.latitude;
-        double lng = position.longitude;
-
-        for (String orderId in orderIds) {
-          locationRepository.addRoute(token, orderId, lat, lng).then((result) {
-            if (result["success"]) {
-              print("Location updated for orderId $orderId: ${result["message"]}");
-            } else {
-              print("Failed to update location for orderId $orderId: ${result["message"]}");
-            }
-          });
-        }
-      } catch (error) {
-        print("Error retrieving location: $error");
-      }
-    });
-  }
-
-  void stopSendingLocation() {
-    _timer?.cancel();
-    print("Stopped sending location updates.");
   }
 
   @override
@@ -122,55 +88,71 @@ class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
         ],
         type: BottomNavigationBarType.fixed, // Đảm bảo các tab không bị cuộn
       ),
-      floatingActionButton: _currentIndex < 2? Stack(
-        children: [
-          FloatingActionButton(
-            onPressed: () {
-              buildBottomSheet(context);
-            },
-            backgroundColor: Colors.white60,
-            child: const Icon(Icons.notifications_active_outlined),
-          ),
-          Positioned(
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              constraints: const BoxConstraints(
-                minWidth: 20,
-                minHeight: 20,
-              ),
-              child: Center(
-                child: BlocBuilder<PendingOrderBloc, TaskState>(
-                  builder: (context, state) {
-                    if (state is TaskLoaded) {
-                      return Text(
-                        state.totalTasks.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      );
-                    }
-                    return const Text(
-                      "0",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+      floatingActionButton: BlocListener<PendingOrderBloc, TaskState>(
+        listener: (context, state) {
+          if (state is TaskLoaded) {
+            setState(() {
+              isLoadingMore = false;
+              if (page == 1) {
+                currTasks = state.tasks;
+              } else {
+                currTasks.addAll(state.tasks);
+              }
+            });
+          }
+        },
+        child: _currentIndex < 2
+            ? Stack(
+                children: [
+                  FloatingActionButton(
+                    onPressed: () {
+                      buildBottomSheet(context);
+                    },
+                    backgroundColor: Colors.white60,
+                    child: const Icon(Icons.notifications_active_outlined),
+                  ),
+                  Positioned(
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-        ],
-      ):Container(),
+                      constraints: const BoxConstraints(
+                        minWidth: 20,
+                        minHeight: 20,
+                      ),
+                      child: Center(
+                        child: BlocBuilder<PendingOrderBloc, TaskState>(
+                          builder: (context, state) {
+                            if (state is TaskLoaded) {
+                              return Text(
+                                state.totalTasks.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            }
+                            return const Text(
+                              "0",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Container(),
+      ),
     );
   }
 
@@ -204,7 +186,23 @@ class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (BuildContext context) {
-        return TasksNotifications(tasks: widget.tasks);
+        return TasksNotifications(
+          tasks: currTasks,
+          reload: () async {
+            context.read<PendingOrderBloc>().add(GetPendingTask());
+            page = 1;
+          },
+          onLoadMore: () async {
+            if (!isLoadingMore) {
+              setState(() {
+                isLoadingMore = true;
+              });
+              page++;
+              context.read<PendingOrderBloc>().add(AddTask(page));
+            }
+          },
+          isLoading: isLoadingMore,
+        );
       },
     );
   }
@@ -212,7 +210,15 @@ class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
 
 class TasksNotifications extends StatefulWidget {
   final List<Task> tasks;
-  const TasksNotifications({super.key, required this.tasks});
+  final Future<void> Function() reload;
+  final Future<void> Function() onLoadMore;
+  final bool isLoading;
+  const TasksNotifications(
+      {super.key,
+      required this.tasks,
+      required this.reload,
+      required this.onLoadMore,
+      required this.isLoading});
 
   @override
   State<TasksNotifications> createState() => _TasksNotificationsState();
@@ -226,141 +232,151 @@ class _TasksNotificationsState extends State<TasksNotifications> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<PendingOrderBloc, TaskState>(
-        listener: (context, state) {
-          if (state is AcceptedTask) {
-            print("accept");
-            // Hiển thị dialog khi tạo đơn hàng thành công
-            showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: const Text('Thành công'),
-                  content: const Text('Nhận đơn thành công!'),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context); // Đóng dialog
-                        // Có thể thêm navigation về trang chủ hoặc trang đơn hàng ở đây
-                      },
-                      child: const Text('Đóng'),
-                    ),
-                  ],
-                );
-              },
-            );
-          } else if (state is FailedAcceptingTask) {
-            showDialog(
-              context: context,
-              barrierDismissible:
-                  false, 
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: const Text('Thất bại'),
-                  content: Text('Không thể nhận đơn: ${state.error}'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Đóng'),
-                    ),
-                  ],
-                );
-              },
-            );
-          }
-        },child: SafeArea(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Danh sách đơn hàng có thể nhận',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+      listener: (context, state) {
+        if (state is AcceptedTask) {
+          print("accept");
+          // Hiển thị dialog khi tạo đơn hàng thành công
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Thành công'),
+                content: const Text('Nhận đơn thành công!'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Đóng dialog
+                      // Có thể thêm navigation về trang chủ hoặc trang đơn hàng ở đây
+                    },
+                    child: const Text('Đóng'),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-            const Divider(),
-            // List orders
-            BlocBuilder<PendingOrderBloc, TaskState>(
-              builder: (context, state) {
-                if (state is TaskLoaded) {
-                  return state.tasks.isNotEmpty
-                      ? Column(
-                          children: [
-                            ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxHeight:
-                                    MediaQuery.of(context).size.height * 0.6,
-                              ),
-                              child: ListView.separated(
-                                shrinkWrap: true,
-                                itemCount: state.tasks.length,
-                                separatorBuilder: (context, index) =>
-                                    const Divider(),
-                                itemBuilder: (context, index) {
-                                  final task = state.tasks[index];
-                                  return _buildTaskCard(context, task);
-                                },
-                              ),
+                ],
+              );
+            },
+          );
+        } else if (state is FailedAcceptingTask) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Thất bại'),
+                content: Text('Không thể nhận đơn: ${state.error}'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Đóng'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      },
+      child: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Danh sách đơn hàng có thể nhận',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const Divider(),
+              RefreshIndicator(
+                onRefresh: widget.reload,
+                child: widget.tasks.isNotEmpty
+                    ? Column(
+                        children: [
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxHeight:
+                                  MediaQuery.of(context).size.height * 0.6,
                             ),
-                            ElevatedButton(
-                              onPressed: () {
-                                context.read<PendingOrderBloc>().add(AddTask());
+                            child: ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: widget.tasks.length,
+                              separatorBuilder: (context, index) =>
+                                  const Divider(),
+                              itemBuilder: (context, index) {
+                                final task = widget.tasks[index];
+                                return _buildTaskCard(context, task);
                               },
-                              child: const Text('Tải thêm'),
                             ),
-                          ],
-                        )
-                      : const Center(
-                          child: Column(
-                            children: [
-                              Image(
-                                image: AssetImage("lib/assets/done.png"),
-                                height: 350,
-                              ),
-                              Text(
-                                'Hiện chưa có đơn hàng!',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 20),
-                              )
-                            ],
                           ),
-                        );
-                } else if (state is TaskError) {
-                  return Text(state.error);
-                } else if (state is AcceptedTask ||
-                    state is FailedAcceptingTask) {
-                  if (state is AcceptedTask) {
-                    print("success");
-                    // acceptTaskPopup(
-                    //     context, true, ""); // Gọi hàm hiển thị popup thành công
-                  } else if (state is FailedAcceptingTask) {
-                    // acceptTaskPopup(context, false,
-                    //     state.error); // Gọi hàm hiển thị popup thất bại
-                  }
-                }
-                return const CircularProgressIndicator();
-              },
-            )
-          ],
+                          ElevatedButton(
+                            onPressed: widget.isLoading
+                                ? null
+                                : () {
+                                    widget.onLoadMore();
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  widget.isLoading ? Colors.grey : mainColor,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: widget.isLoading
+                                ? const Text(
+                                    'Đang tải',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Tải thêm',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      )
+                    : const Center(
+                        child: Column(
+                          children: [
+                            Image(
+                              image: AssetImage("lib/assets/done.png"),
+                              height: 350,
+                            ),
+                            Text(
+                              'Hiện chưa có đơn hàng!',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 20),
+                            ),
+                            const SizedBox(height: 200)
+                          ],
+                        ),
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
-    ));
+    );
   }
 
   void acceptTaskPopup(BuildContext context, bool isSuccess, String message) {
     // Đảm bảo dialog được gọi sau khi build hoàn tất
-    if(isSuccess) {
+    if (isSuccess) {
       context.read<TaskBlocShipReceive>().add(StartTask());
       context.read<TaskBlocShipSend>().add(StartTask());
     }

@@ -177,8 +177,9 @@ class LocationRepository {
       if (response.statusCode >= 200 && response.statusCode <= 210) {
         List<LatLng> routePoints = [];
         for (var point in responseData["data"]) {
-          double lat = point[0];
-          double lng = point[1];
+          if(point[0] == null || point[1] == null) continue;
+          double lat =  point[0].toDouble();
+          double lng = point[1].toDouble();
           routePoints.add(LatLng(lat, lng));
         }
         return {
@@ -257,7 +258,11 @@ class LocationRepository {
           location.toJson(),
         ),
       );
+      print(json.encode(
+          location.toJson(),
+        ),);
       final responseData = json.decode(response.body);
+      print(responseData);
       if (response.statusCode >= 200 && response.statusCode <= 210) {
         return {
           "success": true,
@@ -279,4 +284,41 @@ class LocationRepository {
       };
     }
   }
+
+  Future<Map<String, dynamic>> deleteLocation(
+      String token, String locationId, {bool isFav = false}) async {
+    try {
+      Uri url = Uri.parse('$baseUrl/${isFav?"favorite_order_location":"order_location"}/delete/$locationId');
+      final headers = {
+        'Content-Type': 'application/json',
+        "authorization": "Bearer $token"
+      };
+      var response = await http.delete(
+        url,
+        headers: headers,
+      );
+      final responseData = json.decode(response.body);
+      print(responseData);
+      if (response.statusCode >= 200 && response.statusCode <= 210) {
+        return {
+          "success": true,
+          "message": "Xoá địa điểm thành công",
+          "data": responseData
+        };
+      } else {
+        return {
+          "success": false,
+          "message": "Xoá địa điểm không thành công",
+          "data": null
+        };
+      }
+    } catch (error) {
+      print("Lỗi khi xoá địa điểm: $error");
+      return {
+        "success": false,
+        "message": error.toString(),
+      };
+    }
+  }
+
 }

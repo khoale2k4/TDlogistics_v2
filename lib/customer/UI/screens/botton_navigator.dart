@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tdlogistic_v2/auth/data/models/user_model.dart';
 import 'package:tdlogistic_v2/core/service/socket_for_customer.dart';
+import 'package:tdlogistic_v2/customer/UI/contact/chat_box.dart';
+import 'package:tdlogistic_v2/customer/UI/contact/chats_screen.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/map_widget.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/cus_info.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/history.dart';
@@ -28,9 +30,7 @@ class _NavigatePageState extends State<NavigatePage> {
     _pages = [
       HomePage(user: user),
       const History(),
-      VoucherPage(),
-      // const MapWidget(),
-      // const ChatBox(),
+      ChatListScreen(),
       CustomerInfor(user: user), // Truyền user vào CustomerInfor
     ];
   }
@@ -70,8 +70,8 @@ class _NavigatePageState extends State<NavigatePage> {
             label: 'Lịch sử',
           ),
           BottomNavigationBarItem(
-            icon: _buildIconWithCircle(Icons.percent, 2),
-            label: 'Khuyến mãi',
+            icon: _buildIconWithCircle(Icons.messenger_outline, 2),
+            label: 'Nhắn tin',
           ),
           // BottomNavigationBarItem(
           //   icon: _buildIconWithCircle(Icons.notifications_active_outlined, 2),
@@ -99,8 +99,12 @@ class _NavigatePageState extends State<NavigatePage> {
       padding: const EdgeInsets.all(8), // Khoảng cách xung quanh icon
       child: Icon(
         icon,
-        size: _currentIndex == index ? 35 : 24, // Kích thước lớn hơn cho icon được chọn
-        color: _currentIndex == index ? mainColor : Colors.grey, // Màu icon khi được chọn
+        size: _currentIndex == index
+            ? 35
+            : 24, // Kích thước lớn hơn cho icon được chọn
+        color: _currentIndex == index
+            ? mainColor
+            : Colors.grey, // Màu icon khi được chọn
       ),
     );
   }
