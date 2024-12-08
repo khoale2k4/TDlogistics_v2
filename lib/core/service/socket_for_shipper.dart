@@ -39,8 +39,20 @@ class _SocketPageState extends State<SocketPage> {
     childWidget = ShipperNavigatePage(
       user: widget.user,
       tasks: tasks,
+      sendMessage: sendMessage,
     );
     connectToSocket();
+  }
+
+  void sendMessage(String receiverId, String content) {
+    socket.emit("message", {
+      "receiverId": receiverId,
+      "content": content,
+    });
+    print({
+      "receiverId": receiverId,
+      "content": content,
+    });
   }
 
   void connectToSocket() {
@@ -70,7 +82,7 @@ class _SocketPageState extends State<SocketPage> {
     }
 
     print('Bearer $token');
-    String host = "https://api.tdlogistics.net.vn/";
+    String host = "https:localhost:3000/";
     try {
       socket = IO.io(
         host,
@@ -101,6 +113,9 @@ class _SocketPageState extends State<SocketPage> {
           } catch (error) {
             print("Lỗi khi nhận đơn hàng từ socket: ${error.toString()}");
           }
+        } else if(data['senderId'] != null) {
+          _showNotification("Tin nhắn mới!", "Bạn có một tin nhắn từ ...");
+          context.read<GetChatShipBloc>().add(NewMessage(data['content'], " "));
         }
       });
 

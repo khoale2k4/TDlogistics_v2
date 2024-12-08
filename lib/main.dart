@@ -19,4 +19,6 @@ Future<void> main() async {
     secureStorageService: secureStorageService,
     locationTrackerService: locationTrackerService
   ));
+
+  // runApp(const TestCall());
 }

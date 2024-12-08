@@ -5,7 +5,9 @@ import 'dart:typed_data';
 import 'package:equatable/equatable.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:tdlogistic_v2/core/models/chats_model.dart';
 import 'package:tdlogistic_v2/core/models/order_model.dart';
+import 'package:tdlogistic_v2/customer/data/models/voucher.dart';
 import 'package:tdlogistic_v2/customer/data/models/favorite_location.dart';
 import 'package:tdlogistic_v2/customer/data/models/shipping_bill.dart';
 
@@ -151,4 +153,46 @@ class FailedGettingBill extends OrderState{
   final String error;
 
   FailedGettingBill(this.error);
+}
+
+class GetChatsSuccess extends OrderState{
+  final List<Chat> chats;
+
+  const GetChatsSuccess(this.chats);
+}
+
+class GetChatsFailure extends OrderState{
+  final String error;
+
+  const GetChatsFailure(this.error);
+}
+
+class GetChatWithShipSuccess extends OrderState{
+  final List<Message> messages;
+
+  const GetChatWithShipSuccess(this.messages);
+}
+
+class GetChatWithShipFailure extends OrderState{
+  final String error;
+
+  const GetChatWithShipFailure(this.error);
+}
+
+class ReceiveMessage extends OrderState {
+  final Map<String, dynamic> message;
+
+  ReceiveMessage(this.message);
+}
+
+class GotId extends OrderState {
+  final String id;
+
+  const GotId(this.id);
+}
+
+class GotVouchers extends OrderState {
+  final List<Voucher> vouchers;
+
+  const GotVouchers(this.vouchers);
 }

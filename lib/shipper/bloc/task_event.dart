@@ -105,3 +105,26 @@ class ConfirmTask extends TaskEvent{
 
   ConfirmTask(this.taskId, this.type, {this.reason = ""});
 }
+
+
+class GetChatWithCus extends TaskEvent{
+  final String receiverId;
+  final int page;
+  final int size;
+
+  const GetChatWithCus({required this.receiverId, this.page = 1, this.size = 12});
+}
+
+class GetChats extends TaskEvent{
+  final int page;
+  final int size;
+
+  const GetChats({this.page = 1, this.size = 12});
+}
+
+class NewMessage extends TaskEvent {
+  final String newMess;
+  final String receiverId;
+
+  const NewMessage(this.newMess, this.receiverId);
+}

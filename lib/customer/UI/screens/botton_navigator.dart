@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:tdlogistic_v2/auth/data/models/user_model.dart';
-import 'package:tdlogistic_v2/core/service/socket_for_customer.dart';
-import 'package:tdlogistic_v2/customer/UI/contact/chat_box.dart';
-import 'package:tdlogistic_v2/customer/UI/contact/chats_screen.dart';
-import 'package:tdlogistic_v2/customer/UI/screens/map_widget.dart';
+import 'package:tdlogistic_v2/customer/UI/screens/contact/chats_screen.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/cus_info.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/history.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/home_page.dart';
-import 'package:tdlogistic_v2/customer/UI/screens/vouchers.dart';
 
 class NavigatePage extends StatefulWidget {
   final User user;
-  const NavigatePage({super.key, required this.user});
+  final Function(String, String) sendMessage;
+  const NavigatePage({super.key, required this.user, required this.sendMessage});
 
   @override
   _NavigatePageState createState() => _NavigatePageState();
@@ -29,16 +26,14 @@ class _NavigatePageState extends State<NavigatePage> {
     user = widget.user; // Khởi tạo user từ widget
     _pages = [
       HomePage(user: user),
-      const History(),
-      ChatListScreen(),
+      History(sendMessage: widget.sendMessage),
+      ChatListScreen(sendMessage: widget.sendMessage,),
       CustomerInfor(user: user), // Truyền user vào CustomerInfor
     ];
   }
 
   @override
   void dispose() {
-    // TODO: implement dispose
-    disconnect();
     super.dispose();
   }
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/auth/data/models/user_model.dart';
+import 'package:tdlogistic_v2/shipper/UI/screens/contact/chats_screen.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/map_widget.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/tasks.dart';
 import 'package:tdlogistic_v2/shipper/UI/screens/shipper_info.dart';
@@ -16,8 +17,13 @@ import 'package:tdlogistic_v2/shipper/data/models/task.dart';
 class ShipperNavigatePage extends StatefulWidget {
   final User user;
   final List<Task> tasks;
+  final Function(String, String) sendMessage;
 
-  ShipperNavigatePage({super.key, required this.user, required this.tasks});
+  ShipperNavigatePage(
+      {super.key,
+      required this.user,
+      required this.tasks,
+      required this.sendMessage});
 
   @override
   _ShipperNavigatePageState createState() => _ShipperNavigatePageState();
@@ -39,9 +45,10 @@ class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
     super.initState();
     user = widget.user;
     _pages = [
-      TasksWidget(),
+      const TasksWidget(),
       const ShipperHistory(),
       const MapWidget(),
+      ChatListScreen(sendMessage: widget.sendMessage),
       ShipperInfor(user: user),
     ];
 
@@ -82,7 +89,11 @@ class _ShipperNavigatePageState extends State<ShipperNavigatePage> {
             label: 'Bản đồ',
           ),
           BottomNavigationBarItem(
-            icon: _buildIconWithCircle(Icons.person, 3),
+            icon: _buildIconWithCircle(Icons.message, 3),
+            label: 'Chat',
+          ),
+          BottomNavigationBarItem(
+            icon: _buildIconWithCircle(Icons.person, 4),
             label: 'Bạn',
           ),
         ],

@@ -83,6 +83,9 @@ class _TasksWidgetState extends State<TasksWidget>
             Tab(text: "Giao hàng"),
           ],
         ),
+        actions: [
+          IconButton(icon: const Icon(Icons.message, size: 30, color:Colors.white), onPressed: () {},)
+        ],
       ),
       backgroundColor: Colors.white,
       body: TabBarView(

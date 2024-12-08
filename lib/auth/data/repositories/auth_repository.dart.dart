@@ -1,16 +1,18 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:tdlogistic_v2/core/constant.dart';
 import '../models/user_model.dart';
 
 class AuthRepository {
-  final String baseUrl = 'https://api.tdlogistics.net.vn/v3';
+  final String baseUrl = baseUrll;
 
   AuthRepository();
 
   Future<Map<String, dynamic>> sendOTP(String email, String phone) async {
     try {
       final url = Uri.parse('$baseUrl/auth/customer/login');
+      print(url);
       final headers = {'Content-Type': 'application/json'};
       final response = await http.post(
         url,

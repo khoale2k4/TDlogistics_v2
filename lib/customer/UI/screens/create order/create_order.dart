@@ -12,6 +12,7 @@ import 'package:tdlogistic_v2/customer/UI/screens/create%20order/all_locations.d
 import 'package:tdlogistic_v2/customer/UI/screens/create%20order/clause.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/create%20order/insuarance.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/create%20order/view_insurance.dart';
+import 'package:tdlogistic_v2/customer/UI/screens/create%20order/voucher.dart';
 import 'package:tdlogistic_v2/customer/UI/widgets/search_bar.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_bloc.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_event.dart';
@@ -198,6 +199,26 @@ class _CreateOrderState extends State<CreateOrder> {
         _goodTypeValid);
   }
 
+  Future<void> calculateFee() async {
+    try {
+      final senderLL = await getLatLngFromAddress(_senderAddress.text);
+      final receiverLL = await getLatLngFromAddress(_receiverAddress.text);
+      context.read<OrderBlocFee>().add(CalculateFee(
+          cod: int.tryParse(_cashOnDeliveryController.text) ?? 0,
+          latDestination: receiverLL!["lat"] ?? 0,
+          latSource: senderLL!["lat"] ?? 0,
+          longSource: senderLL!["lng"] ?? 0,
+          longDestination: receiverLL!["lng"] ?? 0,
+          serviceType:
+              _selectedDeliveryMethod == "Giao hàng nhanh" ? "SN" : "SR",
+          voucherId: voucher));
+    } catch (error) {
+      print("Lỗi khi tính toán chi phí: ${error.toString()}");
+    }
+  }
+
+  String? voucher;
+
   @override
   void initState() {
     super.initState();
@@ -364,52 +385,52 @@ Số lượng hình ảnh đính kèm: ${_images.length}
       context.read<CreateOrderBloc>().add(
             CreateOrderEvent(
                 CreateOrderObject(
-                  cod: (cod == null || cod == 0) ? null : cod,
-                  detailDest: "20 Lý Thái Tổ",
-                  // receiverAddress["detail"],
-                  detailSource: "Đường tỉnh 52, tổ 6 Khu phố Hiệp Hòa",
-                  // senderAddress["detail"],
-                  districtDest: "Thành phố Vũng Tàu",
-                  // receiverAddress["district"],
-                  districtSource: "Huyện Đất Đỏ",
-                  // senderAddress["district"],
-                  mass: (int.tryParse(_weightController.text)),
-                  nameReceiver: _receiverNameController.text,
-                  nameSender: _senderNameController.text,
-                  phoneNumberReceiver: _receiverPhoneController.text,
-                  phoneNumberSender: _senderPhoneController.text,
-                  provinceDest: "Tỉnh Bà Rịa - Vũng Tàu",
-                  // receiverAddress["province"],
-                  provinceSource: "Tỉnh Bà Rịa - Vũng Tàu",
-                  // senderAddress["province"],
-                  // sửa loại gửi hàng
-                  serviceType: _selectedDeliveryMethod == "Giao hàng nhanh"
-                      ? "SN"
-                      : "SR",
-                  wardDest: "Phường Đất Đỏ",
-                  // receiverAddress["ward"],
-                  wardSource: "Xã Long Mỹ",
-                  // senderAddress["ward"],
-                  deliverDoorToDoor: _isDoorToDoor,
-                  fromMass: _selectedWeightRange.toInt() == -1
-                      ? null
-                      : _selectedWeightRange.toInt() * 5,
-                  toMass: _selectedWeightRange.toInt() == -1
-                      ? null
-                      : (_selectedWeightRange.toInt() + 1) * 5,
-                  goodType: getTypeCode(),
-                  latDestination: receiverLL!["lat"],
-                  latSource: senderLL!["lat"],
-                  longDestination: receiverLL["lng"],
-                  longSource: senderLL["lng"],
-                  receiverWillPay: _senderWillPay,
-                  takingDescription: _orderDescriptionController.text,
-                  note: _noteController.text,
-                  giftOrder: _isAGift
-                      ? getGift(
-                          _giftMessageController.text, giftTopics[_giftTopic])
-                      : null,
-                ),
+                    cod: (cod == null || cod == 0) ? null : cod,
+                    detailDest: "20 Lý Thái Tổ",
+                    // receiverAddress["detail"],
+                    detailSource: "Đường tỉnh 52, tổ 6 Khu phố Hiệp Hòa",
+                    // senderAddress["detail"],
+                    districtDest: "Thành phố Vũng Tàu",
+                    // receiverAddress["district"],
+                    districtSource: "Huyện Đất Đỏ",
+                    // senderAddress["district"],
+                    mass: (int.tryParse(_weightController.text)),
+                    nameReceiver: _receiverNameController.text,
+                    nameSender: _senderNameController.text,
+                    phoneNumberReceiver: _receiverPhoneController.text,
+                    phoneNumberSender: _senderPhoneController.text,
+                    provinceDest: "Tỉnh Bà Rịa - Vũng Tàu",
+                    // receiverAddress["province"],
+                    provinceSource: "Tỉnh Bà Rịa - Vũng Tàu",
+                    // senderAddress["province"],
+                    // sửa loại gửi hàng
+                    serviceType: _selectedDeliveryMethod == "Giao hàng nhanh"
+                        ? "SN"
+                        : "SR",
+                    wardDest: "Phường Đất Đỏ",
+                    // receiverAddress["ward"],
+                    wardSource: "Xã Long Mỹ",
+                    // senderAddress["ward"],
+                    deliverDoorToDoor: _isDoorToDoor,
+                    fromMass: _selectedWeightRange.toInt() == -1
+                        ? null
+                        : _selectedWeightRange.toInt() * 5,
+                    toMass: _selectedWeightRange.toInt() == -1
+                        ? null
+                        : (_selectedWeightRange.toInt() + 1) * 5,
+                    goodType: getTypeCode(),
+                    latDestination: receiverLL!["lat"],
+                    latSource: senderLL!["lat"],
+                    longDestination: receiverLL["lng"],
+                    longSource: senderLL["lng"],
+                    receiverWillPay: _senderWillPay,
+                    takingDescription: _orderDescriptionController.text,
+                    note: _noteController.text,
+                    giftOrder: _isAGift
+                        ? getGift(
+                            _giftMessageController.text, giftTopics[_giftTopic])
+                        : null,
+                    voucherId: voucher),
                 _images,
                 _isInsured && _isInvoiceEnabled
                     ? ShippingBill(
@@ -1561,12 +1582,13 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             BlocBuilder<OrderBlocFee, OrderState>(
               builder: (context, state) {
                 return _buildInfoRow(
-                    'Chi phí tạm tính',
-                    state is OrderFeeCalculated
-                        ? '${state.fee} VND'
-                        : state is OrderFeeCalculating
-                            ? 'Đang tính...'
-                            : 'Chưa tính phí');
+                  'Chi phí tạm tính',
+                  state is OrderFeeCalculated
+                      ? '${state.fee} VND'
+                      : state is OrderFeeCalculating
+                          ? 'Đang tính...'
+                          : 'Chưa tính phí',
+                );
               },
             ),
             const SizedBox(height: 20),
@@ -1580,7 +1602,53 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               },
               description: '',
             ),
+            const SizedBox(height: 20),
+            _buildVoucherSelection(), // Thêm vùng chọn voucher
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVoucherSelection() {
+    return GestureDetector(
+      onTap: () async {
+        try {
+          final rs = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const VoucherSelectionPage(),
+            ),
+          );
+          setState(() {
+            voucher = rs;
+          });
+          calculateFee();
+        } catch (error) {
+          print("Lỗi sau khi chọn voucher: ${error.toString()}");
+        }
+      },
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Icon(Icons.local_offer, color: Colors.red),
+              const SizedBox(width: 10),
+              Text(
+                voucher ?? "Chọn voucher",
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            ],
+          ),
         ),
       ),
     );
@@ -1928,20 +1996,14 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                 );
               } else if (_currentPage == 2) {
                 if (!_validateNumberInputs()) return;
-                _cashOnDeliveryController.text =
-                    _cashOnDeliveryController.text == ""
-                        ? _cashOnDeliveryController.text
-                        : "0";
+
+                calculateFee();
+
                 _pageController.nextPage(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
                 );
               } else {
-                // context.read<OrderBlocFee>().add(
-                //   CalculateFee(
-                //     _senderCityController.text,
-                //     _senderDistrictController.text, // _senderAddressController.text, // _receiverCityController.text, // _receiverDistrictController.text, // _receiverAddressController.text, // _selectedDeliveryMethod, // int.parse(_heightController.text), // int.parse(_lengthController.text), // int.parse(_weightController.text), // int.parse(_widthController.text), // ), // );
-
                 _pageController.nextPage(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:equatable/equatable.dart';
+import 'package:tdlogistic_v2/core/models/chats_model.dart';
 import 'package:tdlogistic_v2/core/models/order_model.dart';
 import 'package:tdlogistic_v2/shipper/data/models/task.dart';
 
@@ -110,3 +111,32 @@ class FailedAcceptingTask extends TaskState {
 }
 
 
+class GetChatsSuccess extends TaskState{
+  final List<Chat> chats;
+
+  const GetChatsSuccess(this.chats);
+}
+
+class GetChatsFailure extends TaskState{
+  final String error;
+
+  const GetChatsFailure(this.error);
+}
+
+class GetChatWithCusSuccess extends TaskState{
+  final List<Message> messages;
+
+  const GetChatWithCusSuccess(this.messages);
+}
+
+class GetChatWithCusFailure extends TaskState{
+  final String error;
+
+  const GetChatWithCusFailure(this.error);
+}
+
+class ReceiveMessage extends TaskState {
+  final Map<String, dynamic> message;
+
+  ReceiveMessage(this.message);
+}

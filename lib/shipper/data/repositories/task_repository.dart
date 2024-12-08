@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:tdlogistic_v2/core/constant.dart';
 
 class TaskRepository {
-  final String baseUrl = 'https://api.tdlogistics.net.vn/v3';
+  final String baseUrl = baseUrll;
 
   Future<dynamic> getTasks(String token, String status, {int page = 1}) async {
     try {

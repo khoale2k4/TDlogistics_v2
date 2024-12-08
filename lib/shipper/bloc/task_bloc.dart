@@ -2,7 +2,9 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tdlogistic_v2/core/models/chats_model.dart';
 import 'package:tdlogistic_v2/core/models/order_model.dart';
+import 'package:tdlogistic_v2/core/repositories/chat_repository.dart';
 import 'package:tdlogistic_v2/core/repositories/order_repository.dart';
 import 'package:tdlogistic_v2/core/service/secure_storage_service.dart';
 import 'package:tdlogistic_v2/core/service/send_location.dart';
@@ -542,7 +544,7 @@ class ConfirmTaskBloc extends Bloc<TaskEvent, TaskState> {
   Future<void> confirmTask(event, emit) async {
     try {
       emit(AcceptingTask());
-      
+
       var rs;
       if (event.type == "confirm taken") {
         rs = await taskRepository.confirmTakenTasks(
@@ -567,6 +569,70 @@ class ConfirmTaskBloc extends Bloc<TaskEvent, TaskState> {
     } catch (error) {
       print("error confirming task: $error");
       emit(FailedAcceptingTask(error.toString()));
+    }
+  }
+}
+
+class GetChatsShipBloc extends Bloc<TaskEvent, TaskState> {
+  final SecureStorageService secureStorageService;
+  final ChatRepository chatRepository = ChatRepository();
+
+  GetChatsShipBloc({required this.secureStorageService})
+      : super(TaskFeeCalculating()) {
+    on<GetChats>(_getChats);
+  }
+
+  Future<void> _getChats(GetChats event, Emitter<TaskState> emit) async {
+    emit(TaskFeeCalculating());
+    try {
+      final token = (await secureStorageService.getToken())!;
+      final result =
+          await chatRepository.getReceivers(token, event.page, event.size);
+
+      if (result['success']) {
+        emit(GetChatsSuccess(result['data']));
+      } else {
+        emit(GetChatsFailure(result['message']));
+      }
+    } catch (error) {
+      emit(GetChatsFailure('Có lỗi xảy ra: ${error.toString()}'));
+    }
+  }
+}
+
+class GetChatShipBloc extends Bloc<TaskEvent, TaskState> {
+  final SecureStorageService secureStorageService;
+  final ChatRepository chatRepository = ChatRepository();
+
+  GetChatShipBloc({required this.secureStorageService})
+      : super(TaskFeeCalculating()) {
+    on<GetChatWithCus>(_getChatWithCus);
+    on<NewMessage>(addMessage);
+  }
+
+  Future<void> _getChatWithCus(
+      GetChatWithCus event, Emitter<TaskState> emit) async {
+    emit(TaskFeeCalculating());
+    try {
+      final token = (await secureStorageService.getToken())!;
+      final result = await chatRepository.getMessages(
+          token, event.receiverId, event.page, event.size);
+
+      if (result['success']) {
+        emit(GetChatWithCusSuccess(result['data']));
+      } else {
+        emit(GetChatWithCusFailure(result['message']));
+      }
+    } catch (error) {
+      emit(GetChatWithCusFailure('Có lỗi xảy ra: ${error.toString()}'));
+    }
+  }
+
+  Future<void> addMessage(event, emit) async {
+    try {
+      emit(ReceiveMessage({'content': event.newMess, 'receiverId': " "}));
+    } catch (error) {
+      emit(GetChatWithCusFailure('Có lỗi xảy ra: ${error.toString()}'));
     }
   }
 }

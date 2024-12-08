@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:tdlogistic_v2/core/constant.dart';
 import 'package:tdlogistic_v2/shipper/data/models/task.dart';
 
 class LocationRepository {
-  final String baseUrl = 'https://api.tdlogistics.net.vn/v3';
+  final String baseUrl = baseUrll;
 
   Future<Map<String, dynamic>> getRoute(String token, String orderId) async {
     try {

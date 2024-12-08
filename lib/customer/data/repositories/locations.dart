@@ -3,12 +3,13 @@ import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:tdlogistic_v2/core/constant.dart';
 import 'dart:async';
 
 import 'package:tdlogistic_v2/customer/data/models/favorite_location.dart';
 
 class LocationRepository {
-  final String baseUrl = 'https://api.tdlogistics.net.vn/v3';
+  final String baseUrl = baseUrll;
 
   Future<Map<String, dynamic>> getLocations(String token) async {
     try {

@@ -67,7 +67,9 @@ class _MyAppState extends State<MyApp> {
           )..add(const GetOrders()),
         ),
         BlocProvider<OrderBlocFee>(
-          create: (context) => OrderBlocFee(),
+          create: (context) => OrderBlocFee(
+            secureStorageService: widget.secureStorageService,
+          ),
         ),
         BlocProvider<TaskBlocShipReceive>(
           create: (context) => TaskBlocShipReceive(
@@ -152,6 +154,36 @@ class _MyAppState extends State<MyApp> {
             secureStorageService: widget.secureStorageService,
           ),
         ),
+        BlocProvider<GetChatsBloc>(
+          create: (context) => GetChatsBloc(
+            secureStorageService: widget.secureStorageService,
+          ),
+        ),
+        BlocProvider<GetChatBloc>(
+          create: (context) => GetChatBloc(
+            secureStorageService: widget.secureStorageService,
+          ),
+        ),
+        BlocProvider<GetChatsShipBloc>(
+          create: (context) => GetChatsShipBloc(
+            secureStorageService: widget.secureStorageService,
+          ),
+        ),
+        BlocProvider<GetChatShipBloc>(
+          create: (context) => GetChatShipBloc(
+            secureStorageService: widget.secureStorageService,
+          ),
+        ),
+        BlocProvider<GetIdBloc>(
+          create: (context) => GetIdBloc(
+            secureStorageService: widget.secureStorageService,
+          ),
+        ),
+        BlocProvider<GetVoucherBloc>(
+          create: (context) => GetVoucherBloc(
+            secureStorageService: widget.secureStorageService,
+          ),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -163,10 +195,10 @@ class _MyAppState extends State<MyApp> {
           builder: (context, state) {
             if (state is Authenticated) {
               if (state.user == null) {
-                return const HomePage();
+                // return const HomePage(); // test mạng
+                return SocketCustomerPage(user: User(id: "123"), token: " ");
               }
               if (hasCustomerRole(state.user!)) {
-                connectSocket(state.token);
                 void setName(String fName, String lName) {
                   setState(() {
                     state.user!.lastName = lName;
@@ -179,7 +211,8 @@ class _MyAppState extends State<MyApp> {
                     getName: setName,
                   );
                 } else {
-                  return NavigatePage(user: state.user!);
+                  return SocketCustomerPage(
+                      user: state.user!, token: state.token);
                 }
               } else {
                 return SocketPage(user: state.user!, token: state.token);

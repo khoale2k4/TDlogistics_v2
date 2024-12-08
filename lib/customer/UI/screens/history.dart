@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/core/models/order_model.dart';
+import 'package:tdlogistic_v2/core/repositories/order_repository.dart';
+import 'package:tdlogistic_v2/customer/UI/screens/contact/chat_box.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/map2markers.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/map_widget.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_bloc.dart';
@@ -12,7 +14,8 @@ import 'package:tdlogistic_v2/core/constant.dart';
 import 'package:share_plus/share_plus.dart';
 
 class History extends StatefulWidget {
-  const History({super.key});
+  final Function(String, String) sendMessage;
+  const History({super.key, required this.sendMessage});
 
   @override
   State<History> createState() => _HistoryState();
@@ -124,12 +127,22 @@ class _HistoryState extends State<History> with SingleTickerProviderStateMixin {
       backgroundColor: Colors.white,
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          ProcessingOrdersTab(),
-          TakingOrdersTab(),
-          DeliveringOrdersTab(),
-          CompletedOrdersTab(),
-          CancelledOrdersTab(),
+        children: [
+          ProcessingOrdersTab(
+            sendMessage: widget.sendMessage,
+          ),
+          TakingOrdersTab(
+            sendMessage: widget.sendMessage,
+          ),
+          DeliveringOrdersTab(
+            sendMessage: widget.sendMessage,
+          ),
+          CompletedOrdersTab(
+            sendMessage: widget.sendMessage,
+          ),
+          CancelledOrdersTab(
+            sendMessage: widget.sendMessage,
+          ),
         ],
       ),
     );
@@ -137,7 +150,8 @@ class _HistoryState extends State<History> with SingleTickerProviderStateMixin {
 }
 
 class ProcessingOrdersTab extends StatefulWidget {
-  const ProcessingOrdersTab({super.key});
+  final Function(String, String) sendMessage;
+  const ProcessingOrdersTab({super.key, required this.sendMessage});
 
   @override
   State<ProcessingOrdersTab> createState() => _ProcessingOrdersTabState();
@@ -191,6 +205,7 @@ class _ProcessingOrdersTabState extends State<ProcessingOrdersTab> {
                 }
               },
               loading: isLoadingMore,
+              sendMessage: widget.sendMessage,
             ),
           ),
         ],
@@ -200,7 +215,8 @@ class _ProcessingOrdersTabState extends State<ProcessingOrdersTab> {
 }
 
 class TakingOrdersTab extends StatefulWidget {
-  const TakingOrdersTab({super.key});
+  final Function(String, String) sendMessage;
+  const TakingOrdersTab({super.key, required this.sendMessage});
 
   @override
   State<TakingOrdersTab> createState() => _TakingOrdersTabState();
@@ -252,6 +268,7 @@ class _TakingOrdersTabState extends State<TakingOrdersTab> {
                 }
               },
               loading: isLoadingMore,
+              sendMessage: widget.sendMessage,
             ),
           ),
         ],
@@ -261,7 +278,8 @@ class _TakingOrdersTabState extends State<TakingOrdersTab> {
 }
 
 class DeliveringOrdersTab extends StatefulWidget {
-  const DeliveringOrdersTab({super.key});
+  final Function(String, String) sendMessage;
+  const DeliveringOrdersTab({super.key, required this.sendMessage});
 
   @override
   State<DeliveringOrdersTab> createState() => _DeliveringOrdersTabState();
@@ -315,6 +333,7 @@ class _DeliveringOrdersTabState extends State<DeliveringOrdersTab> {
                 }
               },
               loading: isLoadingMore,
+              sendMessage: widget.sendMessage,
             ),
           ),
         ],
@@ -324,7 +343,8 @@ class _DeliveringOrdersTabState extends State<DeliveringOrdersTab> {
 }
 
 class CancelledOrdersTab extends StatefulWidget {
-  const CancelledOrdersTab({super.key});
+  final Function(String, String) sendMessage;
+  const CancelledOrdersTab({super.key, required this.sendMessage});
 
   @override
   State<CancelledOrdersTab> createState() => _CancelledOrdersTabState();
@@ -378,6 +398,7 @@ class _CancelledOrdersTabState extends State<CancelledOrdersTab> {
                 }
               },
               loading: isLoadingMore,
+              sendMessage: widget.sendMessage,
             ),
           ),
         ],
@@ -387,7 +408,8 @@ class _CancelledOrdersTabState extends State<CancelledOrdersTab> {
 }
 
 class CompletedOrdersTab extends StatefulWidget {
-  const CompletedOrdersTab({super.key});
+  final Function(String, String) sendMessage;
+  const CompletedOrdersTab({super.key, required this.sendMessage});
 
   @override
   State<CompletedOrdersTab> createState() => _CompletedOrdersTabState();
@@ -441,6 +463,7 @@ class _CompletedOrdersTabState extends State<CompletedOrdersTab> {
                 }
               },
               loading: isLoadingMore,
+              sendMessage: widget.sendMessage,
             ),
           ),
         ],
@@ -453,6 +476,7 @@ class OrderListView extends StatefulWidget {
   final List<Order> orders;
   final Future<void> Function() refreshFunc;
   final Future<void> Function() loadMoreFunc;
+  final Function(String, String) sendMessage;
   final bool loading;
 
   const OrderListView({
@@ -461,6 +485,7 @@ class OrderListView extends StatefulWidget {
     required this.refreshFunc,
     required this.loadMoreFunc,
     required this.loading,
+    required this.sendMessage,
   });
 
   @override
@@ -634,6 +659,31 @@ class _OrderListViewState extends State<OrderListView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          OrderRepository orderRepository = OrderRepository();
+                          final data = (await orderRepository.getShipperOrders(
+                              token, order.id!))["data"];
+                              if(data == null) return;
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatScreen(
+                                  theirName: data["fullname"],
+                                  theirPhone: data["phoneNumber"],
+                                  receiverId: data["id"],
+                                  sendMessage: widget.sendMessage),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.share),
+                        label: const Text("Liên hệ shipper"),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                        ),
+                      ),
                       ElevatedButton.icon(
                         onPressed: () {
                           // Gọi phương thức chia sẻ

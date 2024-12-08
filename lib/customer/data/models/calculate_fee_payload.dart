@@ -1,31 +1,34 @@
-class CalculateFeePayload{
-  final String? provinceSource;
-  final String? districtSource;
-  final String? detailSource;
-  final String? provinceDestination;
-  final String? districtDestination;
-  final String? detailDestination;
-  final String? deliveryMethod;
-  final num? height;
-  final num? width;
-  final num? length;
-  final num? mass;
-  
-  CalculateFeePayload(this.provinceSource, this.districtSource, this.detailSource, this.provinceDestination, this.districtDestination, this.detailDestination, this.deliveryMethod, this.height, this.length, this.mass, this.width);
 
-  Map<String, dynamic> toJson() {
-    return {
-      'provinceSource': provinceSource,
-      'districtSource': districtSource,
-      'detailSource': detailSource,
-      'provinceDestination': provinceDestination,
-      'districtDestination': districtDestination,
-      'detailDestination': detailDestination,
-      'deliveryMethod': deliveryMethod,
-      'height': height,
-      'width': width,
-      'length': length,
-      'mass': mass,
-    };
-  }
+class CalculateFeePayLoad {
+    String? serviceType;
+    int? cod;
+    double? latSource;
+    double? longSource;
+    double? latDestination;
+    double? longDestination;
+    String? voucherId;
+
+    CalculateFeePayLoad({this.serviceType, this.cod, this.latSource, this.longSource, this.latDestination, this.longDestination, this.voucherId});
+
+    CalculateFeePayLoad.fromJson(Map<String, dynamic> json) {
+        serviceType = json["serviceType"];
+        cod = json["cod"];
+        latSource = json["latSource"];
+        longSource = json["longSource"];
+        latDestination = json["latDestination"];
+        longDestination = json["longDestination"];
+        voucherId = json["voucherId"];
+    }
+
+    Map<String, dynamic> toJson() {
+        final Map<String, dynamic> _data = <String, dynamic>{};
+        _data["serviceType"] = serviceType;
+        _data["cod"] = cod;
+        _data["latSource"] = latSource;
+        _data["longSource"] = longSource;
+        _data["latDestination"] = latDestination;
+        _data["longDestination"] = longDestination;
+        _data["voucherId"] = voucherId;
+        return _data;
+    }
 }

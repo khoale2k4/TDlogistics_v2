@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:tdlogistic_v2/core/constant.dart';
 import 'package:tdlogistic_v2/customer/data/models/calculate_fee_payload.dart';
 import 'package:tdlogistic_v2/customer/data/models/cargo_insurance.dart';
 import 'package:tdlogistic_v2/customer/data/models/create_order.dart';
@@ -11,7 +12,7 @@ import 'dart:async';
 import 'package:tdlogistic_v2/customer/data/models/shipping_bill.dart';
 
 class OrderRepository {
-  final String baseUrl = 'https://api.tdlogistics.net.vn/v3';
+  final String baseUrl = baseUrll;
 
   Future<Map<String, dynamic>> getOrders(String token,
       {String status = "", int page = 1}) async {
@@ -145,16 +146,18 @@ class OrderRepository {
     }
   }
 
-  Future<dynamic> calculateFee(CalculateFeePayload payload) async {
+  Future<dynamic> calculateFee(String token, CalculateFeePayLoad payload) async {
     try {
       final url = Uri.parse('$baseUrl/order/fee/calculate');
-      final headers = {'Content-Type': 'application/json'};
+      final headers = {'Content-Type': 'application/json'
+      , "authorization": "Bearer $token"};
 
       final response = await http.post(
         url,
         headers: headers,
         body: json.encode(payload.toJson()), // Chuyển payload sang JSON
       );
+      print(payload.toJson());
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {
@@ -380,48 +383,35 @@ class OrderRepository {
     }
   }
 
-  // hàm này hết dùng rồi
-  Future<Map<String, dynamic>> createInsurance(
-      String token, CargoInsurance ci, File? info) async {
+  Future<Map<String, dynamic>> getShipperOrders(String token,String id) async {
     try {
-      final url = Uri.parse('$baseUrl/cargo_insurance/create');
-      var request = http.MultipartRequest("POST", url);
-      print(ci.toJson());
-      if (info != null) {
-        var mimeTypeData =
-            lookupMimeType(info.path, headerBytes: [0xFF, 0xD8])!.split('/');
-        var file = await http.MultipartFile.fromPath('file', info.path,
-            contentType: MediaType(mimeTypeData[0], mimeTypeData[1]));
-        request.files.add(file);
-      }
-      request.headers['Content-Type'] = "multipart/form-data";
-      request.headers["authorization"] = "Bearer $token";
+      final url = Uri.parse('$baseUrl/order/shipper/get/$id');
+      final headers = {
+        'Content-Type': 'application/json',
+        "authorization": "Bearer $token"
+      };
+      final response = await http.get(
+        url,
+        headers: headers,
+      );
 
-      // Thêm dữ liệu từ CargoInsurance vào form data
-      request.fields['note'] = ci.note ?? '';
-      request.fields['hasDeliveryCare'] = ci.hasDeliveryCare.toString();
-      request.fields['shippingBillId'] = ci.shippingBillId ?? '';
-      // request.fields['orderId'] = ci.orderId ?? '';
-
-      // Gửi yêu cầu và xử lý phản hồi
-      final response = await request.send();
-      final responseData = json.decode(await response.stream.bytesToString());
-
+      final responseData = json.decode(response.body);
+      print(responseData);
       if (response.statusCode == 200) {
         return {
-          'success': true,
-          'message': responseData["message"],
-          'data': responseData["data"],
+          "success": true,
+          "message": responseData["message"],
+          "data": responseData["data"],
         };
       } else {
         return {
-          'success': false,
-          'message': responseData["message"],
-          'data': null,
+          "success": false,
+          "message": responseData["message"],
+          "data": responseData["data"],
         };
       }
     } catch (error) {
-      print("Error creating cargo insurance: ${error.toString()}");
+      print("Error getting shipper orders: ${error.toString()}");
       return {"success": false, "message": error.toString(), "data": null};
     }
   }

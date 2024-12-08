@@ -1,31 +1,55 @@
 class Message {
-  final String id;
-  final String conversationId;
-  final String senderId;
-  final String content;
-  final DateTime createdAt;
-  final String type;
+    int? id;
+    String? senderId;
+    String? receiverId;
+    String? content;
+    String? createdAt;
+    String? updatedAt;
 
-  Message({
-    required this.id,
-    required this.conversationId,
-    required this.senderId,
-    required this.content,
-    required this.createdAt,
-    required this.type,
-  });
+    Message({this.id, this.senderId, this.receiverId, this.content, this.createdAt, this.updatedAt});
+
+    Message.fromJson(Map<String, dynamic> json) {
+        id = json["id"];
+        senderId = json["senderId"];
+        receiverId = json["receiverId"];
+        content = json["content"];
+        createdAt = json["createdAt"];
+        updatedAt = json["updatedAt"];
+    }
+
+    Map<String, dynamic> toJson() {
+        final Map<String, dynamic> _data = <String, dynamic>{};
+        _data["id"] = id;
+        _data["senderId"] = senderId;
+        _data["receiverId"] = receiverId;
+        _data["content"] = content;
+        _data["createdAt"] = createdAt;
+        _data["updatedAt"] = updatedAt;
+        return _data;
+    }
 }
 
-class Conversation {
-  final String id;
-  final List<String> participantIds;
-  final Message lastMessage;
-  final DateTime updatedAt;
+class Chat {
+    String? otherUserId;
+    String? fullname;
+    String? lastMessageTime;
+    String? lastMessage;
+    
+    Chat({this.otherUserId, this.fullname, this.lastMessageTime, this.lastMessage});
 
-  Conversation({
-    required this.id,
-    required this.participantIds,
-    required this.lastMessage,
-    required this.updatedAt,
-  });
+    Chat.fromJson(Map<String, dynamic> json) {
+        otherUserId = json["id"];
+        fullname = json["fullname"];
+        lastMessageTime = json["lastMessageTime"];
+        lastMessage = json["lastMessage"];
+    }
+
+    Map<String, dynamic> toJson() {
+        final Map<String, dynamic> _data = <String, dynamic>{};
+        _data["id"] = otherUserId;
+        _data["fullname"] = fullname;
+        _data["lastMessageTime"] = lastMessageTime;
+        _data["lastMessage"] = lastMessage;
+        return _data;
+    }
 }

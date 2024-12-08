@@ -34,7 +34,7 @@ Future<void> selectNotification(
   if (payload != null) {
     navigatorKey.currentState?.push(
       MaterialPageRoute(
-        builder: (context) => const History(),
+        builder: (context) => History(sendMessage: (a, b){}),
       ),
     );
     debugPrint('notification payload: $payload');

@@ -24,19 +24,15 @@ class GetOrderImages extends OrderEvent{
 }
 
 class CalculateFee extends OrderEvent {
-  final String? provinceSource;
-  final String? districtSource;
-  final String? detailSource;
-  final String? provinceDestination;
-  final String? districtDestination;
-  final String? detailDestination;
-  final String? deliveryMethod;
-  final num? height;
-  final num? width;
-  final num? length;
-  final num? mass;
+    final String serviceType;
+    final int cod;
+    final double  latSource;
+    final double  longSource;
+    final double  latDestination;
+    final double  longDestination;
+    final String? voucherId;
   
-  const CalculateFee(this.provinceSource, this.districtSource, this.detailSource, this.provinceDestination, this.districtDestination, this.detailDestination, this.deliveryMethod, this.height, this.length, this.mass, this.width);
+  const CalculateFee({required this.serviceType, required this.cod, required this.latSource, required this.longSource, required this.latDestination, required this.longDestination, this.voucherId});
 }
 
 class GetOrders extends OrderEvent {
@@ -153,4 +149,40 @@ class DeleteLocation extends OrderEvent{
   final bool isFav;
 
   DeleteLocation(this.locationId, {this.isFav = false});
+}
+
+
+class GetChatWithShip extends OrderEvent{
+  final String receiverId;
+  final int page;
+  final int size;
+
+  const GetChatWithShip({required this.receiverId, this.page = 1, this.size = 12});
+}
+
+class GetChats extends OrderEvent{
+  final int page;
+  final int size;
+
+  const GetChats({this.page = 1, this.size = 12});
+}
+
+class NewMessage extends OrderEvent {
+  final String newMess;
+  final String receiverId;
+
+  const NewMessage(this.newMess, this.receiverId);
+}
+
+class GetId extends OrderEvent {
+  final String id;
+
+  const GetId(this.id);
+}
+
+class GetVouchers extends OrderEvent {
+  final int page;
+  final int size;
+
+  const GetVouchers({this.page = 1, this.size = 12});
 }

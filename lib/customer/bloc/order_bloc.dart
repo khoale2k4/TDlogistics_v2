@@ -4,11 +4,13 @@ import 'dart:typed_data';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tdlogistic_v2/core/models/order_model.dart';
+import 'package:tdlogistic_v2/core/repositories/chat_repository.dart';
 import 'package:tdlogistic_v2/core/service/secure_storage_service.dart';
 import 'package:tdlogistic_v2/core/service/send_location.dart';
 import 'package:tdlogistic_v2/customer/data/models/calculate_fee_payload.dart';
 import 'package:tdlogistic_v2/customer/data/models/shipping_bill.dart';
 import 'package:tdlogistic_v2/customer/data/repositories/locations.dart';
+import 'package:tdlogistic_v2/customer/data/repositories/voucher_repository.dart';
 import 'order_event.dart';
 import 'order_state.dart';
 import '../../core/repositories/order_repository.dart';
@@ -75,31 +77,28 @@ class OrderBlocSearchCus extends Bloc<OrderEvent, OrderState> {
 
 class OrderBlocFee extends Bloc<OrderEvent, OrderState> {
   final OrderRepository orderRepository = OrderRepository();
+  final SecureStorageService secureStorageService;
 
-  OrderBlocFee() : super(OrderLoading([])) {
+  OrderBlocFee({required this.secureStorageService}) : super(OrderLoading([])) {
     on<CalculateFee>(calculateFee);
   }
   Future<void> calculateFee(event, emit) async {
     emit(OrderFeeCalculating()); // Trạng thái đang tính phí
     try {
-      final fee = await orderRepository.calculateFee(CalculateFeePayload(
-        event.provinceSource,
-        event.districtSource,
-        event.detailSource,
-        event.provinceDestination,
-        event.districtDestination,
-        event.detailDestination,
-        event.deliveryMethod,
-        event.height,
-        event.length,
-        event.mass,
-        event.width,
-      ));
+      final token = await secureStorageService.getToken();
+      final fee = await orderRepository.calculateFee(token!,CalculateFeePayLoad(
+          serviceType: event.serviceType,
+          cod: event.cod,
+          latSource: event.latSource,
+          longSource: event.longSource,
+          latDestination: event.latDestination,
+          longDestination: event.longDestination,
+          voucherId: event.voucherId));
 
       print(fee);
 
       if (fee["success"]) {
-        emit(OrderFeeCalculated(fee["data"])); // Thành công
+        emit(OrderFeeCalculated(fee["data"]["value"])); // Thành công
       } else {
         emit(OrderFeeCalculationFailed(fee["message"])); // Thất bại
       }
@@ -145,7 +144,8 @@ class GetImagesBloc extends Bloc<OrderEvent, OrderState> {
         for (int i = 0; i < sigImageIds.length; i++) {
           bool isSend = (sigImageIds[i]["type"] == "SEND");
           final imageRs = await orderRepository.getOrderImageById(
-              sigImageIds[i]["id"], (await secureStorageService.getToken())!, isSign: true);
+              sigImageIds[i]["id"], (await secureStorageService.getToken())!,
+              isSign: true);
           if (isSend) {
             sendSig = imageRs["data"];
           } else {
@@ -596,10 +596,12 @@ class GetLocationBloc extends Bloc<OrderEvent, OrderState> {
   }
 
   Future<void> deleteLocation(event, emit) async {
-    try{
-      await locationRepository.deleteLocation((await secureStorageService.getToken())!, event.locationId, isFav: event.isFav);
+    try {
+      await locationRepository.deleteLocation(
+          (await secureStorageService.getToken())!, event.locationId,
+          isFav: event.isFav);
       await getLocations(event, emit);
-    }catch(error){
+    } catch (error) {
       print("Lỗi khi xoá địa điểm: $error");
     }
   }
@@ -619,15 +621,130 @@ class GetPositionsBloc extends Bloc<OrderEvent, OrderState> {
     try {
       final getPos = await locationRepository.getPositions(
           (await secureStorageService.getToken())!, event.orderId);
-          print(getPos);
+      print(getPos);
       if (getPos["success"]) {
-
         emit(GotPositions(getPos["data"]));
       } else {
         emit(FailedGetPositions(getPos["message"]));
       }
     } catch (error) {
       emit(FailedGetPositions(error.toString()));
+    }
+  }
+}
+
+class GetChatsBloc extends Bloc<OrderEvent, OrderState> {
+  final SecureStorageService secureStorageService;
+  final ChatRepository chatRepository = ChatRepository();
+
+  GetChatsBloc({required this.secureStorageService})
+      : super(GettingPositions()) {
+    on<GetChats>(_getChats);
+  }
+
+  Future<void> _getChats(GetChats event, Emitter<OrderState> emit) async {
+    emit(GettingPositions());
+    try {
+      final token = (await secureStorageService.getToken())!;
+      final result =
+          await chatRepository.getReceivers(token, event.page, event.size);
+
+      if (result['success']) {
+        emit(GetChatsSuccess(result['data']));
+      } else {
+        emit(GetChatsFailure(result['message']));
+      }
+    } catch (error) {
+      emit(GetChatsFailure('Có lỗi xảy ra: ${error.toString()}'));
+    }
+  }
+}
+
+class GetChatBloc extends Bloc<OrderEvent, OrderState> {
+  final SecureStorageService secureStorageService;
+  final ChatRepository chatRepository = ChatRepository();
+
+  GetChatBloc({required this.secureStorageService})
+      : super(GettingPositions()) {
+    on<GetChatWithShip>(_getChatWithCus);
+    on<NewMessage>(addMessage);
+  }
+
+  Future<void> _getChatWithCus(
+      GetChatWithShip event, Emitter<OrderState> emit) async {
+    emit(GettingPositions());
+    try {
+      final token = (await secureStorageService.getToken())!;
+      final result = await chatRepository.getMessages(
+          token, event.receiverId, event.page, event.size);
+
+      if (result['success']) {
+        emit(GetChatWithShipSuccess(result['data']));
+      } else {
+        emit(GetChatWithShipFailure(result['message']));
+      }
+    } catch (error) {
+      emit(GetChatWithShipFailure('Có lỗi xảy ra: ${error.toString()}'));
+    }
+  }
+
+  Future<void> addMessage(event, emit) async {
+    try {
+      emit(ReceiveMessage({'content': event.newMess, 'receiverId': " "}));
+    } catch (error) {
+      emit(GetChatWithShipFailure('Có lỗi xảy ra: ${error.toString()}'));
+    }
+  }
+}
+
+class GetIdBloc extends Bloc<OrderEvent, OrderState> {
+  final SecureStorageService secureStorageService;
+  final OrderRepository orderRepository = OrderRepository();
+
+  GetIdBloc({required this.secureStorageService}) : super(GettingPositions()) {
+    on<GetId>(_getIdFromOrder);
+  }
+
+  Future<void> _getIdFromOrder(event, emit) async {
+    emit(GettingPositions());
+    try {
+      final token = (await secureStorageService.getToken())!;
+      final result = await orderRepository.getShipperOrders(token, event.id);
+
+      if (result['success']) {
+        emit(GotId(result['data']));
+      } else {
+        emit(GetChatWithShipFailure(result['message']));
+      }
+    } catch (error) {
+      emit(GetChatWithShipFailure('Có lỗi xảy ra: ${error.toString()}'));
+    }
+  }
+}
+
+class GetVoucherBloc extends Bloc<OrderEvent, OrderState> {
+  final SecureStorageService secureStorageService;
+  final VoucherRepository voucherRepository = VoucherRepository();
+
+  GetVoucherBloc({required this.secureStorageService})
+      : super(GettingPositions()) {
+    on<GetVouchers>(_getVouchers);
+  }
+
+  Future<void> _getVouchers(event, emit) async {
+    emit(GettingPositions());
+    try {
+      final token = (await secureStorageService.getToken())!;
+      final result =
+          await voucherRepository.getVouchers(token, event.page, event.size);
+
+      if (result['success']) {
+        emit(GotVouchers(result['data']));
+      } else {
+        emit(GetChatWithShipFailure(result['message']));
+      }
+    } catch (error) {
+      emit(GetChatWithShipFailure('Có lỗi xảy ra: ${error.toString()}'));
     }
   }
 }
