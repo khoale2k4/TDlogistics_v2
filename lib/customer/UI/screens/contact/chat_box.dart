@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
@@ -153,7 +154,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (messages.isEmpty)
-                        const Center(child: Text("Chưa có tin nhắn"))
+                        Center(child: Text(context.tr("noChat")))
                       else
                         ListView.builder(
                           controller: _scrollController,
@@ -202,7 +203,7 @@ class _ChatScreenState extends State<ChatScreen> {
             child: TextField(
               controller: _messageController,
               decoration: InputDecoration(
-                hintText: "Nhập tin nhắn...",
+                hintText: context.tr("typeSomething"),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide.none,

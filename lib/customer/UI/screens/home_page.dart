@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:tdlogistic_v2/auth/data/models/user_model.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
@@ -127,11 +128,11 @@ class _HomePageState extends State<HomePage>
                 );
               },
               backgroundColor: secondColor,
-              child: const Column(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.shopping_bag_rounded),
-                  Text("Đặt ngay", style: TextStyle(fontSize: 10)),
+                  const Icon(Icons.shopping_bag_rounded),
+                  Text(context.tr("orderNow"), style: const TextStyle(fontSize: 10)),
                 ],
               ),
             ),
@@ -146,11 +147,11 @@ class _HomePageState extends State<HomePage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Text(
-            'Khuyến mãi',
-            style: TextStyle(
+            context.tr('voucher'),
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -251,11 +252,11 @@ class _HomePageState extends State<HomePage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Text(
-            'Tin tức',
-            style: TextStyle(
+            context.tr("news"),
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.white,

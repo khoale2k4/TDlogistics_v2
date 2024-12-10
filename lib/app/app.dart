@@ -1,9 +1,9 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/auth/UI/screens/OTP_verification.dart';
 import 'package:tdlogistic_v2/auth/UI/screens/ask_name.dart';
 import 'package:tdlogistic_v2/auth/UI/screens/customer_login_page.dart';
-import 'package:tdlogistic_v2/auth/UI/screens/home_page.dart';
 import 'package:tdlogistic_v2/auth/UI/screens/shipper_login_page.dart';
 import 'package:tdlogistic_v2/auth/UI/screens/splash_screen.dart';
 import 'package:tdlogistic_v2/auth/bloc/auth_event.dart';
@@ -13,7 +13,6 @@ import 'package:tdlogistic_v2/core/service/secure_storage_service.dart';
 import 'package:tdlogistic_v2/core/service/send_location.dart';
 import 'package:tdlogistic_v2/core/service/socket_for_customer.dart';
 import 'package:tdlogistic_v2/core/service/socket_for_shipper.dart';
-import 'package:tdlogistic_v2/customer/UI/screens/botton_navigator.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_bloc.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_event.dart';
 import 'package:tdlogistic_v2/shipper/bloc/task_bloc.dart';
@@ -35,6 +34,13 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  Locale _locale = const Locale('en');
+
+  void _changeLanguage(String languageCode) {
+    setState(() {
+      _locale = Locale(languageCode);
+    });
+  }
   @override
   Widget build(BuildContext context) {
     bool hasCustomerRole(User user) {
@@ -188,6 +194,9 @@ class _MyAppState extends State<MyApp> {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'My Flutter App',
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale,
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),

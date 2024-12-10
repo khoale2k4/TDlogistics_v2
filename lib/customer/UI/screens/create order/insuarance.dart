@@ -18,6 +18,7 @@ class InsuranceForm extends StatefulWidget {
   final String initialAddress;
   final String initialTaxCode;
   final String initialEmail;
+  final String initialPhone;
 
   const InsuranceForm({
     super.key,
@@ -28,6 +29,7 @@ class InsuranceForm extends StatefulWidget {
     this.initialAddress = '',
     this.initialTaxCode = '',
     this.initialEmail = '',
+    this.initialPhone = ''
   });
 
   @override
@@ -42,6 +44,7 @@ class _InsuranceFormState extends State<InsuranceForm> {
   late final TextEditingController _addressController;
   late final TextEditingController _taxCodeController;
   late final TextEditingController _emailController;
+  late final TextEditingController _phoneController;
   final ImagePicker _picker = ImagePicker();
   bool isLoading = false;
 
@@ -56,6 +59,7 @@ class _InsuranceFormState extends State<InsuranceForm> {
     _addressController = TextEditingController(text: widget.initialAddress);
     _taxCodeController = TextEditingController(text: widget.initialTaxCode);
     _emailController = TextEditingController(text: widget.initialEmail);
+    _phoneController = TextEditingController(text: widget.initialPhone);
   }
 
   @override
@@ -427,6 +431,19 @@ class _InsuranceFormState extends State<InsuranceForm> {
           controller: _emailController,
           decoration: const InputDecoration(
             labelText: 'Email công ty',
+            border: OutlineInputBorder(),
+            filled: true,
+            fillColor: Colors.white, // Light background for input
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: secondColor, width: 1.5),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _phoneController,
+          decoration: const InputDecoration(
+            labelText: 'Số điện thoại (không bắt buộc)',
             border: OutlineInputBorder(),
             filled: true,
             fillColor: Colors.white, // Light background for input

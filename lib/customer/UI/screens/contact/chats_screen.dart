@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
@@ -26,8 +27,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: mainColor,
-        title: const Text(
-          "Danh sách trò chuyện",
+        title: Text(
+          context.tr("chatList"),
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
@@ -133,13 +134,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final difference = now.difference(timestamp);
 
     if (difference.inMinutes < 1) {
-      return 'Vừa xong';
+      return context.tr("now");
     } else if (difference.inHours < 1) {
-      return '${difference.inMinutes} phút trước';
+      return '${difference.inMinutes} ${context.tr("minuteBefore")}';
     } else if (difference.inDays < 1) {
-      return '${difference.inHours} giờ trước';
+      return '${difference.inHours} ${context.tr("hourBefore")}';
     } else {
-      return '${difference.inDays} ngày trước';
+      return '${difference.inDays} ${context.tr("dayBefore")}';
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:tdlogistic_v2/auth/data/models/user_model.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/contact/chats_screen.dart';
@@ -58,15 +59,15 @@ class _NavigatePageState extends State<NavigatePage> {
         items: [
           BottomNavigationBarItem(
             icon: _buildIconWithCircle(Icons.home, 0),
-            label: 'Trang chủ',
+            label: context.tr("home"),
           ),
           BottomNavigationBarItem(
             icon: _buildIconWithCircle(Icons.history, 1),
-            label: 'Lịch sử',
+            label: context.tr('history'),
           ),
           BottomNavigationBarItem(
             icon: _buildIconWithCircle(Icons.messenger_outline, 2),
-            label: 'Nhắn tin',
+            label: context.tr('chat'),
           ),
           // BottomNavigationBarItem(
           //   icon: _buildIconWithCircle(Icons.notifications_active_outlined, 2),
@@ -74,7 +75,7 @@ class _NavigatePageState extends State<NavigatePage> {
           // ),
           BottomNavigationBarItem(
             icon: _buildIconWithCircle(Icons.person, 3),
-            label: 'Bạn',
+            label: context.tr('me'),
           ),
         ],
         type: BottomNavigationBarType.fixed, // Đảm bảo các tab không bị cuộn

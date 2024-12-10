@@ -37,6 +37,17 @@
         <string>remote-notification</string>
     </array>
 
+    <!-- Chọn contact từ điện thoại -->
+    <key>NSContactsUsageDescription</key>
+    <string>Ứng dụng cần quyền truy cập danh bạ để chọn số điện thoại.</string>
+
+    <!-- Ngôn ngữ -->
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+        <string>nb</string>
+    </array>
+
     <!-- Thông tin ứng dụng -->
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>

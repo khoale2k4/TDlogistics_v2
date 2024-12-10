@@ -1,9 +1,11 @@
 import 'dart:typed_data';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/core/models/order_model.dart';
 import 'package:tdlogistic_v2/core/repositories/order_repository.dart';
+import 'package:tdlogistic_v2/core/service/secure_storage_service.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/contact/chat_box.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/map2markers.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/map_widget.dart';
@@ -115,12 +117,12 @@ class _HistoryState extends State<History> with SingleTickerProviderStateMixin {
             fontWeight: FontWeight.normal,
             color: Colors.black,
           ),
-          tabs: const [
-            Tab(text: "Đang xử lý"),
-            Tab(text: "Đang gửi hàng"),
-            Tab(text: "Đang giao hàng"),
-            Tab(text: "Đã hoàn thành"),
-            Tab(text: "Đã huỷ"),
+          tabs: [
+            Tab(text: context.tr("processing")),
+            Tab(text: context.tr("taking")),
+            Tab(text: context.tr("delivering")),
+            Tab(text: context.tr("completed")),
+            Tab(text: context.tr("cancelled")),
           ],
         ),
       ),
@@ -493,6 +495,8 @@ class OrderListView extends StatefulWidget {
 }
 
 class _OrderListViewState extends State<OrderListView> {
+  var secureStorageService = SecureStorageService();
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -537,16 +541,16 @@ class _OrderListViewState extends State<OrderListView> {
                         ),
                       ),
                       child: widget.loading
-                          ? const Text(
-                              'Đang tải',
-                              style: TextStyle(
+                          ? Text(
+                              context.tr("loading"),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
                             )
-                          : const Text(
-                              'Tải thêm',
-                              style: TextStyle(
+                          : Text(
+                              context.tr("loadMore"),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -597,7 +601,7 @@ class _OrderListViewState extends State<OrderListView> {
           children: [
             const Icon(Icons.person, size: 16.0, color: Colors.grey),
             const SizedBox(width: 4.0),
-            Text('Người nhận: ${order.nameReceiver ?? ''}'),
+            Text('${context.tr("recevier")}: ${order.nameReceiver ?? ''}'),
           ],
         ),
         const SizedBox(height: 4.0),
@@ -605,7 +609,7 @@ class _OrderListViewState extends State<OrderListView> {
           children: [
             const Icon(Icons.phone, size: 16.0, color: Colors.grey),
             const SizedBox(width: 4.0),
-            Text('SĐT: ${order.phoneNumberReceiver ?? ''}'),
+            Text('${context.tr("phone")}: ${order.phoneNumberReceiver ?? ''}'),
           ],
         ),
         const SizedBox(height: 4.0),
@@ -615,7 +619,7 @@ class _OrderListViewState extends State<OrderListView> {
             const SizedBox(width: 4.0),
             Expanded(
               child: Text(
-                'Địa chỉ: ${order.detailDest ?? ''}, ${order.districtDest ?? ''}, ${order.provinceDest ?? ''}',
+                '${context.tr("address")}: ${order.detailDest ?? ''}, ${order.districtDest ?? ''}, ${order.provinceDest ?? ''}',
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -659,11 +663,11 @@ class _OrderListViewState extends State<OrderListView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      ElevatedButton.icon(
+                      if(order.statusCode != "PROCESSING") ElevatedButton.icon(
                         onPressed: () async {
                           OrderRepository orderRepository = OrderRepository();
                           final data = (await orderRepository.getShipperOrders(
-                              token, order.id!))["data"];
+                              (await secureStorageService.getToken())!, order.id!))["data"];
                               if(data == null) return;
 
                           Navigator.push(
@@ -677,20 +681,20 @@ class _OrderListViewState extends State<OrderListView> {
                             ),
                           );
                         },
-                        icon: const Icon(Icons.share),
-                        label: const Text("Liên hệ shipper"),
+                        icon: const Icon(Icons.chat),
+                        label: Text(context.tr("chatWithShipper")),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24, vertical: 12),
                         ),
                       ),
-                      ElevatedButton.icon(
+                      const SizedBox(width: 5),
+                      IconButton(
                         onPressed: () {
                           // Gọi phương thức chia sẻ
                           Share.share("abcde");
                         },
                         icon: const Icon(Icons.share),
-                        label: const Text("Chia sẻ"),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24, vertical: 12),
@@ -707,7 +711,7 @@ class _OrderListViewState extends State<OrderListView> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
-                      'Chi tiết đơn hàng ${order.trackingNumber ?? ''}',
+                      '${context.tr("orderDetail")} ${order.trackingNumber ?? ''}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -717,13 +721,13 @@ class _OrderListViewState extends State<OrderListView> {
                   ),
                   const Divider(),
                   _buildOrderDetailTile(
-                      'Người gửi', order.nameSender, Icons.person),
+                      context.tr("sender"), order.nameSender, Icons.person),
                   // _buildOrderDetailTile(
                   //     'Trạng thái', order.statusCode, Icons.person),
                   _buildOrderDetailTile(
-                      'SĐT người gửi', order.phoneNumberSender, Icons.phone),
+                      context.tr("senderPhone"), order.phoneNumberSender, Icons.phone),
                   _buildOrderDetailTile(
-                      'Địa chỉ gửi',
+                      context.tr("senderAddress"),
                       '${order.provinceSource ?? ''}, ${order.districtSource ?? ''}, ${order.wardSource ?? ''}, ${order.detailSource ?? ''}',
                       Icons.location_on,
                       sendAddress:
@@ -732,11 +736,11 @@ class _OrderListViewState extends State<OrderListView> {
                           '${order.provinceDest ?? ''}, ${order.districtDest ?? ''}, ${order.wardDest ?? ''}, ${order.detailDest ?? ''}'),
                   const Divider(),
                   _buildOrderDetailTile(
-                      'Người nhận', order.nameReceiver, Icons.person),
+                      context.tr("recevier"), order.nameReceiver, Icons.person),
                   _buildOrderDetailTile(
-                      'SĐT người nhận', order.phoneNumberReceiver, Icons.phone),
+                      context.tr("receiverPhone"), order.phoneNumberReceiver, Icons.phone),
                   _buildOrderDetailTile(
-                      'Địa chỉ nhận',
+                      context.tr("receiverAddress"),
                       '${order.provinceDest ?? ''}, ${order.districtDest ?? ''}, ${order.wardDest ?? ''}, ${order.detailDest ?? ''}',
                       Icons.location_on,
                       sendAddress:
@@ -745,7 +749,7 @@ class _OrderListViewState extends State<OrderListView> {
                           '${order.provinceDest ?? ''}, ${order.districtDest ?? ''}, ${order.wardDest ?? ''}, ${order.detailDest ?? ''}'),
                   const Divider(),
                   _buildOrderDetailTile(
-                      'Khối lượng',
+                      context.tr("weight"),
                       order.mass != null
                           ? '${order.mass?.toStringAsFixed(2)} kg'
                           : (order.fromMass != null
@@ -753,13 +757,13 @@ class _OrderListViewState extends State<OrderListView> {
                               : "0 kg"),
                       Icons.line_weight),
                   _buildOrderDetailTile(
-                      'Phí',
+                      context.tr("fee"),
                       '${order.fee?.toStringAsFixed(0) ?? '0'} VNĐ',
                       Icons.attach_money),
 
                   _buildOrderDetailTile(
-                      'Trạng thái thanh toán',
-                      (order.paid!) ? "Đã thanh toán" : "Chưa thanh toán",
+                      context.tr("paymentStatus"),
+                      (order.paid!) ? context.tr("paid") : context.tr("notPaid"),
                       (Icons.info)),
                   const Divider(), // Thêm dòng phân cách trước khi hiển thị hành trình
                   Padding(
@@ -767,8 +771,9 @@ class _OrderListViewState extends State<OrderListView> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Hành trình đơn hàng',
+                        Text(
+                          context.tr("orderJourney"),
+                          // ignore: prefer_const_constructors
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -815,11 +820,11 @@ class _OrderListViewState extends State<OrderListView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(8.0),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
             child: Text(
-              'Hình ảnh và chữ ký',
-              style: TextStyle(
+              context.tr("images&signature"),
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.green,
@@ -845,20 +850,20 @@ class _OrderListViewState extends State<OrderListView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Hiển thị hình gửi
-                      _buildImageGrid("Hình ảnh gửi", sendImages),
+                      _buildImageGrid(context.tr("sendImage"), sendImages),
 
                       const SizedBox(height: 16), // Khoảng cách giữa các phần
 
                       // Hiển thị hình nhận
-                      _buildImageGrid("Hình ảnh nhận", receiveImages),
+                      _buildImageGrid(context.tr("receiveImage"), receiveImages),
 
                       const SizedBox(height: 16), // Khoảng cách giữa các phần
 
                       // Hiển thị chữ ký
-                      _buildSignatureSection("Chữ ký người gửi", sendSignature),
+                      _buildSignatureSection(context.tr("sendSignature"), sendSignature),
                       const SizedBox(height: 8),
                       _buildSignatureSection(
-                          "Chữ ký người nhận", receiveSignature),
+                          context.tr("receiveSignature"), receiveSignature),
                     ],
                   ),
                 );
@@ -881,7 +886,7 @@ class _OrderListViewState extends State<OrderListView> {
 
   Widget _buildImageGrid(String title, List<Uint8List> images) {
     if (images.isEmpty) {
-      return Text('$title: Chưa có hình ảnh');
+      return Text('$title: ${context.tr("noImages")}');
     }
 
     return Column(
@@ -925,7 +930,7 @@ class _OrderListViewState extends State<OrderListView> {
                     );
                   },
                 )
-              : const Text("Chưa có hình ảnh"),
+              : Text(context.tr("noImages")),
         ),
       ],
     );
@@ -961,7 +966,7 @@ class _OrderListViewState extends State<OrderListView> {
                   ),
                 ),
               )
-            : const Text("Chưa có chữ ký"),
+            : Text(context.tr("noSignature")),
       ],
     );
   }
@@ -984,7 +989,7 @@ class _OrderListViewState extends State<OrderListView> {
             child: ListTile(
               leading: Icon(icon, color: Colors.green),
               title: Text(
-                "$title (Nhấn để xem)",
+                "$title (${context.tr("clickMe")})",
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                 ),
@@ -994,7 +999,7 @@ class _OrderListViewState extends State<OrderListView> {
         : ListTile(
             leading: Icon(icon,
                 color:
-                    (value == "Chưa thanh toán" ? Colors.red : Colors.green)),
+                    (value == "Chưa thanh toán" || value == "Not Paid" ? Colors.red : Colors.green)),
             title: Text(
               title,
               style: const TextStyle(

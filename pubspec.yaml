@@ -41,6 +41,9 @@ dependencies:
   flutter_native_contact_picker: ^0.0.9
   flutter_background_service: ^5.0.10
   qr_flutter: ^4.1.0
+  contacts_service: ^0.6.3
+  easy_localization: ^3.0.7
+  intl: ^0.19.0 
 
 flutter_launcher_icons:
   android: "launcher_icon"
@@ -58,3 +61,4 @@ flutter:
   assets:
     - lib/assets/done.png
     - lib/assets/
+    - lib/assets/translations/

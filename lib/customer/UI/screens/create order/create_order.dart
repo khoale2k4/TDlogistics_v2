@@ -1,8 +1,12 @@
 import 'dart:typed_data';
 
+import 'package:contacts_service/contacts_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tdlogistic_v2/auth/data/models/user_model.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
@@ -11,6 +15,7 @@ import 'package:tdlogistic_v2/customer/UI/screens/create%20order/add_location.da
 import 'package:tdlogistic_v2/customer/UI/screens/create%20order/all_locations.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/create%20order/clause.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/create%20order/insuarance.dart';
+import 'package:tdlogistic_v2/customer/UI/screens/create%20order/map_screen.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/create%20order/view_insurance.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/create%20order/voucher.dart';
 import 'package:tdlogistic_v2/customer/UI/widgets/search_bar.dart';
@@ -45,6 +50,27 @@ class _CreateOrderState extends State<CreateOrder> {
   final _receiverAddress = TextEditingController();
   bool sendering = false;
 
+  LatLng? _startLatLng;
+  LatLng? _endLatLng;
+
+  Future<void> _convertAddresses() async {
+    if (_senderLocation.text.isNotEmpty && _receiverLocation.text.isNotEmpty) {
+      print(
+          "Tìm đường từ ${_senderLocation.text} đến ${_receiverLocation.text}");
+      final senderLatLng = await getLatLngFromAddress(_senderLocation.text);
+      final receiverLatLng = await getLatLngFromAddress(_receiverLocation.text);
+
+      if (senderLatLng != null && receiverLatLng != null) {
+        setState(() {
+          _startLatLng = LatLng(senderLatLng['lat']!, senderLatLng['lng']!);
+          _endLatLng = LatLng(receiverLatLng['lat']!, receiverLatLng['lng']!);
+        });
+      } else {
+        print("Không thể lấy tọa độ cho một trong hai địa chỉ.");
+      }
+    }
+  }
+
   final _senderNameController = TextEditingController();
   final _senderPhoneController = TextEditingController();
 
@@ -62,8 +88,10 @@ class _CreateOrderState extends State<CreateOrder> {
 
   bool _validateInputs() {
     setState(() {
-      _validLocation = _receiverLocation.text != "";
-      _validAddress = _receiverAddress.text != "";
+      _validLocation =
+          (_receiverLocation.text != "" && _senderLocation.text != "");
+      _validAddress =
+          (_receiverAddress.text != "" && _senderAddress.text != "");
     });
 
     return _validLocation && _validAddress;
@@ -93,6 +121,50 @@ class _CreateOrderState extends State<CreateOrder> {
   bool _isWeightValid = true;
   bool _overMaxWeight = false;
   bool _goodTypeValid = true;
+
+  Future<Map<String, String?>> _pickContact() async {
+    // Yêu cầu quyền truy cập danh bạ
+    if (await Permission.contacts.request().isGranted) {
+      Iterable<Contact> contacts = await ContactsService.getContacts();
+      // Hiển thị danh bạ trong danh sách
+      final selectedContact = await showModalBottomSheet<Contact?>(
+        context: context,
+        builder: (BuildContext context) {
+          return ListView(
+            children: contacts
+                .map(
+                  (contact) => ListTile(
+                    title: Text(contact.displayName ?? 'Không rõ tên'),
+                    subtitle: Text(contact.phones!.isNotEmpty
+                        ? contact.phones!.first.value!
+                        : 'Không có số điện thoại'),
+                    onTap: () {
+                      Navigator.pop(context, contact);
+                    },
+                  ),
+                )
+                .toList(),
+          );
+        },
+      );
+
+      // Trả về kết quả nếu người dùng chọn
+      if (selectedContact != null) {
+        return {
+          'name': selectedContact.displayName,
+          'phone': selectedContact.phones!.isNotEmpty
+              ? selectedContact.phones!.first.value
+              : null,
+        };
+      }
+    } else {
+      // Xử lý khi không có quyền
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Bạn cần cấp quyền để truy cập danh bạ.')),
+      );
+    }
+    return {};
+  }
 
   String _selectedDeliveryMethod = 'Giao hàng tiết kiệm';
   List<String> giftTopics = [
@@ -215,6 +287,36 @@ class _CreateOrderState extends State<CreateOrder> {
     } catch (error) {
       print("Lỗi khi tính toán chi phí: ${error.toString()}");
     }
+  }
+
+  void _showConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Không cho phép đóng khi nhấn bên ngoài.
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Xác nhận'),
+          content: const Text('Bạn có chắc chắn muốn tạo đơn hàng không?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Đóng popup.
+              },
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Đóng popup.
+                handleNewOrder(context); // Gọi hàm tạo đơn hàng.
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: mainColor),
+              child:
+                  const Text('Xác nhận', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   String? voucher;
@@ -375,6 +477,16 @@ Số lượng hình ảnh đính kèm: ${_images.length}
     return "OTHER";
   }
 
+  String toProper(String input) {
+    return input
+        .toLowerCase() // Chuyển tất cả về chữ thường
+        .split(' ') // Tách chuỗi thành danh sách các từ
+        .map((word) => word.isNotEmpty
+            ? '${word[0].toUpperCase()}${word.substring(1)}'
+            : '') // Viết hoa chữ cái đầu tiên của mỗi từ
+        .join(' '); // Ghép lại thành chuỗi
+  }
+
   Future<void> handleNewOrder(BuildContext context) async {
     try {
       final senderAddress = getAddress(_senderAddress.text);
@@ -395,8 +507,8 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                     districtSource: "Huyện Đất Đỏ",
                     // senderAddress["district"],
                     mass: (int.tryParse(_weightController.text)),
-                    nameReceiver: _receiverNameController.text,
-                    nameSender: _senderNameController.text,
+                    nameReceiver: toProper(_receiverNameController.text),
+                    nameSender: toProper(_senderNameController.text),
                     phoneNumberReceiver: _receiverPhoneController.text,
                     phoneNumberSender: _senderPhoneController.text,
                     provinceDest: "Tỉnh Bà Rịa - Vũng Tàu",
@@ -475,7 +587,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                     _buildMain(context),
                     _buildTextInputPage(),
                     _buildNumberInputPage(),
-                    _buildPaymentPage(),
+                    _buildPaymentPage(context),
                     _buildConfirmPage(context),
                   ],
                 ),
@@ -550,7 +662,6 @@ Số lượng hình ảnh đính kèm: ${_images.length}
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
-          // Thêm SingleChildScrollView để cuộn
           child: Column(
             children: [
               Padding(
@@ -580,12 +691,17 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                                 controller: _senderLocation,
                                 onChanged: () {
                                   _senderAddress.text = _senderLocation.text;
+                                  _convertAddresses();
                                 },
                                 onTap: () {
                                   sendering = true;
                                 },
                                 onDelete: () {
-                                  _senderAddress.clear();
+                                  setState(() {
+                                    _senderAddress.clear();
+                                    _senderLocation.clear();
+                                    _startLatLng = null;
+                                  });
                                 },
                               ),
                               MySearchBar(
@@ -596,6 +712,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                                 onChanged: () {
                                   _receiverAddress.text =
                                       _receiverLocation.text;
+                                  _convertAddresses();
                                 },
                                 onTap: () {
                                   _validLocation = true;
@@ -603,7 +720,12 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                                   sendering = false;
                                 },
                                 onDelete: () {
-                                  _receiverAddress.clear();
+                                  setState(() {
+                                    _receiverAddress.clear();
+                                    _receiverLocation.clear();
+                                    _convertAddresses();
+                                    _startLatLng = null;
+                                  });
                                 },
                               ),
                               if (!_validLocation && !_validAddress)
@@ -617,16 +739,17 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                         const SizedBox(width: 8),
                         ElevatedButton(
                           onPressed: () {
-                            // Hoán đổi giá trị giữa hai trường
-                            String temp = _senderLocation.text;
-                            String temp2 = _senderAddress.text;
-                            _senderLocation.text = _receiverLocation.text;
-                            _senderAddress.text = _receiverAddress.text;
-                            _receiverLocation.text = temp;
-                            _receiverAddress.text = temp2;
-
-                            // Nếu muốn cập nhật lại giao diện
-                            setState(() {});
+                            setState(() {
+                              String temp = _senderLocation.text;
+                              String temp2 = _senderAddress.text;
+                              _senderLocation.text = _receiverLocation.text;
+                              _senderAddress.text = _receiverAddress.text;
+                              _receiverLocation.text = temp;
+                              _receiverAddress.text = temp2;
+                              _startLatLng = null;
+                              _endLatLng = null;
+                              _convertAddresses();
+                            });
                           },
                           style: ElevatedButton.styleFrom(
                             foregroundColor: Colors.black,
@@ -638,7 +761,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                             padding: const EdgeInsets.all(0),
                           ),
                           child: const Icon(
-                            Icons.swap_vert, // Biểu tượng hoán đổi
+                            Icons.swap_vert,
                             color: Colors.black,
                           ),
                         ),
@@ -656,7 +779,22 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                         }
                       },
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 10),
+                    if (_startLatLng != null && _endLatLng != null)
+                      SizedBox(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onPanDown: (_) {},
+                          child: IgnorePointer(
+                            ignoring: false,
+                            child: MapScreen(
+                              startLocation: _startLatLng!,
+                              endLocation: _endLatLng!,
+                            ),
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 10),
                     _buildSectionTitle(
                       "Địa điểm nhận yêu thích",
                       button: true,
@@ -674,14 +812,17 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                             {"lat": 0, "lng": 0};
                         if (result != null) {
                           setState(() {
-                            context.read<GetLocationBloc>().add(AddLocation(
-                                faLoc: FavoriteLocation(
-                                    name: result[0],
-                                    phoneNumber: result[1],
-                                    description: result[2],
-                                    lat: latLng["lat"],
-                                    lng: latLng["lng"])));
-                            // context.read<GetLocationBloc>().add(GetLocations());
+                            context.read<GetLocationBloc>().add(
+                                  AddLocation(
+                                    faLoc: FavoriteLocation(
+                                      name: result[0],
+                                      phoneNumber: result[1],
+                                      description: result[2],
+                                      lat: latLng["lat"],
+                                      lng: latLng["lng"],
+                                    ),
+                                  ),
+                                );
                           });
                         }
                       },
@@ -749,14 +890,13 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                       setState(() {
                         if (sendering) {
                           _senderLocation.text = address;
-                          // getNameLabel(location.name);
                           _senderAddress.text = address;
                         } else {
                           _receiverLocation.text = address;
-                          // getNameLabel(location.name);
                           _receiverAddress.text = address;
                         }
                       });
+                      _convertAddresses();
                     },
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.black,
@@ -897,7 +1037,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => AllLocationsPage(),
+                  builder: (context) => const AllLocationsPage(),
                 ),
               );
             },
@@ -1048,15 +1188,16 @@ Số lượng hình ảnh đính kèm: ${_images.length}
     );
   }
 
-  Widget _buildTextField(
-      {required TextEditingController controller,
-      required ValueChanged<String?> onChanged,
-      required String labelText,
-      required Icon icon,
-      bool isDes = false,
-      bool fromContacts = false,
-      bool isSender = true,
-      bool addToFavo = false}) {
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required ValueChanged<String?> onChanged,
+    required String labelText,
+    required Icon icon,
+    bool isDes = false,
+    bool fromContacts = false,
+    bool isSender = true,
+    bool addToFavo = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: TextField(
@@ -1067,6 +1208,22 @@ Số lượng hình ảnh đính kèm: ${_images.length}
           filled: true,
           fillColor: Colors.white,
           prefixIcon: icon,
+
+          // Thêm icon chỉ báo danh bạ
+          suffixIcon: fromContacts
+              ? InkWell(
+                  onTap: () async {
+                    final contact = await _pickContact();
+                    if (contact != null) {
+                      controller.text = contact['phone'] ?? '';
+                      onChanged(controller.text);
+                    }
+                    print("SMTH");
+                  },
+                  child: const Icon(Icons.contact_page, color: Colors.blue),
+                )
+              : null,
+
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: const BorderSide(color: Colors.white),
@@ -1133,7 +1290,10 @@ Số lượng hình ảnh đính kèm: ${_images.length}
         items: items.map((String item) {
           return DropdownMenuItem<String>(
             value: item,
-            child: Text(item),
+            child: Text(
+              item,
+              overflow: TextOverflow.ellipsis,
+            ),
           );
         }).toList(),
         hint: Text(
@@ -1143,6 +1303,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
         dropdownColor: Colors.white,
         iconEnabledColor: secondColor,
         iconSize: 28,
+        isExpanded: true,
       ),
     );
   }
@@ -1154,41 +1315,41 @@ Số lượng hình ảnh đính kèm: ${_images.length}
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle("Người nhận:", func: () {
+            _buildSectionTitle(context.tr("recevier"), func: () {
               setState(() {
                 _receiverNameController.text = _senderNameController.text;
                 _receiverPhoneController.text = _senderPhoneController.text;
               });
-            }, button: true, textButton: "Tôi là người nhận"),
+            }, button: true, textButton: context.tr("i_am_receiver")),
             const SizedBox(height: 30),
             _buildTextField(
               controller: _receiverNameController,
-              labelText: "Tên người nhận",
+              labelText: context.tr("receiver_name"),
               onChanged: (value) {},
               icon: const Icon(Icons.person),
             ),
             if (!_isReceiverNameValid)
-              const Text("Vui lòng nhập tên!",
-                  style: TextStyle(color: Colors.red)),
+              Text(context.tr("enter_name"),
+                  style: const TextStyle(color: Colors.red)),
             _buildTextField(
-              controller: _receiverPhoneController,
-              labelText: "SĐT người nhận",
-              onChanged: (value) {},
-              icon: const Icon(Icons.phone),
-            ),
+                controller: _receiverPhoneController,
+                labelText: context.tr("receiver_phone"),
+                onChanged: (value) {},
+                icon: const Icon(Icons.phone),
+                fromContacts: true),
             if (!_isReceiverPhoneValid)
-              const Text("Vui lòng nhập SĐT!",
+              Text(context.tr("enter_phone"),
                   style: TextStyle(color: Colors.red)),
             _buildTextField(
               controller: _orderDescriptionController,
-              labelText: "Mô tả nhận hàng",
+              labelText: context.tr("description"),
               onChanged: (value) {},
               icon: const Icon(Icons.note),
               isDes: true,
             ),
             const SizedBox(height: 30),
-            const Text(
-              'Thông tin gói hàng:',
+            Text(
+              context.tr("package_info"),
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             ),
             const SizedBox(height: 30),
@@ -1196,16 +1357,16 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             // Trường nhập số tiền thu hộ (không cần kiểm tra hợp lệ)
             _buildNumberField(
               controller: _cashOnDeliveryController,
-              labelText: 'Số tiền thu hộ (VNĐ)',
-              hintText: 'Nhập số tiền',
+              labelText: context.tr("cod_amount"),
+              hintText: context.tr("enter_cod"),
               isEmpty: true,
             ),
             const SizedBox(height: 20),
 
             // Lưới nút chọn khối lượng
-            const Text(
-              'Chọn khối lượng (kg):',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            Text(
+              context.tr("weight_range"),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -1242,14 +1403,14 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               ],
             ),
             if (!_isWeightValid)
-              const Text("Vui lòng chọn khối lượng!",
+              Text(context.tr("select_weight"),
                   style: TextStyle(color: Colors.red)),
 
             const SizedBox(height: 10),
             _buildNumberField(
                 controller: _weightController,
-                labelText: 'Khối lượng (kg) (Không bắt buộc)',
-                hintText: 'Nhập khối lượng',
+                labelText: context.tr("not_obligatory"),
+                hintText: context.tr("enter_weight"),
                 isEmpty: true,
                 onChangedCallback: (value) {
                   setState(() {
@@ -1289,15 +1450,15 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                   });
                 }),
             if (_overMaxWeight)
-              const Text(
-                "Khối lượng không hợp lệ!",
+              Text(
+                context.tr("select_weight"),
                 style: TextStyle(color: Colors.red),
               ),
             const SizedBox(height: 20),
 
             // Lưới nút chọn loại hàng hoá
-            const Text(
-              'Chọn loại hàng hoá:',
+            Text(
+              context.tr("goods_type"),
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 10),
@@ -1339,12 +1500,12 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               ],
             ),
             if (!_goodTypeValid)
-              const Text("Vui lòng chọn loại hàng!",
+              Text(context.tr("select_goods_type"),
                   style: TextStyle(color: Colors.red)),
 
             const SizedBox(height: 20),
             _buildToggleButton(
-              title: 'Hàng cồng kềnh',
+              title: context.tr("bulky_goods"),
               isSelected: _isBulky,
               callBack: (bool value) {
                 setState(() {
@@ -1357,7 +1518,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             ),
             const SizedBox(height: 20),
             _buildToggleButton(
-              title: 'Đơn hàng quà tặng',
+              title: context.tr("gift_order"),
               isSelected: _isAGift,
               callBack: (bool value) {
                 setState(() {
@@ -1410,7 +1571,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
 
             const SizedBox(height: 20),
             _buildToggleButton(
-              title: 'Giao tận cửa',
+              title: context.tr("delivery_to_door"),
               isSelected: _isDoorToDoor,
               callBack: (bool value) {
                 setState(() {
@@ -1449,7 +1610,9 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        _isInsured ? 'Đã thêm bảo hiểm' : 'Thêm bảo hiểm',
+                        _isInsured
+                            ? context.tr("insurance_added")
+                            : context.tr("insurance"),
                         style: const TextStyle(
                           color: Colors.black87,
                           fontSize: 16,
@@ -1466,7 +1629,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             _buildDropdown(
               items: ['Giao hàng nhanh', "Giao hàng tiết kiệm"],
               selectedValue: _selectedDeliveryMethod,
-              labelText: 'Phương thức vận chuyển',
+              labelText: context.tr("shipping_method"),
               isValid: true,
               icon: Icons.local_shipping,
               onChanged: (value) {
@@ -1477,7 +1640,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             ),
             _buildTextField(
                 controller: _noteController,
-                labelText: "Ghi chú đơn hàng",
+                labelText: context.tr("note"),
                 onChanged: (value) {
                   setState(() {});
                 },
@@ -1558,18 +1721,22 @@ Số lượng hình ảnh đính kèm: ${_images.length}
     );
   }
 
-  Widget _buildPaymentPage() {
+  Widget _buildPaymentPage(BuildContext context) {
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('Thông tin thanh toán', func: () {}),
+            _buildSectionTitle(context.tr('payment_page.title'), func: () {}),
             _buildDropdown(
-              items: ['Chuyển khoản', 'Tiền mặt', 'Ví điện tử'],
+              items: [
+                "Chuyển khoản",
+                "Tiền mặt",
+                "Ví điện tử",
+              ],
               selectedValue: _selectedPaymentMethod,
-              labelText: 'Phương thức thanh toán',
+              labelText: context.tr('payment_page.payment_method_label'),
               isValid: true,
               icon: Icons.payment,
               onChanged: (value) {
@@ -1582,18 +1749,18 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             BlocBuilder<OrderBlocFee, OrderState>(
               builder: (context, state) {
                 return _buildInfoRow(
-                  'Chi phí tạm tính',
+                  context.tr('payment_page.temporary_fee'),
                   state is OrderFeeCalculated
                       ? '${state.fee} VND'
                       : state is OrderFeeCalculating
-                          ? 'Đang tính...'
-                          : 'Chưa tính phí',
+                          ? context.tr('payment_page.fee_calculating')
+                          : context.tr('payment_page.fee_not_calculated'),
                 );
               },
             ),
             const SizedBox(height: 20),
             _buildToggleButton(
-              title: 'Người gửi trả tiền',
+              title: context.tr('payment_page.sender_pays'),
               isSelected: _senderWillPay,
               callBack: (bool value) {
                 setState(() {
@@ -1603,7 +1770,9 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               description: '',
             ),
             const SizedBox(height: 20),
-            _buildVoucherSelection(), // Thêm vùng chọn voucher
+            Text(context
+                .tr('payment_page.voucher_selection')), // Thêm nhãn voucher
+            _buildVoucherSelection(),
           ],
         ),
       ),
@@ -1663,15 +1832,15 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
-                title: const Text('Thành công'),
-                content: const Text('Đơn hàng đã được tạo thành công!'),
+                title: Text(context.tr('confirm_page.success_title')),
+                content: Text(context.tr('confirm_page.success_message')),
                 actions: [
                   TextButton(
                     onPressed: () {
                       Navigator.pop(context); // Đóng dialog
                       // Có thể thêm navigation về trang chủ hoặc trang đơn hàng ở đây
                     },
-                    child: const Text('Đóng'),
+                    child: Text(context.tr('common.close')),
                   ),
                 ],
               );
@@ -1685,12 +1854,13 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                 false, // Không cho phép đóng dialog bằng cách chạm bên ngoài
             builder: (BuildContext context) {
               return AlertDialog(
-                title: const Text('Thất bại'),
-                content: Text('Không thể tạo đơn hàng: ${state.error}'),
+                title: Text(context.tr('confirm_page.failure_title')),
+                content: Text(
+                    '${context.tr('confirm_page.failure_message_prefix')}: ${state.error}'),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Thử lại'),
+                    child: Text(context.tr('common.retry_button')),
                   ),
                 ],
               );
@@ -1705,72 +1875,83 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                const Center(
+                Center(
                   child: Text(
-                    "Xác nhận đơn hàng",
-                    style: TextStyle(
+                    context.tr("confirm_page.page_title"),
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
                 _buildInfoCard(
-                  'Thông tin người gửi',
+                  context.tr('confirm_page.sender_info'),
                   Icons.person_outline,
                   [
-                    _buildInfoRow('Họ và tên', _senderNameController.text),
-                    _buildInfoRow('Địa chỉ', _senderAddress.text),
-                    _buildInfoRow('Điện thoại', _senderPhoneController.text),
+                    _buildInfoRow(context.tr('confirm_page.sender_name'),
+                        toProper(_senderNameController.text)),
+                    _buildInfoRow(context.tr('confirm_page.sender_address'),
+                        _senderAddress.text),
+                    _buildInfoRow(context.tr('confirm_page.sender_phone'),
+                        _senderPhoneController.text),
                     _buildInfoRow(
-                        'Ghi chú',
-                        (_orderDescriptionController.text == ""
-                            ? "Không có"
-                            : _orderDescriptionController.text)),
+                      context.tr('confirm_page.sender_note'),
+                      (_orderDescriptionController.text.isEmpty
+                          ? context.tr('confirm_page.no_note')
+                          : _orderDescriptionController.text),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 _buildInfoCard(
-                  'Thông tin người nhận',
+                  context.tr('confirm_page.receiver_info'),
                   Icons.person_pin_circle_outlined,
                   [
-                    _buildInfoRow('Họ và tên', _receiverNameController.text),
-                    _buildInfoRow('Địa chỉ', _receiverAddress.text),
-                    _buildInfoRow('Điện thoại', _receiverPhoneController.text),
+                    _buildInfoRow(context.tr('confirm_page.receiver_name'),
+                        toProper(_receiverNameController.text)),
+                    _buildInfoRow(context.tr('confirm_page.receiver_address'),
+                        _receiverAddress.text),
+                    _buildInfoRow(context.tr('confirm_page.receiver_phone'),
+                        _receiverPhoneController.text),
                   ],
                 ),
                 const SizedBox(height: 16),
                 _buildInfoCard(
-                  'Thông tin gói hàng',
+                  context.tr('confirm_page.package_info'),
                   Icons.inventory_2_outlined,
                   [
-                    _buildInfoRow('Thu hộ (COD)',
+                    _buildInfoRow(context.tr('confirm_page.cash_on_delivery'),
                         '${_cashOnDeliveryController.text == "" ? "0" : _cashOnDeliveryController.text} VNĐ'),
                     // _buildInfoRow('Kích thước',
                     //     '${_lengthController.text}x${_widthController.text}x${_heightController.text} cm'),
                     _buildInfoRow(
-                        'Cân nặng',
+                        context.tr('confirm_page.weight'),
                         _selectedWeightRange != -1
                             ? '${_selectedWeightRange * 5}-${(_selectedWeightRange + 1) * 5} kg'
                             : "> 40 kg"),
-                    _buildInfoRow('Loại hàng', _selectedGoodsType ?? "Bất kì"),
+                    _buildInfoRow(context.tr('confirm_page.goods_type'),
+                        _selectedGoodsType ?? "Bất kì"),
                     if (_isAGift) ...[
-                      _buildInfoRow('Đơn quà', giftTopics[_giftTopic]),
-                      _buildInfoRow('Lời nhắn', _giftMessageController.text),
+                      _buildInfoRow(context.tr('confirm_page.gift_order'),
+                          giftTopics[_giftTopic]),
+                      _buildInfoRow(context.tr('confirm_page.message'),
+                          _giftMessageController.text),
                     ]
                   ],
                 ),
                 const SizedBox(height: 16),
                 _buildInfoCard(
-                  'Thông tin đơn hàng',
+                  context.tr('confirm_page.order_info'),
                   Icons.description_outlined,
                   [
-                    _buildInfoRow('Phương thức giao', _selectedDeliveryMethod),
-                    _buildInfoRow('Phương thức thanh toán',
-                        _selectedPaymentMethod ?? 'Chưa chọn'),
+                    _buildInfoRow(context.tr('confirm_page.delivery_method'),
+                        _selectedDeliveryMethod),
+                    _buildInfoRow(context.tr('confirm_page.payment_method'),
+                        _selectedPaymentMethod),
+                    _buildInfoRow(context.tr('confirm_page.bulky_order'),
+                        _isBulky ? "Có" : "Không"),
                     _buildInfoRow(
-                        "Đơn hàng cồng kềnh", _isBulky ? "Có" : "Không"),
-                    _buildInfoRow(
-                        'Mô tả',
+                        context.tr('confirm_page.description'),
                         (_noteController.text == ""
                             ? "Không có"
                             : _noteController.text)),
@@ -1779,7 +1960,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                 const SizedBox(height: 16),
                 if (_isInsured)
                   _buildInfoCard(
-                    'Bảo hiểm',
+                    context.tr('confirm_page.insurance'),
                     Icons.perm_contact_calendar_outlined,
                     [
                       TextButton(
@@ -1799,8 +1980,9 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                             ),
                           );
                         },
-                        child: const Text("Xem bảo hiểm",
-                            style: TextStyle(fontSize: 16, color: mainColor)),
+                        child: Text(context.tr('confirm_page.view_insurance'),
+                            style: const TextStyle(
+                                fontSize: 16, color: mainColor)),
                       ),
                     ],
                   ),
@@ -1818,11 +2000,11 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  text: 'Tạo đơn đồng nghĩa với đồng ý ',
+                  text: context.tr('confirm_page.terms_agreement'),
                   style: const TextStyle(color: Colors.black),
                   children: [
                     TextSpan(
-                      text: 'điều khoản',
+                      text: context.tr('confirm_page.terms_highlight'),
                       style: const TextStyle(
                         color: mainColor,
                         fontWeight: FontWeight.bold,
@@ -1853,12 +2035,12 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                     ),
                     onPressed: state is OrderCreating
                         ? null
-                        : () => handleNewOrder(context),
+                        : () => _showConfirmationDialog(context),
                     child: state is OrderCreating
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            'Xác nhận và tạo đơn hàng',
-                            style: TextStyle(
+                        : Text(
+                            context.tr('confirm_page.create_order_button'),
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -2020,7 +2202,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                 ? const CircularProgressIndicator()
                 : const Text(
                     'Tiếp tục',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
           ),
         const SizedBox(

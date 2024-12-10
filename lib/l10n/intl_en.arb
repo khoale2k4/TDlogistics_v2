@@ -1,0 +1,6 @@
+{
+  "appTitle": "My Flutter App",
+  "welcome": "Welcome",
+  "greeting": "Hello, {name}!",
+  "language": "Language"
+}

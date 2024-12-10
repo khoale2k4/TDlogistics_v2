@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/auth/bloc/auth_bloc.dart';
@@ -37,21 +38,57 @@ class _CustomerInforState extends State<CustomerInfor> {
     print("Changing avatar");
   }
 
+  void _changeLanguage(String langCode) {
+    Locale newLocale =
+        langCode == 'vi' ? const Locale('vi', '') : const Locale('en', '');
+    context.setLocale(newLocale);
+  }
+
+  Widget buildLanguageButton(String langCode, String label) {
+    return ElevatedButton(
+      onPressed: () => _changeLanguage(langCode),
+      child: Text(label),
+    );
+  }
+
+  Widget _buildLanguageButton() {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.language, color: Colors.white),
+      onSelected: (String langCode) {
+        _changeLanguage(langCode);
+      },
+      itemBuilder: (BuildContext context) => [
+        const PopupMenuItem(
+          value: 'vi',
+          child: Text('Tiếng Việt'),
+        ),
+        const PopupMenuItem(
+          value: 'en',
+          child: Text('English'),
+        ),
+      ],
+    );
+  }
+
+  Widget logoutButton() {
+    return TextButton(
+      onPressed: () {
+        _showLogoutDialog(context);
+      },
+      child: Text(context.tr("logout"), style: TextStyle(color: Colors.red)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Xin chào!",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          context.tr("greeting"),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.exit_to_app, color: Colors.white),
-            onPressed: () {
-              _showLogoutDialog(context);
-            },
-          ),
+          _buildLanguageButton(),
         ],
         elevation: 2,
         backgroundColor: mainColor,
@@ -60,23 +97,19 @@ class _CustomerInforState extends State<CustomerInfor> {
       body: BlocListener<UserBloc, AuthState>(
         listener: (context, state) {
           if (state is UpdatingInfo) {
-            // Hiển thị một thông báo khi đang cập nhật thông tin
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Đang cập nhật thông tin...")),
-            );
           } else if (state is UpdatedInfo) {
             // Hiển thị thông báo thành công
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Cập nhật thông tin thành công!"),
+              SnackBar(
+                content: Text(context.tr("successSaveInfo")),
                 backgroundColor: secondColor,
               ),
             );
           } else if (state is FailedUpdateInfo) {
             // Hiển thị thông báo lỗi
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Cập nhật thông tin thất bại!"),
+              SnackBar(
+                content: Text(context.tr("failedSaveInfo")),
                 backgroundColor: mainColor,
               ),
             );
@@ -112,11 +145,11 @@ class _CustomerInforState extends State<CustomerInfor> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                buildFieldText(context, "Họ", firstNameController),
+                buildFieldText(context, context.tr("lastName"), firstNameController),
                 const SizedBox(height: 20),
-                buildFieldText(context, "Tên", lastNameController),
+                buildFieldText(context, context.tr("firstName"), lastNameController),
                 const SizedBox(height: 20),
-                buildFieldText(context, "Số điện thoại", phoneController),
+                buildFieldText(context, context.tr("phone"), phoneController),
                 const SizedBox(height: 20),
                 buildFieldText(context, "Email", emailController),
                 const SizedBox(height: 30),
@@ -136,12 +169,14 @@ class _CustomerInforState extends State<CustomerInfor> {
                       borderRadius: BorderRadius.circular(10), // Border radius
                     ),
                   ),
-                  child: const Text(
-                    'Lưu',
-                    style: TextStyle(
+                  child: Text(
+                    context.tr("save"),
+                    style: const TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
+                const SizedBox(height: 30),
+                logoutButton(),
               ],
             ),
           ),
@@ -155,20 +190,20 @@ class _CustomerInforState extends State<CustomerInfor> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Bạn muốn đăng xuất?'),
+          title: Text(context.tr("confirmLogout")),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('Hủy'),
+              child: Text(context.tr("deny")),
             ),
             ElevatedButton(
               onPressed: () {
                 context.read<AuthBloc>().add(LogoutRequested());
                 Navigator.of(context).pop();
               },
-              child: const Text('Đăng xuất'),
+              child: Text(context.tr("confirm")),
             ),
           ],
         );
