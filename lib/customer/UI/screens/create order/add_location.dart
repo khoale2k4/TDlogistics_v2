@@ -107,6 +107,7 @@ class _NewLocationState extends State<NewLocation> {
                 setState(() {});
 //
               },
+              onChoose: () {},
               onTap: () {},
               onDelete: () {
                 // Xử lý khi xóa văn bản

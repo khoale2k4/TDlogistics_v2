@@ -8,6 +8,7 @@ class MySearchBar extends StatefulWidget {
   final Function() onChanged;
   final Function() onTap;
   final Function() onDelete;
+  final Function() onChoose;
   final TextEditingController controller;
   final String labelText;
 
@@ -18,6 +19,7 @@ class MySearchBar extends StatefulWidget {
     required this.controller,
     required this.onTap,
     required this.labelText,
+    required this.onChoose,
     required this.onDelete,
   });
 
@@ -130,7 +132,7 @@ class _MySearchBarState extends State<MySearchBar> {
                           _searchSuggestions[index]['description'];
                       _searchSuggestions = [];
                     });
-                    widget.onChanged();
+                    widget.onChoose();
                   },
                 );
               },

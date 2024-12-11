@@ -92,7 +92,7 @@
     "cod_amount": "Cash on Delivery Amount (VND)",
     "enter_cod": "Enter the amount",
     "weight_range": "Select weight (kg):",
-    "not_obligatory" : "Not obligatory",
+    "not_obligatory" : "Specifically (Not obligatory)",
     "select_weight": "Please select the weight!",
     "enter_weight": "Enter weight",
     "invalid_weight": "Invalid weight!",

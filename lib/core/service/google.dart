@@ -48,6 +48,7 @@ Future<Map<String, double>?> getLatLngFromAddress(String address) async {
       final double lat = location['lat'];
       final double lng = location['lng'];
 
+      // print("Tìm được địa chỉ!!!");
       return {'lat': lat, 'lng': lng};
     } else {
       print('Không tìm thấy tọa độ cho địa chỉ: $address');

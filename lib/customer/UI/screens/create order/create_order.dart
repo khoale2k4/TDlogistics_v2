@@ -65,6 +65,7 @@ class _CreateOrderState extends State<CreateOrder> {
           _startLatLng = LatLng(senderLatLng['lat']!, senderLatLng['lng']!);
           _endLatLng = LatLng(receiverLatLng['lat']!, receiverLatLng['lng']!);
         });
+        print("TÌM THÀNH CÔNG");
       } else {
         print("Không thể lấy tọa độ cho một trong hai địa chỉ.");
       }
@@ -160,7 +161,7 @@ class _CreateOrderState extends State<CreateOrder> {
     } else {
       // Xử lý khi không có quyền
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Bạn cần cấp quyền để truy cập danh bạ.')),
+        const SnackBar(content: Text('Bạn cần cấp quyền để truy cập danh bạ.')),
       );
     }
     return {};
@@ -691,6 +692,8 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                                 controller: _senderLocation,
                                 onChanged: () {
                                   _senderAddress.text = _senderLocation.text;
+                                },
+                                onChoose: () {
                                   _convertAddresses();
                                 },
                                 onTap: () {
@@ -712,6 +715,8 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                                 onChanged: () {
                                   _receiverAddress.text =
                                       _receiverLocation.text;
+                                },
+                                onChoose: () {
                                   _convertAddresses();
                                 },
                                 onTap: () {
@@ -781,17 +786,11 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                     ),
                     const SizedBox(height: 10),
                     if (_startLatLng != null && _endLatLng != null)
-                      SizedBox(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onPanDown: (_) {},
-                          child: IgnorePointer(
-                            ignoring: false,
-                            child: MapScreen(
-                              startLocation: _startLatLng!,
-                              endLocation: _endLatLng!,
-                            ),
-                          ),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 400),
+                        child: MapScreen(
+                          startLocation: _startLatLng ?? const LatLng(0, 1),
+                          endLocation: _endLatLng ?? const LatLng(0, 1),
                         ),
                       ),
                     const SizedBox(height: 10),
@@ -1339,7 +1338,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                 fromContacts: true),
             if (!_isReceiverPhoneValid)
               Text(context.tr("enter_phone"),
-                  style: TextStyle(color: Colors.red)),
+                  style: const TextStyle(color: Colors.red)),
             _buildTextField(
               controller: _orderDescriptionController,
               labelText: context.tr("description"),
@@ -1350,7 +1349,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             const SizedBox(height: 30),
             Text(
               context.tr("package_info"),
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             ),
             const SizedBox(height: 30),
 
@@ -1404,7 +1403,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             ),
             if (!_isWeightValid)
               Text(context.tr("select_weight"),
-                  style: TextStyle(color: Colors.red)),
+                  style: const TextStyle(color: Colors.red)),
 
             const SizedBox(height: 10),
             _buildNumberField(
@@ -1452,14 +1451,14 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             if (_overMaxWeight)
               Text(
                 context.tr("select_weight"),
-                style: TextStyle(color: Colors.red),
+                style: const TextStyle(color: Colors.red),
               ),
             const SizedBox(height: 20),
 
             // Lưới nút chọn loại hàng hoá
             Text(
               context.tr("goods_type"),
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -1501,7 +1500,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             ),
             if (!_goodTypeValid)
               Text(context.tr("select_goods_type"),
-                  style: TextStyle(color: Colors.red)),
+                  style: const TextStyle(color: Colors.red)),
 
             const SizedBox(height: 20),
             _buildToggleButton(
@@ -2202,7 +2201,8 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                 ? const CircularProgressIndicator()
                 : const Text(
                     'Tiếp tục',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold),
                   ),
           ),
         const SizedBox(

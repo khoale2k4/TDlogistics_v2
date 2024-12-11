@@ -24,13 +24,11 @@ Future<void> main() async {
         Locale('vi', ''),
       ],
       path: 'lib/assets/translations',
-      fallbackLocale: const Locale('en', ''),
+      fallbackLocale: const Locale('vi', ''),
       child: MyApp(
         secureStorageService: secureStorageService,
         locationTrackerService: locationTrackerService,
       ),
     ),
   );
-
-  // runApp(const TestCall());
 }
