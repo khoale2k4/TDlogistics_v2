@@ -8,7 +8,7 @@ import 'package:tdlogistic_v2/shipper/bloc/task_state.dart';
 
 class ChatListScreen extends StatefulWidget {
   final Function(String, String) sendMessage;
-  const ChatListScreen({Key? key, required this.sendMessage}) : super(key: key);
+  const ChatListScreen({super.key, required this.sendMessage});
 
   @override
   State<ChatListScreen> createState() => _ChatListScreenState();

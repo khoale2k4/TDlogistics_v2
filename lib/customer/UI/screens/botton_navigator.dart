@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:tdlogistic_v2/auth/data/models/user_model.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/contact/chats_screen.dart';
+import 'package:tdlogistic_v2/customer/UI/screens/create%20order/create_order.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/cus_info.dart';
 import 'package:tdlogistic_v2/customer/UI/screens/history.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
@@ -10,27 +11,39 @@ import 'package:tdlogistic_v2/customer/UI/screens/home_page.dart';
 class NavigatePage extends StatefulWidget {
   final User user;
   final Function(String, String) sendMessage;
-  const NavigatePage({super.key, required this.user, required this.sendMessage});
+  final int start;
+  const NavigatePage(
+      {super.key,
+      required this.user,
+      required this.sendMessage,
+      required this.start});
 
   @override
   _NavigatePageState createState() => _NavigatePageState();
 }
 
 class _NavigatePageState extends State<NavigatePage> {
-  int _currentIndex = 0; // Index hiện tại của bottom navigation
-  late User user; // Sử dụng late để đảm bảo user được khởi tạo
+  int _currentIndex = 0;
+  int _currentFeature = 0;
   late List<Widget> _pages;
+  late List<Widget> _features;
 
   @override
   void initState() {
     super.initState();
-    user = widget.user; // Khởi tạo user từ widget
-    _pages = [
-      HomePage(user: user),
-      History(sendMessage: widget.sendMessage),
-      ChatListScreen(sendMessage: widget.sendMessage,),
-      CustomerInfor(user: user), // Truyền user vào CustomerInfor
+    _features = [
+      HomePage(user: widget.user, toFeature: toFeature),
+      CreateOrder(user: widget.user, toHome: toHome)
     ];
+    _pages = [
+      Container(),
+      History(sendMessage: widget.sendMessage),
+      ChatListScreen(
+        sendMessage: widget.sendMessage,
+      ),
+      CustomerInfor(user: widget.user), // Truyền user vào CustomerInfor
+    ];
+    _currentIndex = widget.start;
   }
 
   @override
@@ -45,12 +58,29 @@ class _NavigatePageState extends State<NavigatePage> {
     });
   }
 
+  void toHome() {
+    setState(() {
+      _currentFeature = 0;
+    });
+  }
+
+  void toFeature(int feature) {
+    setState(() {
+      _currentFeature = feature;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex, // Hiển thị trang dựa trên chỉ số hiện tại
-        children: _pages, // Lưu trạng thái các trang
+        index: _currentIndex,
+        children: [
+          _features[_currentFeature], // Tab Home
+          _buildHistory(), // Tab History
+          _buildChatList(), // Tab Chat
+          _buildCustomerInfo(), // Tab Profile
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
@@ -59,15 +89,15 @@ class _NavigatePageState extends State<NavigatePage> {
         items: [
           BottomNavigationBarItem(
             icon: _buildIconWithCircle(Icons.home, 0),
-            label: context.tr("home"),
+            label: context.tr("nav_bar.home"),
           ),
           BottomNavigationBarItem(
             icon: _buildIconWithCircle(Icons.history, 1),
-            label: context.tr('history'),
+            label: context.tr('nav_bar.history'),
           ),
           BottomNavigationBarItem(
             icon: _buildIconWithCircle(Icons.messenger_outline, 2),
-            label: context.tr('chat'),
+            label: context.tr('nav_bar.chat'),
           ),
           // BottomNavigationBarItem(
           //   icon: _buildIconWithCircle(Icons.notifications_active_outlined, 2),
@@ -75,7 +105,7 @@ class _NavigatePageState extends State<NavigatePage> {
           // ),
           BottomNavigationBarItem(
             icon: _buildIconWithCircle(Icons.person, 3),
-            label: context.tr('me'),
+            label: context.tr('nav_bar.me'),
           ),
         ],
         type: BottomNavigationBarType.fixed, // Đảm bảo các tab không bị cuộn
@@ -103,5 +133,24 @@ class _NavigatePageState extends State<NavigatePage> {
             : Colors.grey, // Màu icon khi được chọn
       ),
     );
+  }
+
+  Widget _buildHistory() {
+    return _currentIndex == 1
+        ? History(sendMessage: widget.sendMessage) // Chỉ build nếu index == 1
+        : Container(); // Trả về Container rỗng nếu không phải tab History
+  }
+
+  Widget _buildChatList() {
+    return _currentIndex == 2
+        ? ChatListScreen(
+            sendMessage: widget.sendMessage) // Chỉ build nếu index == 2
+        : Container(); // Trả về Container rỗng nếu không phải tab Chat
+  }
+
+  Widget _buildCustomerInfo() {
+    return _currentIndex == 3
+        ? CustomerInfor(user: widget.user) // Chỉ build nếu index == 3
+        : Container(); // Trả về Container rỗng nếu không phải tab Profile
   }
 }

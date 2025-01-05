@@ -82,7 +82,7 @@ class _SocketPageState extends State<SocketPage> {
     }
 
     print('Bearer $token');
-    String host = "https:localhost:3000/";
+    String host = "https://api.tdlogistics.net.vn/v3";
     try {
       socket = IO.io(
         host,

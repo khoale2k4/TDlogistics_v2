@@ -20,6 +20,7 @@ class ChatScreen extends StatefulWidget {
       required this.sendMessage});
 
   @override
+  // ignore: library_private_types_in_public_api
   _ChatScreenState createState() => _ChatScreenState();
 }
 
@@ -154,7 +155,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (messages.isEmpty)
-                        Center(child: Text(context.tr("noChat")))
+                        Center(child: Text(context.tr("chat.noChat")))
                       else
                         ListView.builder(
                           controller: _scrollController,
@@ -193,17 +194,17 @@ class _ChatScreenState extends State<ChatScreen> {
       padding: const EdgeInsets.all(8.0),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.attach_file, color: Colors.grey),
-            onPressed: () {
-              // Đính kèm ảnh
-            },
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.attach_file, color: Colors.grey),
+          //   onPressed: () {
+          //     // Đính kèm ảnh
+          //   },
+          // ),
           Expanded(
             child: TextField(
               controller: _messageController,
               decoration: InputDecoration(
-                hintText: context.tr("typeSomething"),
+                hintText: context.tr("chat.typeSomething"),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide.none,
@@ -224,6 +225,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   'content': _messageController.text
                 });
                 _messageController.clear();
+                _scrollController.jumpTo(10000);
               });
             },
           ),

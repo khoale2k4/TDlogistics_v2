@@ -25,6 +25,7 @@
         "delivering": "Đang giao hàng",
         "completed": "Đã hoàn thành",
         "cancelled": "Đã huỷ",
+        "noOrder": "Chưa có đơn hàng nào",
         "phone": "SĐT",
         "address": "Địa chỉ",
         "loadMore": "Tải thêm",
@@ -82,6 +83,7 @@
     "order_pages": {
         "continue": "Tiếp tục",
         "back": "Quay lại",
+        "share": "Chia sẻ",
         "locations_page": {
             "delivery": "Giao hàng",
             "map": "Bản đồ",
@@ -90,18 +92,27 @@
             "please_enter_address": "Vui lòng nhập địa chỉ",
             "fetching_locations": "Đang lấy các địa điểm",
             "favorite_pickup_location": "Địa điểm nhận yêu thích",
-            "pick_a_location" : "Chọn địa điểm",
-            "search_address" : "Tìm kiếm địa điểm", 
-            "enter_address" : "Nhập địa điểm",
-            "description" : "Mô tả",
-            "name" : "Tên người nhận",
-            "phone" : "SĐT người nhận",
-            "correct_phone" : "Vui lòng nhập đúng SĐT!",
-            "saved_locations" : "Các địa điểm đã lưu",
+            "pick_a_location": "Chọn địa điểm",
+            "search_address": "Tìm kiếm địa điểm",
+            "confirm_location": "Xác nhận địa điểm",
+            "location_name": "Tên địa điểm",
+            "address": "Địa chỉ",
+            "enter_address": "Nhập địa điểm",
+            "description": "Mô tả",
+            "name": "Tên người nhận",
+            "phone": "SĐT người nhận",
+            "correct_phone": "Vui lòng nhập đúng SĐT!",
+            "save" : "Lưu",
+            "saved_locations": "Các địa điểm đã lưu",
             "button_label": "Nút",
             "myHome": "Nhà",
             "myCompany": "Công ty",
-            "more": "Thêm"
+            "more": "Thêm",
+            "see_all": "Xem tất cả",
+            "confirm_delete": "Xác nhận xóa",
+            "delete_alert": "Bạn có chắc chắn muốn xóa địa điểm này không?",
+            "delete": "Xoá",
+            "cancel": "Huỷ"
         },
         "order_detail_page": {
             "i_am_receiver": "Tôi là người nhận",
@@ -121,8 +132,11 @@
             "goods_type": "Chọn loại hàng hoá:",
             "select_goods_type": "Vui lòng chọn loại hàng!",
             "bulky_goods": "Hàng cồng kềnh",
+            "bg_des": "60 x 70 x 60cm, tối đã 50kg",
             "gift_order": "Đơn hàng quà tặng",
+            "go_des": "Quà tặng bạn bè, người thân",
             "delivery_to_door": "Giao tận cửa",
+            "dtd_des": "Giao đến tận cửa người nhận",
             "insurance": "Thêm bảo hiểm",
             "insurance_added": "Đã thêm bảo hiểm",
             "shipping_method": "Phương thức vận chuyển",
@@ -177,13 +191,16 @@
             "terms_agreement": "Tạo đơn đồng nghĩa với đồng ý ",
             "terms_highlight": "điều khoản",
             "create_order_button": "Tạo đơn hàng",
-            "creating_order": "Đang tạo đơn hàng..."
+            "creating_order": "Đang tạo đơn hàng...",
+            "confirmation" : "Bạn có chắc chắn muốn tạo đơn hàng không?",
+            "confirm" : "Xác nhận",
+            "cancel": "Huỷ"
         }
     },
     "common": {
         "close": "Đóng",
         "retry": "Thử lại",
-        "save" : ":ưu",
+        "save": "Lưu",
         "error": "Lỗi: "
     }
 }

@@ -178,25 +178,25 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          height: 300,
-          child: GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: widget.startLocation,
-              zoom: 12,
-            ),
-            // onMapCreated: (controller) {
-            //   _mapController = controller;
-            // },
-            polylines: _polylines,
-            markers: _markers,
-            myLocationButtonEnabled: false,
-          ),
-        ),
+        // Container(
+        //   height: 300,
+        //   child: GoogleMap(
+        //     initialCameraPosition: CameraPosition(
+        //       target: widget.startLocation,
+        //       zoom: 12,
+        //     ),
+        //     onMapCreated: (controller) {
+        //       _mapController = controller;
+        //     },
+        //     polylines: _polylines,
+        //     markers: _markers,
+        //     myLocationButtonEnabled: false,
+        //   ),
+        // ),
         if (_distance.isNotEmpty && _duration.isNotEmpty)
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text("Khoảng cách: $_distance - Thời gian: $_duration"),
+            child: Text("$_distance - $_duration"),
           ),
       ],
     );

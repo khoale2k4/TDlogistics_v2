@@ -7,6 +7,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:image_picker/image_picker.dart';
 
 class SignatureScreen extends StatefulWidget {
+  const SignatureScreen({super.key});
+
   @override
   _SignatureScreenState createState() => _SignatureScreenState();
 }
@@ -27,7 +29,7 @@ class _SignatureScreenState extends State<SignatureScreen> {
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Permission Denied')),
+        const SnackBar(content: Text('Permission Denied')),
       );
     }
   }
@@ -55,7 +57,7 @@ class _SignatureScreenState extends State<SignatureScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Ký tên'),
+        title: const Text('Ký tên'),
       ),
       body: Column(
         children: [
@@ -64,7 +66,7 @@ class _SignatureScreenState extends State<SignatureScreen> {
             height: MediaQuery.of(context).size.height - 300,
             backgroundColor: Colors.grey[200]!,
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -72,11 +74,11 @@ class _SignatureScreenState extends State<SignatureScreen> {
                 onPressed: () {
                   _controller.clear();
                 },
-                child: Text('Xóa'),
+                child: const Text('Xóa'),
               ),
               ElevatedButton(
                 onPressed: _saveSignature,
-                child: Text('Lưu'),
+                child: const Text('Lưu'),
               ),
             ],
           ),

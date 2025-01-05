@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:tdlogistic_v2/customer/UI/screens/history.dart';
+import 'package:tdlogistic_v2/app/app.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -31,14 +31,20 @@ Future<void> onDidReceiveLocalNotification(
 Future<void> selectNotification(
     NotificationResponse notificationResponse) async {
   String? payload = notificationResponse.payload;
-  if (payload != null) {
+  if (payload == 'new order') {
     navigatorKey.currentState?.push(
       MaterialPageRoute(
-        builder: (context) => History(sendMessage: (a, b){}),
+        builder: (context) => MyApp(start: 1),
       ),
     );
-    debugPrint('notification payload: $payload');
+  } else if (payload == 'new message') {
+    navigatorKey.currentState?.push(
+      MaterialPageRoute(
+        builder: (context) => MyApp(start: 2),
+      ),
+    );
   }
+  debugPrint('notification payload: $payload');
 }
 
 Future<void> startNotice() async {
@@ -71,4 +77,30 @@ Future<void> startNotice() async {
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
+}
+
+Future<void> showNotification(
+    String title, String message, String payload) async {
+  print("Đang hiển thị thông báo: $title - $message");
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+    '123',
+    'tdlogistic',
+    importance: Importance.max,
+    priority: Priority.high,
+    showWhen: false,
+  );
+  const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+      DarwinNotificationDetails();
+  const NotificationDetails platformChannelSpecifics = NotificationDetails(
+    android: androidPlatformChannelSpecifics,
+    iOS: iOSPlatformChannelSpecifics,
+  );
+  await flutterLocalNotificationsPlugin.show(
+    0,
+    title,
+    message,
+    platformChannelSpecifics,
+    payload: payload,
+  );
 }

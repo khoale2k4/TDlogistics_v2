@@ -118,11 +118,11 @@ class _HistoryState extends State<History> with SingleTickerProviderStateMixin {
             color: Colors.black,
           ),
           tabs: [
-            Tab(text: context.tr("processing")),
-            Tab(text: context.tr("taking")),
-            Tab(text: context.tr("delivering")),
-            Tab(text: context.tr("completed")),
-            Tab(text: context.tr("cancelled")),
+            Tab(text: context.tr("history.processing")),
+            Tab(text: context.tr("history.taking")),
+            Tab(text: context.tr("history.delivering")),
+            Tab(text: context.tr("history.completed")),
+            Tab(text: context.tr("history.cancelled")),
           ],
         ),
       ),
@@ -502,20 +502,20 @@ class _OrderListViewState extends State<OrderListView> {
     return RefreshIndicator(
       onRefresh: widget.refreshFunc,
       child: widget.orders.isEmpty
-          ? const Center(
+          ? Center(
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image(
+                    const Image(
                       image: AssetImage("lib/assets/hoptrong.png"),
                     ),
                     Text(
-                      'Chưa có đơn hàng nào',
+                      context.tr("history.noOrder"),
                       style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                          const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                     ),
-                    SizedBox(height: 250),
+                    const SizedBox(height: 250),
                   ],
                 ),
               ),
@@ -542,14 +542,14 @@ class _OrderListViewState extends State<OrderListView> {
                       ),
                       child: widget.loading
                           ? Text(
-                              context.tr("loading"),
+                              context.tr("history.loading"),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
                             )
                           : Text(
-                              context.tr("loadMore"),
+                              context.tr("history.loadMore"),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -601,7 +601,7 @@ class _OrderListViewState extends State<OrderListView> {
           children: [
             const Icon(Icons.person, size: 16.0, color: Colors.grey),
             const SizedBox(width: 4.0),
-            Text('${context.tr("recevier")}: ${order.nameReceiver ?? ''}'),
+            Text('${context.tr("history.recevier")}: ${order.nameReceiver ?? ''}'),
           ],
         ),
         const SizedBox(height: 4.0),
@@ -609,7 +609,7 @@ class _OrderListViewState extends State<OrderListView> {
           children: [
             const Icon(Icons.phone, size: 16.0, color: Colors.grey),
             const SizedBox(width: 4.0),
-            Text('${context.tr("phone")}: ${order.phoneNumberReceiver ?? ''}'),
+            Text('${context.tr("history.phone")}: ${order.phoneNumberReceiver ?? ''}'),
           ],
         ),
         const SizedBox(height: 4.0),
@@ -619,7 +619,7 @@ class _OrderListViewState extends State<OrderListView> {
             const SizedBox(width: 4.0),
             Expanded(
               child: Text(
-                '${context.tr("address")}: ${order.detailDest ?? ''}, ${order.districtDest ?? ''}, ${order.provinceDest ?? ''}',
+                '${context.tr("history.address")}: ${order.detailDest ?? ''}, ${order.districtDest ?? ''}, ${order.provinceDest ?? ''}',
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -682,7 +682,7 @@ class _OrderListViewState extends State<OrderListView> {
                           );
                         },
                         icon: const Icon(Icons.chat),
-                        label: Text(context.tr("chatWithShipper")),
+                        label: Text(context.tr("history.chatWithShipper")),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24, vertical: 12),
@@ -711,7 +711,7 @@ class _OrderListViewState extends State<OrderListView> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
-                      '${context.tr("orderDetail")} ${order.trackingNumber ?? ''}',
+                      '${context.tr("history.orderDetail")} ${order.trackingNumber ?? ''}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -721,13 +721,13 @@ class _OrderListViewState extends State<OrderListView> {
                   ),
                   const Divider(),
                   _buildOrderDetailTile(
-                      context.tr("sender"), order.nameSender, Icons.person),
+                      context.tr("history.sender"), order.nameSender, Icons.person),
                   // _buildOrderDetailTile(
                   //     'Trạng thái', order.statusCode, Icons.person),
                   _buildOrderDetailTile(
-                      context.tr("senderPhone"), order.phoneNumberSender, Icons.phone),
+                      context.tr("history.senderPhone"), order.phoneNumberSender, Icons.phone),
                   _buildOrderDetailTile(
-                      context.tr("senderAddress"),
+                      context.tr("history.senderAddress"),
                       '${order.provinceSource ?? ''}, ${order.districtSource ?? ''}, ${order.wardSource ?? ''}, ${order.detailSource ?? ''}',
                       Icons.location_on,
                       sendAddress:
@@ -736,11 +736,11 @@ class _OrderListViewState extends State<OrderListView> {
                           '${order.provinceDest ?? ''}, ${order.districtDest ?? ''}, ${order.wardDest ?? ''}, ${order.detailDest ?? ''}'),
                   const Divider(),
                   _buildOrderDetailTile(
-                      context.tr("recevier"), order.nameReceiver, Icons.person),
+                      context.tr("history.recevier"), order.nameReceiver, Icons.person),
                   _buildOrderDetailTile(
-                      context.tr("receiverPhone"), order.phoneNumberReceiver, Icons.phone),
+                      context.tr("history.receiverPhone"), order.phoneNumberReceiver, Icons.phone),
                   _buildOrderDetailTile(
-                      context.tr("receiverAddress"),
+                      context.tr("history.receiverAddress"),
                       '${order.provinceDest ?? ''}, ${order.districtDest ?? ''}, ${order.wardDest ?? ''}, ${order.detailDest ?? ''}',
                       Icons.location_on,
                       sendAddress:
@@ -749,7 +749,7 @@ class _OrderListViewState extends State<OrderListView> {
                           '${order.provinceDest ?? ''}, ${order.districtDest ?? ''}, ${order.wardDest ?? ''}, ${order.detailDest ?? ''}'),
                   const Divider(),
                   _buildOrderDetailTile(
-                      context.tr("weight"),
+                      context.tr("history.weight"),
                       order.mass != null
                           ? '${order.mass?.toStringAsFixed(2)} kg'
                           : (order.fromMass != null
@@ -757,13 +757,13 @@ class _OrderListViewState extends State<OrderListView> {
                               : "0 kg"),
                       Icons.line_weight),
                   _buildOrderDetailTile(
-                      context.tr("fee"),
+                      context.tr("history.fee"),
                       '${order.fee?.toStringAsFixed(0) ?? '0'} VNĐ',
                       Icons.attach_money),
 
                   _buildOrderDetailTile(
-                      context.tr("paymentStatus"),
-                      (order.paid!) ? context.tr("paid") : context.tr("notPaid"),
+                      context.tr("history.paymentStatus"),
+                      (order.paid!) ? context.tr("history.paid") : context.tr("history.notPaid"),
                       (Icons.info)),
                   const Divider(), // Thêm dòng phân cách trước khi hiển thị hành trình
                   Padding(
@@ -772,7 +772,7 @@ class _OrderListViewState extends State<OrderListView> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          context.tr("orderJourney"),
+                          context.tr("history.orderJourney"),
                           // ignore: prefer_const_constructors
                           style: TextStyle(
                             fontSize: 18,
@@ -823,7 +823,7 @@ class _OrderListViewState extends State<OrderListView> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(
-              context.tr("images&signature"),
+              context.tr("history.images&signature"),
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -850,20 +850,20 @@ class _OrderListViewState extends State<OrderListView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Hiển thị hình gửi
-                      _buildImageGrid(context.tr("sendImage"), sendImages),
+                      _buildImageGrid(context.tr("history.sendImage"), sendImages),
 
                       const SizedBox(height: 16), // Khoảng cách giữa các phần
 
                       // Hiển thị hình nhận
-                      _buildImageGrid(context.tr("receiveImage"), receiveImages),
+                      _buildImageGrid(context.tr("history.receiveImage"), receiveImages),
 
                       const SizedBox(height: 16), // Khoảng cách giữa các phần
 
                       // Hiển thị chữ ký
-                      _buildSignatureSection(context.tr("sendSignature"), sendSignature),
+                      _buildSignatureSection(context.tr("history.sendSignature"), sendSignature),
                       const SizedBox(height: 8),
                       _buildSignatureSection(
-                          context.tr("receiveSignature"), receiveSignature),
+                          context.tr("history.receiveSignature"), receiveSignature),
                     ],
                   ),
                 );
@@ -886,7 +886,7 @@ class _OrderListViewState extends State<OrderListView> {
 
   Widget _buildImageGrid(String title, List<Uint8List> images) {
     if (images.isEmpty) {
-      return Text('$title: ${context.tr("noImages")}');
+      return Text('$title: ${context.tr("history.noImages")}');
     }
 
     return Column(
@@ -930,7 +930,7 @@ class _OrderListViewState extends State<OrderListView> {
                     );
                   },
                 )
-              : Text(context.tr("noImages")),
+              : Text(context.tr("history.noImages")),
         ),
       ],
     );
@@ -966,7 +966,7 @@ class _OrderListViewState extends State<OrderListView> {
                   ),
                 ),
               )
-            : Text(context.tr("noSignature")),
+            : Text(context.tr("history.noSignature")),
       ],
     );
   }
@@ -989,7 +989,7 @@ class _OrderListViewState extends State<OrderListView> {
             child: ListTile(
               leading: Icon(icon, color: Colors.green),
               title: Text(
-                "$title (${context.tr("clickMe")})",
+                "$title (${context.tr("history.clickMe")})",
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                 ),

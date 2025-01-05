@@ -6,7 +6,8 @@ import 'package:tdlogistic_v2/customer/UI/screens/create%20order/create_order.da
 
 class HomePage extends StatefulWidget {
   final User user;
-  const HomePage({super.key, required this.user});
+  final Function(int) toFeature;
+  const HomePage({super.key, required this.user, required this.toFeature});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -20,6 +21,7 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
+    print(widget.user.toJson());
     _scrollController.addListener(_onScroll);
     _animationController = AnimationController(
       vsync: this,
@@ -120,19 +122,14 @@ class _HomePageState extends State<HomePage>
             offset: Offset(0, _animation.value),
             child: FloatingActionButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CreateOrder(user: widget.user),
-                  ),
-                );
+                widget.toFeature(1);
               },
               backgroundColor: secondColor,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.shopping_bag_rounded),
-                  Text(context.tr("orderNow"), style: const TextStyle(fontSize: 10)),
+                  const Icon(Icons.shopping_bag_rounded, color: Colors.black),
+                  Text(context.tr("home.orderNow"), style: const TextStyle(fontSize: 10, color: Colors.black)),
                 ],
               ),
             ),
@@ -150,7 +147,7 @@ class _HomePageState extends State<HomePage>
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Text(
-            context.tr('voucher'),
+            context.tr('home.voucher'),
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -255,7 +252,7 @@ class _HomePageState extends State<HomePage>
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Text(
-            context.tr("news"),
+            context.tr("home.news"),
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,

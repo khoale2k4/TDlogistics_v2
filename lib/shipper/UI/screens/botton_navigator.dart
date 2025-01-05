@@ -19,7 +19,7 @@ class ShipperNavigatePage extends StatefulWidget {
   final List<Task> tasks;
   final Function(String, String) sendMessage;
 
-  ShipperNavigatePage(
+  const ShipperNavigatePage(
       {super.key,
       required this.user,
       required this.tasks,
@@ -373,7 +373,7 @@ class _TasksNotificationsState extends State<TasksNotifications> {
                               style: TextStyle(
                                   fontWeight: FontWeight.bold, fontSize: 20),
                             ),
-                            const SizedBox(height: 200)
+                            SizedBox(height: 200)
                           ],
                         ),
                       ),

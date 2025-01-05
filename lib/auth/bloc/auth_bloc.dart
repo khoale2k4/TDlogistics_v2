@@ -2,7 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/auth/bloc/auth_event.dart';
 import 'package:tdlogistic_v2/auth/bloc/auth_state.dart';
 import 'package:tdlogistic_v2/core/service/secure_storage_service.dart';
-import 'package:tdlogistic_v2/core/service/socket_for_customer.dart';
 import '../data/repositories/auth_repository.dart.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 

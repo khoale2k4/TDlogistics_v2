@@ -937,7 +937,7 @@ class _TaskListViewState extends State<TaskListView> {
                 onTap: () async {
                   // Mở trang ký tên và trả về kết quả sau khi ký
                   final XFile? signatureData = await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => SignatureScreen()),
+                    MaterialPageRoute(builder: (context) => const SignatureScreen()),
                   );
                   Navigator.pop(context, signatureData);
                 },
@@ -962,13 +962,13 @@ class _TaskListViewState extends State<TaskListView> {
 
   Widget _buildOrderDetailTile(String title, String? value, IconData icon,
       {String address = "", String qrData = ""}) {
-    void _showQrDialog() {
+    void showQrDialog() {
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text("Thanh toán"),
-            content: Container(
+            content: SizedBox(
               // Wrap QrImage in a Container
               width: 200,
               height: 200,
@@ -1010,7 +1010,7 @@ class _TaskListViewState extends State<TaskListView> {
         : qrData != ""
             ? InkWell(
                 onTap: () {
-                  _showQrDialog();
+                  showQrDialog();
                 },
                 child: ListTile(
                   leading: Icon(icon, color: Colors.green),
@@ -1351,7 +1351,7 @@ class _TaskListViewState extends State<TaskListView> {
 class FullScreenImage extends StatelessWidget {
   final Uint8List image;
 
-  FullScreenImage({required this.image});
+  const FullScreenImage({super.key, required this.image});
 
   @override
   Widget build(BuildContext context) {

@@ -31,7 +31,8 @@ import 'package:tdlogistic_v2/customer/data/models/shipping_bill.dart';
 
 class CreateOrder extends StatefulWidget {
   final User user;
-  const CreateOrder({super.key, required this.user});
+  final Function() toHome;
+  const CreateOrder({super.key, required this.user, required this.toHome});
 
   @override
   State<CreateOrder> createState() => _CreateOrderState();
@@ -167,7 +168,7 @@ class _CreateOrderState extends State<CreateOrder> {
     return {};
   }
 
-  String _selectedDeliveryMethod = 'Giao hàng tiết kiệm';
+  String _selectedDeliveryMethod = 'Giao hàng nhanh';
   List<String> giftTopics = [
     "Ngày quốc tế Phụ nữ 8/3",
     "Ngày của mẹ",
@@ -178,22 +179,6 @@ class _CreateOrderState extends State<CreateOrder> {
     "Giáng sinh",
     "Ngày nhà giáo Việt Nam"
   ];
-
-  final List<String> _offers = [
-    'Ưu đãi 1: Giảm 10%',
-    'Ưu đãi 2: Miễn phí vận chuyển',
-    'Ưu đãi 3: Giảm giá cho lần mua tiếp theo',
-    'Ưu đãi 4: Tặng kèm sản phẩm',
-  ];
-
-  final List<bool> _selectedOffers = [false, false, false, false];
-
-  void _onOfferSelected(int index, bool value) {
-    setState(() {
-      _selectedOffers[index] =
-          value; // Cập nhật trạng thái khi người dùng chọn ưu đãi
-    });
-  }
 
   //////////////////////////////
   final TextEditingController _noteInSController = TextEditingController();
@@ -296,14 +281,14 @@ class _CreateOrderState extends State<CreateOrder> {
       barrierDismissible: false, // Không cho phép đóng khi nhấn bên ngoài.
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Xác nhận'),
-          content: const Text('Bạn có chắc chắn muốn tạo đơn hàng không?'),
+          title: Text(context.tr('order_pages.confirm_page.confirm')),
+          content: Text(context.tr('order_pages.confirm_page.confirmation')),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop(); // Đóng popup.
               },
-              child: const Text('Hủy'),
+              child: Text(context.tr('order_pages.confirm_page.cancel')),
             ),
             ElevatedButton(
               onPressed: () {
@@ -312,7 +297,7 @@ class _CreateOrderState extends State<CreateOrder> {
               },
               style: ElevatedButton.styleFrom(backgroundColor: mainColor),
               child:
-                  const Text('Xác nhận', style: TextStyle(color: Colors.white)),
+                  Text(context.tr('order_pages.confirm_page.confirm'), style: const TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -363,13 +348,6 @@ class _CreateOrderState extends State<CreateOrder> {
   int _currentPage = 1;
 
   String createShareContent() {
-    String offerText = _selectedOffers
-        .asMap()
-        .entries
-        .where((entry) => entry.value)
-        .map((entry) => _offers[entry.key])
-        .join(', ');
-
     String content = '''
 Thông tin người gửi:
 - Tên: ${_senderNameController.text}
@@ -390,7 +368,6 @@ Chi tiết đơn hàng:
 - Loại hàng hóa: ${_selectedGoodsType ?? 'Không có'}
 - Dịch vụ: ${_selectedDeliveryMethod}
 - Thanh toán khi nhận: ${_cashOnDeliveryController.text} VNĐ
-- Ưu đãi: ${offerText.isNotEmpty ? offerText : 'Không có'}
 - Ghi chú: ${_noteController.text}
 
 Thông tin quà tặng:
@@ -593,9 +570,8 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
               _buildNextButton(),
-              const SizedBox(height: 50),
+              const SizedBox(height: 10),
             ],
           ),
         ],
@@ -671,11 +647,11 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildSectionTitle(
-                      "Giao hàng",
+                      context.tr("order_pages.locations_page.delivery"),
                       func: () {
                         print("OK");
                       },
-                      textButton: "Bản đồ",
+                      textButton: context.tr("order_pages.locations_page.map"),
                     ),
                     Row(
                       children: [
@@ -688,7 +664,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                                   Icons.start,
                                   color: secondColor,
                                 ),
-                                labelText: "Nơi gửi",
+                                labelText: context.tr("order_pages.locations_page.sender_location"),
                                 controller: _senderLocation,
                                 onChanged: () {
                                   _senderAddress.text = _senderLocation.text;
@@ -710,7 +686,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                               MySearchBar(
                                 icon: const Icon(Icons.last_page,
                                     color: mainColor),
-                                labelText: "Nơi nhận",
+                                labelText: context.tr("order_pages.locations_page.receiver_location"),
                                 controller: _receiverLocation,
                                 onChanged: () {
                                   _receiverAddress.text =
@@ -734,9 +710,9 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                                 },
                               ),
                               if (!_validLocation && !_validAddress)
-                                const Text(
-                                  "Vui lòng nhập địa chỉ",
-                                  style: TextStyle(color: Colors.red),
+                                Text(
+                                  context.tr("order_pages.locations_page.please_enter_address"),
+                                  style: const TextStyle(color: Colors.red),
                                 )
                             ],
                           ),
@@ -780,7 +756,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                         } else if (state is GotLocations) {
                           return buildHorizontalLocationList(state.locations);
                         } else {
-                          return const Text("Đang lấy các địa điểm");
+                          return Text(context.tr("order_pages.locations_page.fetching_locations"));
                         }
                       },
                     ),
@@ -795,9 +771,9 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                       ),
                     const SizedBox(height: 10),
                     _buildSectionTitle(
-                      "Địa điểm nhận yêu thích",
+                      context.tr("order_pages.locations_page.favorite_pickup_location"),
                       button: true,
-                      textButton: "Thêm",
+                      textButton: context.tr("order_pages.locations_page.more"),
                       func: () async {
                         final result = await Navigator.push(
                           context,
@@ -842,7 +818,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                       child: _buildFavoriteLocations(state.favLocations),
                     );
                   } else {
-                    return const Text("Đang lấy các địa điểm");
+                    return Text(context.tr("order_pages.locations_page.fetching_locations"));
                   }
                 },
               ),
@@ -998,7 +974,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
       Row(
         children: [
           addButton(
-            name: "Thêm",
+            name: context.tr("order_pages.locations_page.more"),
             icon: const Icon(Icons.add),
             func: () async {
               final result = await Navigator.push(
@@ -1042,7 +1018,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             },
             icon: const Icon(Icons.location_on, color: Colors.black),
             label:
-                const Text("Xem tất cả", style: TextStyle(color: Colors.black)),
+                Text(context.tr("order_pages.locations_page.see_all"), style: const TextStyle(color: Colors.black)),
             style: ElevatedButton.styleFrom(
               foregroundColor: Colors.white,
               backgroundColor: Colors.grey.shade300,
@@ -1314,41 +1290,47 @@ Số lượng hình ảnh đính kèm: ${_images.length}
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle(context.tr("recevier"), func: () {
+            _buildSectionTitle(context.tr("history.recevier"), func: () {
               setState(() {
                 _receiverNameController.text = _senderNameController.text;
                 _receiverPhoneController.text = _senderPhoneController.text;
               });
-            }, button: true, textButton: context.tr("i_am_receiver")),
+            },
+                button: true,
+                textButton:
+                    context.tr("order_pages.order_detail_page.i_am_receiver")),
             const SizedBox(height: 30),
             _buildTextField(
               controller: _receiverNameController,
-              labelText: context.tr("receiver_name"),
+              labelText:
+                  context.tr("order_pages.order_detail_page.receiver_name"),
               onChanged: (value) {},
               icon: const Icon(Icons.person),
             ),
             if (!_isReceiverNameValid)
-              Text(context.tr("enter_name"),
+              Text(context.tr("order_pages.order_detail_page.enter_name"),
                   style: const TextStyle(color: Colors.red)),
             _buildTextField(
                 controller: _receiverPhoneController,
-                labelText: context.tr("receiver_phone"),
+                labelText:
+                    context.tr("order_pages.order_detail_page.receiver_phone"),
                 onChanged: (value) {},
                 icon: const Icon(Icons.phone),
                 fromContacts: true),
             if (!_isReceiverPhoneValid)
-              Text(context.tr("enter_phone"),
+              Text(context.tr("order_pages.order_detail_page.enter_phone"),
                   style: const TextStyle(color: Colors.red)),
             _buildTextField(
               controller: _orderDescriptionController,
-              labelText: context.tr("description"),
+              labelText:
+                  context.tr("order_pages.order_detail_page.description"),
               onChanged: (value) {},
               icon: const Icon(Icons.note),
               isDes: true,
             ),
             const SizedBox(height: 30),
             Text(
-              context.tr("package_info"),
+              context.tr("order_pages.order_detail_page.package_info"),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             ),
             const SizedBox(height: 30),
@@ -1356,15 +1338,15 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             // Trường nhập số tiền thu hộ (không cần kiểm tra hợp lệ)
             _buildNumberField(
               controller: _cashOnDeliveryController,
-              labelText: context.tr("cod_amount"),
-              hintText: context.tr("enter_cod"),
+              labelText: context.tr("order_pages.order_detail_page.cod_amount"),
+              hintText: context.tr("order_pages.order_detail_page.enter_cod"),
               isEmpty: true,
             ),
             const SizedBox(height: 20),
 
             // Lưới nút chọn khối lượng
             Text(
-              context.tr("weight_range"),
+              context.tr("order_pages.order_detail_page.weight_range"),
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 10),
@@ -1402,14 +1384,16 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               ],
             ),
             if (!_isWeightValid)
-              Text(context.tr("select_weight"),
+              Text(context.tr("order_pages.order_detail_page.select_weight"),
                   style: const TextStyle(color: Colors.red)),
 
             const SizedBox(height: 10),
             _buildNumberField(
                 controller: _weightController,
-                labelText: context.tr("not_obligatory"),
-                hintText: context.tr("enter_weight"),
+                labelText:
+                    context.tr("order_pages.order_detail_page.not_obligatory"),
+                hintText:
+                    context.tr("order_pages.order_detail_page.enter_weight"),
                 isEmpty: true,
                 onChangedCallback: (value) {
                   setState(() {
@@ -1450,14 +1434,14 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                 }),
             if (_overMaxWeight)
               Text(
-                context.tr("select_weight"),
+                context.tr("order_pages.order_detail_page.select_weight"),
                 style: const TextStyle(color: Colors.red),
               ),
             const SizedBox(height: 20),
 
             // Lưới nút chọn loại hàng hoá
             Text(
-              context.tr("goods_type"),
+              context.tr("order_pages.order_detail_page.goods_type"),
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 10),
@@ -1499,12 +1483,13 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               ],
             ),
             if (!_goodTypeValid)
-              Text(context.tr("select_goods_type"),
+              Text(
+                  context.tr("order_pages.order_detail_page.select_goods_type"),
                   style: const TextStyle(color: Colors.red)),
 
             const SizedBox(height: 20),
             _buildToggleButton(
-              title: context.tr("bulky_goods"),
+              title: context.tr("order_pages.order_detail_page.bulky_goods"),
               isSelected: _isBulky,
               callBack: (bool value) {
                 setState(() {
@@ -1513,18 +1498,18 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                   _selectedWeightRange = -1;
                 });
               },
-              description: '60 x 70 x 60cm, tối đa 50kg',
+              description: context.tr("order_pages.order_detail_page.bg_des"),
             ),
             const SizedBox(height: 20),
             _buildToggleButton(
-              title: context.tr("gift_order"),
+              title: context.tr("order_pages.order_detail_page.gift_order"),
               isSelected: _isAGift,
               callBack: (bool value) {
                 setState(() {
                   _isAGift = value;
                 });
               },
-              description: 'Quà tặng bạn bè, người thân.',
+              description: context.tr("order_pages.order_detail_page.go_des"),
             ),
             if (_isAGift) ...[
               Wrap(
@@ -1560,7 +1545,8 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               ),
               _buildTextField(
                   controller: _giftMessageController,
-                  labelText: "Lời nhắn",
+                  labelText:
+                      context.tr("order_pages.confirm_page.gift_message"),
                   onChanged: (value) {
                     if (value != null) _giftMessageController.text = value;
                   },
@@ -1570,14 +1556,15 @@ Số lượng hình ảnh đính kèm: ${_images.length}
 
             const SizedBox(height: 20),
             _buildToggleButton(
-              title: context.tr("delivery_to_door"),
+              title:
+                  context.tr("order_pages.order_detail_page.delivery_to_door"),
               isSelected: _isDoorToDoor,
               callBack: (bool value) {
                 setState(() {
                   _isDoorToDoor = value;
                 });
               },
-              description: 'Giao đến cửa người nhận.',
+              description: context.tr("order_pages.order_detail_page.dtd_des"),
             ),
             const SizedBox(height: 20),
             Card(
@@ -1610,8 +1597,10 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                       const SizedBox(width: 8),
                       Text(
                         _isInsured
-                            ? context.tr("insurance_added")
-                            : context.tr("insurance"),
+                            ? context.tr(
+                                "order_pages.order_detail_page.insurance_added")
+                            : context
+                                .tr("order_pages.order_detail_page.insurance"),
                         style: const TextStyle(
                           color: Colors.black87,
                           fontSize: 16,
@@ -1628,7 +1617,8 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             _buildDropdown(
               items: ['Giao hàng nhanh', "Giao hàng tiết kiệm"],
               selectedValue: _selectedDeliveryMethod,
-              labelText: context.tr("shipping_method"),
+              labelText:
+                  context.tr("order_pages.order_detail_page.shipping_method"),
               isValid: true,
               icon: Icons.local_shipping,
               onChanged: (value) {
@@ -1639,7 +1629,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             ),
             _buildTextField(
                 controller: _noteController,
-                labelText: context.tr("note"),
+                labelText: context.tr("order_pages.order_detail_page.note"),
                 onChanged: (value) {
                   setState(() {});
                 },
@@ -1727,7 +1717,8 @@ Số lượng hình ảnh đính kèm: ${_images.length}
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle(context.tr('payment_page.title'), func: () {}),
+            _buildSectionTitle(context.tr('order_pages.payment_page.title'),
+                func: () {}),
             _buildDropdown(
               items: [
                 "Chuyển khoản",
@@ -1735,7 +1726,8 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                 "Ví điện tử",
               ],
               selectedValue: _selectedPaymentMethod,
-              labelText: context.tr('payment_page.payment_method_label'),
+              labelText:
+                  context.tr('order_pages.payment_page.payment_method_label'),
               isValid: true,
               icon: Icons.payment,
               onChanged: (value) {
@@ -1748,18 +1740,20 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             BlocBuilder<OrderBlocFee, OrderState>(
               builder: (context, state) {
                 return _buildInfoRow(
-                  context.tr('payment_page.temporary_fee'),
+                  context.tr('order_pages.payment_page.temporary_fee'),
                   state is OrderFeeCalculated
                       ? '${state.fee} VND'
                       : state is OrderFeeCalculating
-                          ? context.tr('payment_page.fee_calculating')
-                          : context.tr('payment_page.fee_not_calculated'),
+                          ? context
+                              .tr('order_pages.payment_page.fee_calculating')
+                          : context.tr(
+                              'order_pages.payment_page.fee_not_calculated'),
                 );
               },
             ),
             const SizedBox(height: 20),
             _buildToggleButton(
-              title: context.tr('payment_page.sender_pays'),
+              title: context.tr('order_pages.payment_page.sender_pays'),
               isSelected: _senderWillPay,
               callBack: (bool value) {
                 setState(() {
@@ -1769,8 +1763,8 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               description: '',
             ),
             const SizedBox(height: 20),
-            Text(context
-                .tr('payment_page.voucher_selection')), // Thêm nhãn voucher
+            Text(context.tr(
+                'order_pages.payment_page.voucher_selection')), // Thêm nhãn voucher
             _buildVoucherSelection(),
           ],
         ),
@@ -1831,8 +1825,10 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
-                title: Text(context.tr('confirm_page.success_title')),
-                content: Text(context.tr('confirm_page.success_message')),
+                title:
+                    Text(context.tr('order_pages.confirm_page.success_title')),
+                content: Text(
+                    context.tr('order_pages.confirm_page.success_message')),
                 actions: [
                   TextButton(
                     onPressed: () {
@@ -1853,13 +1849,14 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                 false, // Không cho phép đóng dialog bằng cách chạm bên ngoài
             builder: (BuildContext context) {
               return AlertDialog(
-                title: Text(context.tr('confirm_page.failure_title')),
+                title:
+                    Text(context.tr('order_pages.confirm_page.failure_title')),
                 content: Text(
-                    '${context.tr('confirm_page.failure_message_prefix')}: ${state.error}'),
+                    '${context.tr('order_pages.confirm_page.failure_message_prefix')}: ${state.error}'),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: Text(context.tr('common.retry_button')),
+                    child: Text(context.tr('common.retry')),
                   ),
                 ],
               );
@@ -1876,7 +1873,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               children: [
                 Center(
                   child: Text(
-                    context.tr("confirm_page.page_title"),
+                    context.tr("order_pages.confirm_page.page_title"),
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -1884,73 +1881,86 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                   ),
                 ),
                 _buildInfoCard(
-                  context.tr('confirm_page.sender_info'),
+                  context.tr('order_pages.confirm_page.sender_info'),
                   Icons.person_outline,
                   [
-                    _buildInfoRow(context.tr('confirm_page.sender_name'),
+                    _buildInfoRow(
+                        context.tr('order_pages.confirm_page.sender_name'),
                         toProper(_senderNameController.text)),
-                    _buildInfoRow(context.tr('confirm_page.sender_address'),
+                    _buildInfoRow(
+                        context.tr('order_pages.confirm_page.sender_address'),
                         _senderAddress.text),
-                    _buildInfoRow(context.tr('confirm_page.sender_phone'),
+                    _buildInfoRow(
+                        context.tr('order_pages.confirm_page.sender_phone'),
                         _senderPhoneController.text),
                     _buildInfoRow(
-                      context.tr('confirm_page.sender_note'),
+                      context.tr('order_pages.confirm_page.sender_note'),
                       (_orderDescriptionController.text.isEmpty
-                          ? context.tr('confirm_page.no_note')
+                          ? context.tr('order_pages.confirm_page.no_note')
                           : _orderDescriptionController.text),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 _buildInfoCard(
-                  context.tr('confirm_page.receiver_info'),
+                  context.tr('order_pages.confirm_page.receiver_info'),
                   Icons.person_pin_circle_outlined,
                   [
-                    _buildInfoRow(context.tr('confirm_page.receiver_name'),
+                    _buildInfoRow(
+                        context.tr('order_pages.confirm_page.receiver_name'),
                         toProper(_receiverNameController.text)),
-                    _buildInfoRow(context.tr('confirm_page.receiver_address'),
+                    _buildInfoRow(
+                        context.tr('order_pages.confirm_page.receiver_address'),
                         _receiverAddress.text),
-                    _buildInfoRow(context.tr('confirm_page.receiver_phone'),
+                    _buildInfoRow(
+                        context.tr('order_pages.confirm_page.receiver_phone'),
                         _receiverPhoneController.text),
                   ],
                 ),
                 const SizedBox(height: 16),
                 _buildInfoCard(
-                  context.tr('confirm_page.package_info'),
+                  context.tr('order_pages.confirm_page.package_info'),
                   Icons.inventory_2_outlined,
                   [
-                    _buildInfoRow(context.tr('confirm_page.cash_on_delivery'),
+                    _buildInfoRow(
+                        context.tr('order_pages.confirm_page.cash_on_delivery'),
                         '${_cashOnDeliveryController.text == "" ? "0" : _cashOnDeliveryController.text} VNĐ'),
                     // _buildInfoRow('Kích thước',
                     //     '${_lengthController.text}x${_widthController.text}x${_heightController.text} cm'),
                     _buildInfoRow(
-                        context.tr('confirm_page.weight'),
+                        context.tr('order_pages.confirm_page.weight'),
                         _selectedWeightRange != -1
                             ? '${_selectedWeightRange * 5}-${(_selectedWeightRange + 1) * 5} kg'
                             : "> 40 kg"),
-                    _buildInfoRow(context.tr('confirm_page.goods_type'),
+                    _buildInfoRow(
+                        context.tr('order_pages.confirm_page.goods_type'),
                         _selectedGoodsType ?? "Bất kì"),
                     if (_isAGift) ...[
-                      _buildInfoRow(context.tr('confirm_page.gift_order'),
+                      _buildInfoRow(
+                          context.tr('order_pages.confirm_page.gift_order'),
                           giftTopics[_giftTopic]),
-                      _buildInfoRow(context.tr('confirm_page.message'),
+                      _buildInfoRow(
+                          context.tr('order_pages.confirm_page.message'),
                           _giftMessageController.text),
                     ]
                   ],
                 ),
                 const SizedBox(height: 16),
                 _buildInfoCard(
-                  context.tr('confirm_page.order_info'),
+                  context.tr('order_pages.confirm_page.order_info'),
                   Icons.description_outlined,
                   [
-                    _buildInfoRow(context.tr('confirm_page.delivery_method'),
+                    _buildInfoRow(
+                        context.tr('order_pages.confirm_page.delivery_method'),
                         _selectedDeliveryMethod),
-                    _buildInfoRow(context.tr('confirm_page.payment_method'),
+                    _buildInfoRow(
+                        context.tr('order_pages.confirm_page.payment_method'),
                         _selectedPaymentMethod),
-                    _buildInfoRow(context.tr('confirm_page.bulky_order'),
+                    _buildInfoRow(
+                        context.tr('order_pages.confirm_page.bulky_order'),
                         _isBulky ? "Có" : "Không"),
                     _buildInfoRow(
-                        context.tr('confirm_page.description'),
+                        context.tr('order_pages.confirm_page.description'),
                         (_noteController.text == ""
                             ? "Không có"
                             : _noteController.text)),
@@ -1959,7 +1969,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                 const SizedBox(height: 16),
                 if (_isInsured)
                   _buildInfoCard(
-                    context.tr('confirm_page.insurance'),
+                    context.tr('order_pages.confirm_page.insurance'),
                     Icons.perm_contact_calendar_outlined,
                     [
                       TextButton(
@@ -1979,7 +1989,9 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                             ),
                           );
                         },
-                        child: Text(context.tr('confirm_page.view_insurance'),
+                        child: Text(
+                            context
+                                .tr('order_pages.confirm_page.view_insurance'),
                             style: const TextStyle(
                                 fontSize: 16, color: mainColor)),
                       ),
@@ -1999,11 +2011,12 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  text: context.tr('confirm_page.terms_agreement'),
+                  text: context.tr('order_pages.confirm_page.terms_agreement'),
                   style: const TextStyle(color: Colors.black),
                   children: [
                     TextSpan(
-                      text: context.tr('confirm_page.terms_highlight'),
+                      text: context
+                          .tr('order_pages.confirm_page.terms_highlight'),
                       style: const TextStyle(
                         color: mainColor,
                         fontWeight: FontWeight.bold,
@@ -2038,7 +2051,8 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                     child: state is OrderCreating
                         ? const CircularProgressIndicator(color: Colors.white)
                         : Text(
-                            context.tr('confirm_page.create_order_button'),
+                            context.tr(
+                                'order_pages.confirm_page.create_order_button'),
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -2126,7 +2140,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
           ElevatedButton(
             onPressed: () {
               if (_currentPage == 1) {
-                Navigator.pop(context);
+                widget.toHome();
               } else {
                 _pageController.previousPage(
                   duration: const Duration(milliseconds: 300),
@@ -2140,10 +2154,10 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                 borderRadius: BorderRadius.circular(10), // Border radius
               ),
             ),
-            child: const Text(
-              'Quay lại',
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            child: Text(
+              context.tr("order_pages.back"),
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
         if (_currentPage == 4)
@@ -2152,10 +2166,10 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               Share.share(createShareContent());
             },
             icon: const Icon(Icons.share, color: Colors.white),
-            label: const Text(
-              "Chia sẻ",
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            label: Text(
+              context.tr("order_pages.share"),
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: mainColor, // Thay đổi màu nền của nút
@@ -2199,9 +2213,9 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             ),
             child: isCalculating
                 ? const CircularProgressIndicator()
-                : const Text(
-                    'Tiếp tục',
-                    style: TextStyle(
+                : Text(
+                    context.tr("order_pages.continue"),
+                    style: const TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold),
                   ),
           ),

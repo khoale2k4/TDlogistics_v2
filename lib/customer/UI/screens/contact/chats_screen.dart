@@ -9,7 +9,7 @@ import 'package:tdlogistic_v2/customer/bloc/order_state.dart';
 
 class ChatListScreen extends StatefulWidget {
   final Function(String, String) sendMessage;
-  const ChatListScreen({Key? key, required this.sendMessage}) : super(key: key);
+  const ChatListScreen({super.key, required this.sendMessage});
 
   @override
   State<ChatListScreen> createState() => _ChatListScreenState();
@@ -19,6 +19,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   void initState() {
     super.initState();
+    print("CHat Init");
     context.read<GetChatsBloc>().add(const GetChats());
   }
 
@@ -28,7 +29,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       appBar: AppBar(
         backgroundColor: mainColor,
         title: Text(
-          context.tr("chatList"),
+          context.tr("chat.chatList"),
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
@@ -134,13 +135,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final difference = now.difference(timestamp);
 
     if (difference.inMinutes < 1) {
-      return context.tr("now");
+      return context.tr("chat.now");
     } else if (difference.inHours < 1) {
-      return '${difference.inMinutes} ${context.tr("minuteBefore")}';
+      return '${difference.inMinutes} ${context.tr("chat.minuteBefore")}';
     } else if (difference.inDays < 1) {
-      return '${difference.inHours} ${context.tr("hourBefore")}';
+      return '${difference.inHours} ${context.tr("chat.hourBefore")}';
     } else {
-      return '${difference.inDays} ${context.tr("dayBefore")}';
+      return '${difference.inDays} ${context.tr("chat.dayBefore")}';
     }
   }
 }

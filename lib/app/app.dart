@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/auth/UI/screens/OTP_verification.dart';
 import 'package:tdlogistic_v2/auth/UI/screens/ask_name.dart';
 import 'package:tdlogistic_v2/auth/UI/screens/customer_login_page.dart';
+import 'package:tdlogistic_v2/auth/UI/screens/home_page.dart';
 import 'package:tdlogistic_v2/auth/UI/screens/shipper_login_page.dart';
 import 'package:tdlogistic_v2/auth/UI/screens/splash_screen.dart';
 import 'package:tdlogistic_v2/auth/bloc/auth_event.dart';
@@ -20,13 +21,12 @@ import 'package:tdlogistic_v2/shipper/bloc/task_event.dart';
 import '../auth/bloc/auth_bloc.dart';
 import 'app_bloc.dart';
 
+// ignore: must_be_immutable
 class MyApp extends StatefulWidget {
-  final SecureStorageService secureStorageService;
-  final LocationTrackerService locationTrackerService;
-  const MyApp({
+  final int start;
+  MyApp({
     super.key,
-    required this.secureStorageService,
-    required this.locationTrackerService,
+    required this.start
   });
 
   @override
@@ -34,13 +34,9 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  Locale _locale = const Locale('en');
+  final SecureStorageService secureStorageService =  SecureStorageService();
+  final LocationTrackerService locationTrackerService = LocationTrackerService();
 
-  void _changeLanguage(String languageCode) {
-    setState(() {
-      _locale = Locale(languageCode);
-    });
-  }
   @override
   Widget build(BuildContext context) {
     bool hasCustomerRole(User user) {
@@ -59,135 +55,135 @@ class _MyAppState extends State<MyApp> {
         ),
         BlocProvider<OrderBlocCus>(
           create: (context) => OrderBlocCus(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           )..add(StartOrder()),
         ),
         BlocProvider<UserBloc>(
           create: (context) => UserBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<OrderBlocSearchCus>(
           create: (context) => OrderBlocSearchCus(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           )..add(const GetOrders()),
         ),
         BlocProvider<OrderBlocFee>(
           create: (context) => OrderBlocFee(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<TaskBlocShipReceive>(
           create: (context) => TaskBlocShipReceive(
-              secureStorageService: widget.secureStorageService),
+              secureStorageService: secureStorageService),
         ),
         BlocProvider<TaskBlocShipSend>(
           create: (context) => TaskBlocShipSend(
-              secureStorageService: widget.secureStorageService,
-              locationTrackerService: widget.locationTrackerService),
+              secureStorageService: secureStorageService,
+              locationTrackerService: locationTrackerService),
         ),
         BlocProvider<TaskBlocSearchShip>(
           create: (context) => TaskBlocSearchShip(
-              secureStorageService: widget.secureStorageService),
+              secureStorageService: secureStorageService),
         ),
         BlocProvider<ProcessingOrderBloc>(
           create: (context) => ProcessingOrderBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           )..add(StartOrder()),
         ),
         BlocProvider<TakingOrderBloc>(
           create: (context) => TakingOrderBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           )..add(StartOrder()),
         ),
         BlocProvider<DeliveringOrderBloc>(
           create: (context) => DeliveringOrderBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           )..add(StartOrder()),
         ),
         BlocProvider<CancelledOrderBloc>(
           create: (context) => CancelledOrderBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           )..add(StartOrder()),
         ),
         BlocProvider<PendingOrderBloc>(
           create: (context) => PendingOrderBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           )..add(GetPendingTask()),
         ),
         BlocProvider<CompletedOrderBloc>(
           create: (context) => CompletedOrderBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           )..add(StartOrder()),
         ),
         BlocProvider<GetImagesBloc>(
           create: (context) => GetImagesBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<GetImagesShipBloc>(
           create: (context) => GetImagesShipBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<UpdateImagesShipBloc>(
           create: (context) => UpdateImagesShipBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<AcceptTask>(
           create: (context) => AcceptTask(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<CreateOrderBloc>(
           create: (context) => CreateOrderBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<GetLocationBloc>(
           create: (context) => GetLocationBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<GetPositionsBloc>(
           create: (context) => GetPositionsBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<ConfirmTaskBloc>(
           create: (context) => ConfirmTaskBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<GetChatsBloc>(
           create: (context) => GetChatsBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<GetChatBloc>(
           create: (context) => GetChatBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<GetChatsShipBloc>(
           create: (context) => GetChatsShipBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<GetChatShipBloc>(
           create: (context) => GetChatShipBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<GetIdBloc>(
           create: (context) => GetIdBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
         BlocProvider<GetVoucherBloc>(
           create: (context) => GetVoucherBloc(
-            secureStorageService: widget.secureStorageService,
+            secureStorageService: secureStorageService,
           ),
         ),
       ],
@@ -204,8 +200,8 @@ class _MyAppState extends State<MyApp> {
           builder: (context, state) {
             if (state is Authenticated) {
               if (state.user == null) {
-                // return const HomePage(); // test mạng
-                return SocketCustomerPage(user: User(id: "123"), token: " ");
+                return const HomePage(); // test mạng
+                // return SocketCustomerPage(user: User(id: "123"), token: " ");
               }
               if (hasCustomerRole(state.user!)) {
                 void setName(String fName, String lName) {
@@ -221,7 +217,7 @@ class _MyAppState extends State<MyApp> {
                   );
                 } else {
                   return SocketCustomerPage(
-                      user: state.user!, token: state.token);
+                      user: state.user!, token: state.token, start: widget.start);
                 }
               } else {
                 return SocketPage(user: state.user!, token: state.token);

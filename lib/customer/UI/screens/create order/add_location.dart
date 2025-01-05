@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/core/constant.dart';
@@ -49,16 +50,16 @@ class _NewLocationState extends State<NewLocation> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Xác nhận xóa'),
-          content: const Text('Bạn có chắc chắn muốn xóa địa điểm này không?'),
+          title: Text(context.tr("order_pages.locations_page.confirm_delete")),
+          content: Text(context.tr("order_pages.locations_page.delete_alert")),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Đóng popup
               },
-              child: const Text(
-                'Hủy',
-                style: TextStyle(color: Colors.grey),
+              child: Text(
+                context.tr("order_pages.locations_page.cancel"),
+                style: const TextStyle(color: Colors.grey),
               ),
             ),
             ElevatedButton(
@@ -66,7 +67,7 @@ class _NewLocationState extends State<NewLocation> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red, // Màu nền đỏ cho nút xóa
               ),
-              child: const Text('Xóa', style: TextStyle(color: Colors.white)),
+              child: Text(context.tr("order_pages.locations_page.delete"), style: const TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -78,7 +79,7 @@ class _NewLocationState extends State<NewLocation> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chọn địa điểm'),
+        title: Text(context.tr("order_pages.locations_page.pick_a_location")),
         actions: [
           if (widget.isEdit)
             IconButton(
@@ -102,7 +103,7 @@ class _NewLocationState extends State<NewLocation> {
             MySearchBar(
               controller: _searchController,
               icon: const Icon(Icons.search),
-              labelText: "Tìm kiếm địa điểm",
+              labelText: context.tr("order_pages.locations_page.search_address"),
               onChanged: () async {
                 setState(() {});
 //
@@ -165,9 +166,9 @@ class _NewLocationState extends State<NewLocation> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: const Text(
-                'Tiếp tục',
-                style: TextStyle(color: Colors.white),
+              child: Text(
+                context.tr("order_pages.continue"),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
           ],
@@ -201,7 +202,7 @@ class _NewMarkState extends State<NewMark> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Xác nhận địa điểm'),
+        title: Text(context.tr("order_pages.locations_page.confirm_location")),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -209,7 +210,7 @@ class _NewMarkState extends State<NewMark> {
           children: [
             _buildTextField(
               controller: _locationController,
-              labelText: "Tên địa điểm",
+              labelText: context.tr("order_pages.locations_page.location_name"),
               onChanged: (str) {
                 setState(() {});
               },
@@ -217,7 +218,7 @@ class _NewMarkState extends State<NewMark> {
             const SizedBox(height: 16),
             _buildTextField(
               controller: _addressController,
-              labelText: "Địa chỉ",
+              labelText: context.tr("order_pages.locations_page.address"),
               onChanged: (str) {
                 setState(() {});
               },
@@ -334,7 +335,7 @@ class _NewFavMarkState extends State<NewFavMark> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Xác nhận địa điểm'),
+        title: Text(context.tr("order_pages.locations_page.confirm_location")),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -342,7 +343,7 @@ class _NewFavMarkState extends State<NewFavMark> {
           children: [
             _buildTextField(
               controller: _addressController,
-              labelText: "Địa chỉ",
+              labelText: context.tr("order_pages.locations_page.address"),
               onChanged: (str) {
                 setState(() {});
               },
@@ -350,7 +351,7 @@ class _NewFavMarkState extends State<NewFavMark> {
             const SizedBox(height: 16),
             _buildTextField(
               controller: _descriptionController,
-              labelText: "Mô tả",
+              labelText: context.tr("order_pages.locations_page.description"),
               onChanged: (str) {
                 setState(() {});
               },
@@ -358,7 +359,7 @@ class _NewFavMarkState extends State<NewFavMark> {
             const SizedBox(height: 16),
             _buildTextField(
               controller: _nameController,
-              labelText: "Tên người nhận",
+              labelText: context.tr("order_pages.locations_page.name"),
               onChanged: (str) {
                 setState(() {});
               },
@@ -366,14 +367,14 @@ class _NewFavMarkState extends State<NewFavMark> {
             const SizedBox(height: 16),
             _buildTextField(
               controller: _numberController,
-              labelText: "SĐT người nhận",
+              labelText: context.tr("order_pages.locations_page.phone"),
               onChanged: (str) {
                 setState(() {});
               },
             ),
             if (!phoneValid)
-              const Text("Vui lòng nhập đúng SĐT!",
-                  style: TextStyle(
+              Text(context.tr("order_pages.locations_page.correct_phone"),
+                  style: const TextStyle(
                       color: Colors.red, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -399,9 +400,9 @@ class _NewFavMarkState extends State<NewFavMark> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: const Text(
-                'Lưu',
-                style: TextStyle(color: Colors.white),
+              child: Text(
+                context.tr("order_pages.locations_page.save"),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
           ],

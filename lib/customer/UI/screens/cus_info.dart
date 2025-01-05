@@ -75,7 +75,7 @@ class _CustomerInforState extends State<CustomerInfor> {
       onPressed: () {
         _showLogoutDialog(context);
       },
-      child: Text(context.tr("logout"), style: TextStyle(color: Colors.red)),
+      child: Text(context.tr("user_info.logout"), style: TextStyle(color: Colors.red)),
     );
   }
 
@@ -84,7 +84,7 @@ class _CustomerInforState extends State<CustomerInfor> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          context.tr("greeting"),
+          context.tr("user_info.greeting"),
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
@@ -101,7 +101,7 @@ class _CustomerInforState extends State<CustomerInfor> {
             // Hiển thị thông báo thành công
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(context.tr("successSaveInfo")),
+                content: Text(context.tr("user_info.successSaveInfo")),
                 backgroundColor: secondColor,
               ),
             );
@@ -109,7 +109,7 @@ class _CustomerInforState extends State<CustomerInfor> {
             // Hiển thị thông báo lỗi
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(context.tr("failedSaveInfo")),
+                content: Text(context.tr("user_info.failedSaveInfo")),
                 backgroundColor: mainColor,
               ),
             );
@@ -145,11 +145,11 @@ class _CustomerInforState extends State<CustomerInfor> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                buildFieldText(context, context.tr("lastName"), firstNameController),
+                buildFieldText(context, context.tr("user_info.lastName"), firstNameController),
                 const SizedBox(height: 20),
-                buildFieldText(context, context.tr("firstName"), lastNameController),
+                buildFieldText(context, context.tr("user_info.firstName"), lastNameController),
                 const SizedBox(height: 20),
-                buildFieldText(context, context.tr("phone"), phoneController),
+                buildFieldText(context, context.tr("history.phone"), phoneController),
                 const SizedBox(height: 20),
                 buildFieldText(context, "Email", emailController),
                 const SizedBox(height: 30),
@@ -170,7 +170,7 @@ class _CustomerInforState extends State<CustomerInfor> {
                     ),
                   ),
                   child: Text(
-                    context.tr("save"),
+                    context.tr("user_info.save"),
                     style: const TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold),
                   ),
@@ -190,20 +190,20 @@ class _CustomerInforState extends State<CustomerInfor> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(context.tr("confirmLogout")),
+          title: Text(context.tr("user_info.confirmLogout")),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text(context.tr("deny")),
+              child: Text(context.tr("user_info.deny")),
             ),
             ElevatedButton(
               onPressed: () {
                 context.read<AuthBloc>().add(LogoutRequested());
                 Navigator.of(context).pop();
               },
-              child: Text(context.tr("confirm")),
+              child: Text(context.tr("user_info.confirm")),
             ),
           ],
         );
