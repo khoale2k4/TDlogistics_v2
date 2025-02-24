@@ -1,4 +1,5 @@
 import "dart:convert";
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import 'package:http/http.dart' as http;
 import "package:tdlogistic_v2/core/constant.dart";
@@ -66,7 +67,7 @@ class _MySearchBarState extends State<MySearchBar> {
         TextField(
           controller: widget.controller,
           decoration: InputDecoration(
-            hintText: "Nhập địa điểm",
+            hintText: context.tr("order_pages.locations_page.enter_address"),
             filled: true,
             fillColor: Colors.white,
             labelText: widget.labelText,

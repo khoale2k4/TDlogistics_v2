@@ -140,7 +140,16 @@
             "insurance": "Thêm bảo hiểm",
             "insurance_added": "Đã thêm bảo hiểm",
             "shipping_method": "Phương thức vận chuyển",
-            "note": "Ghi chú đơn hàng"
+            "note": "Ghi chú đơn hàng",
+            "good_types": {
+                "breakable": "Hàng dễ vỡ",
+                "food" : "Thực phẩm",
+                "clothes": "Quần áo",
+                "fresh": "Đồ tươi sống",
+                "others": "Khác"
+            },
+            "eco_transmit": "Giao hàng tiết kiệm",
+            "quick_transmit" : "Giao hàng nhanh"
         },
         "payment_page": {
             "title": "Thông tin thanh toán",
@@ -154,7 +163,10 @@
             "fee_calculating": "Đang tính...",
             "fee_not_calculated": "Chưa tính phí",
             "sender_pays": "Người gửi trả tiền",
-            "voucher_selection": "Chọn voucher"
+            "voucher_selection": "Chọn voucher",
+            "discount" : "Voucher này giảm",
+            "choose" : "Chọn",
+            "voucher_detail": "Chi tiết voucher"
         },
         "confirm_page": {
             "success_title": "Thành công",

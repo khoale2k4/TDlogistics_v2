@@ -6,7 +6,7 @@ const Color secondColor = Color.fromARGB(255,120,188,68);
 const double titleSize = 20;
 const double contentSize = 18;
 
-const ggApiKey = "AIzaSyB1D4XCGPDidtXUwOw1K-gQ8VPB2c4IxC8";
+const ggApiKey = "AIzaSyDQ0pDRDKSyAO4lm10ttEXa2_uoZmWQzHc";
 
 const host = "https://api.tdlogistics.net.vn";
 const baseUrll = "$host/v3";

@@ -31,6 +31,7 @@ class VoucherRepository {
           "data": vouchers
         };
       } else {
+        print(responseData);
         return {
           "success": false,
           "message": "Lấy các phiếu giảm giá không thành công",

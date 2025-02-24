@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tdlogistic_v2/customer/bloc/order_bloc.dart';
@@ -27,9 +28,9 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Chọn Voucher',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          context.tr("order_pages.payment_page.voucher_selection"),
+          style: const TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.red,
       ),
@@ -65,7 +66,7 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                             ),
                           ),
                           subtitle: Text(
-                            "Voucher này giảm ${voucher.discount} VNĐ",
+                            "${context.tr("order_pages.payment_page.discount")} ${voucher.discount} VNĐ",
                             overflow: TextOverflow.ellipsis,
                           ),
                           trailing: Checkbox(
@@ -107,9 +108,9 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                         : () {
                             Navigator.pop(context, _selectedVoucher);
                           },
-                    child: const Text(
-                      'Chọn',
-                      style: TextStyle(
+                    child: Text(
+                      context.tr("order_pages.payment_page.choose"),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -138,9 +139,9 @@ class VoucherDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Chi tiết Voucher',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          context.tr("order_pages.payment_page.voucher_detail"),
+          style: const TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.red,
       ),
@@ -165,7 +166,7 @@ class VoucherDetailPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  "Voucher này giảm ${voucher.discount} VNĐ",
+                  "${context.tr("order_pages.payment_page.discount")} ${voucher.discount} VNĐ",
                   style: const TextStyle(fontSize: 16),
                 ),
               ],

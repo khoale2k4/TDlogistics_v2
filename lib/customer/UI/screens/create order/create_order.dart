@@ -111,7 +111,7 @@ class _CreateOrderState extends State<CreateOrder> {
   final _giftMessageController = TextEditingController();
   final _noteController = TextEditingController();
   int _giftTopic = 0;
-  String? _selectedGoodsType;
+  String _selectedGoodsType = "";
   bool _isBulky = false;
   bool _isInsured = false;
   bool _isAGift = false;
@@ -230,7 +230,7 @@ class _CreateOrderState extends State<CreateOrder> {
   }
 
   //////////////////////////////
-  String _selectedPaymentMethod = "Tiền mặt";
+  String _selectedPaymentMethod = "";
   bool _senderWillPay = true;
 
   GiftOrder getGift(String msg, String topic) {
@@ -494,7 +494,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                     provinceSource: "Tỉnh Bà Rịa - Vũng Tàu",
                     // senderAddress["province"],
                     // sửa loại gửi hàng
-                    serviceType: _selectedDeliveryMethod == "Giao hàng nhanh"
+                    serviceType: _selectedDeliveryMethod == context.tr("order_pages.order_detail_page.quick_transmit")
                         ? "SN"
                         : "SR",
                     wardDest: "Phường Đất Đỏ",
@@ -1284,6 +1284,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
   }
 
   Widget _buildNumberInputPage() {
+    _selectedDeliveryMethod = context.tr("order_pages.order_detail_page.quick_transmit");
     return SingleChildScrollView(
       child: Container(
         padding: const EdgeInsets.only(top: 50.0, left: 20, right: 20),
@@ -1450,11 +1451,11 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               runSpacing: 8,
               children: [
                 for (var type in [
-                  'Hàng dễ vỡ',
-                  'Thực phẩm',
-                  'Quần áo',
-                  'Đồ tươi sống',
-                  'Khác',
+                  context.tr("order_pages.order_detail_page.good_types.breakable"),
+                  context.tr("order_pages.order_detail_page.good_types.food"),
+                  context.tr("order_pages.order_detail_page.good_types.clothes"),
+                  context.tr("order_pages.order_detail_page.good_types.fresh"),
+                  context.tr("order_pages.order_detail_page.good_types.others")
                 ])
                   ElevatedButton(
                     onPressed: () {
@@ -1615,7 +1616,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
             const SizedBox(height: 20),
             // Dropdown cho phương thức giao
             _buildDropdown(
-              items: ['Giao hàng nhanh', "Giao hàng tiết kiệm"],
+              items: [context.tr("order_pages.order_detail_page.eco_transmit"), context.tr("order_pages.order_detail_page.quick_transmit")],
               selectedValue: _selectedDeliveryMethod,
               labelText:
                   context.tr("order_pages.order_detail_page.shipping_method"),
@@ -1711,6 +1712,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
   }
 
   Widget _buildPaymentPage(BuildContext context) {
+    _selectedPaymentMethod = context.tr("order_pages.payment_page.payment_methods.cash");
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
@@ -1721,9 +1723,9 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                 func: () {}),
             _buildDropdown(
               items: [
-                "Chuyển khoản",
-                "Tiền mặt",
-                "Ví điện tử",
+                context.tr("order_pages.payment_page.payment_methods.bank_transfer"),
+                context.tr("order_pages.payment_page.payment_methods.cash"),
+                context.tr("order_pages.payment_page.payment_methods.e_wallet"),
               ],
               selectedValue: _selectedPaymentMethod,
               labelText:
@@ -1803,7 +1805,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
               const Icon(Icons.local_offer, color: Colors.red),
               const SizedBox(width: 10),
               Text(
-                voucher ?? "Chọn voucher",
+                voucher ?? context.tr("order_pages.payment_page.voucher_selection"),
                 style:
                     const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
@@ -1934,7 +1936,7 @@ Số lượng hình ảnh đính kèm: ${_images.length}
                             : "> 40 kg"),
                     _buildInfoRow(
                         context.tr('order_pages.confirm_page.goods_type'),
-                        _selectedGoodsType ?? "Bất kì"),
+                        _selectedGoodsType),
                     if (_isAGift) ...[
                       _buildInfoRow(
                           context.tr('order_pages.confirm_page.gift_order'),
