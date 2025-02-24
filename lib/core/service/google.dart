@@ -28,14 +28,10 @@ Future<String?> convertLatLngToAddress(
 }
 
 Future<Map<String, double>?> getLatLngFromAddress(String address) async {
-  // Thay YOUR_API_KEY bằng API Key thực của bạn
-  const String apiKey = ggApiKey;
-
-  // Encode địa chỉ để sử dụng trong URL
+  String apiKey = ggApiKey;
   final Uri url = Uri.parse(
       'https://maps.googleapis.com/maps/api/geocode/json?address=${Uri.encodeComponent(address)}&key=$apiKey');
 
-  // Gửi yêu cầu đến Google Maps Geocoding API
   final response = await http.get(url);
 
   // Kiểm tra nếu yêu cầu thành công
